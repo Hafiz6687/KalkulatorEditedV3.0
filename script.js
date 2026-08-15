@@ -1059,50 +1059,69 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
         </div>`;
     }
     
-    // PENAMBAHBAIKAN CSS UNTUK FLOATING BUTTONS
+// PENAMBAHBAIKAN CSS UNTUK FLOATING BUTTONS & MENU KEBAB
     let cssBaru = `
     .floating-action-bar {
         position: fixed;
         bottom: 25px;
         right: 25px;
         display: flex;
-        gap: 15px;
+        gap: 10px;
         z-index: 9999;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 15px 20px;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        border: 1px solid #ddd;
         align-items: center;
     }
-    .btn-kemaskini {
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        padding: 10px 18px;
-        font-size: 13px;
+    .kebab-btn {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 22px;
         cursor: pointer;
-        font-weight: bold;
-        border-radius: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        padding: 5px 15px;
+        color: #1f4e79;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        transition: 0.2s;
     }
-    .btn-cetak {
-        background-color: #1f4e79;
-        color: white;
-        border: none;
-        padding: 10px 18px;
+    .kebab-btn:hover {
+        background: #f4f6f9;
+    }
+    .kebab-dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        bottom: 120%; 
+        background-color: white;
+        min-width: 170px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+    .kebab-dropdown a {
+        color: #333;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
         font-size: 13px;
-        cursor: pointer;
         font-weight: bold;
-        border-radius: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: 0.2s;
     }
-    .btn-kemaskini:hover { background-color: #5a6268; }
-    .btn-cetak:hover { background-color: #153a5b; }
+    .kebab-dropdown a:hover {
+        background-color: #f4f6f9;
+    }
+    .kebab-dropdown a:first-child {
+        border-bottom: 1px solid #eee;
+    }
+    .info-tag {
+        font-size: 11px;
+        color: #555;
+        font-style: italic;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
     @media print {
         .floating-action-bar, .print-btn-container { display: none !important; }
     }
@@ -1111,9 +1130,17 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body>
     
     <div class="floating-action-bar">
-        <span style="font-size: 11px; color: #555; margin-right: 5px; font-style: italic;">*Sila simpan sebagai PDF</span>
-        <button class="btn-kemaskini" onclick="window.close()">Kemaskini</button>
-        <button class="btn-cetak" onclick="window.print()">🖨️ Cetak Laporan</button>
+        <span class="info-tag">*Sila simpan sebagai PDF</span>
+        
+        <!-- Action Menu Kebab -->
+        <div style="position: relative;">
+            <button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button>
+            
+            <div id="kebabDropdown" class="kebab-dropdown">
+                <a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a>
+                <a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a>
+            </div>
+        </div>
     </div>
 
     <h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1>
