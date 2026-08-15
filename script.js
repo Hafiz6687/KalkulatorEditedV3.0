@@ -1,74 +1,404 @@
 // =====================================================
 // KALKULATOR AKTA KERJA 1955
-// SCRIPT.JS - MASTER KARYA AGUNG (FINAL INTEGRATION)
+// SCRIPT.JS - FINAL CLEAN ENGINE (ROMBAKAN PENUH 2026)
 // =====================================================
 
 // =====================================================
-// 1. AUTO-FIX & AUTO-FORMAT RM (KEMAS KINI BAHARU)
+// 1. HELPER & GET-ELEMENT ADAPTER (SELAMAT & ISOLATED)
 // =====================================================
+let activeCardContext = null;
+const originalGetElement = document.getElementById.bind(document);
+
+window.getElement = function(id) {
+    if (activeCardContext) {
+        let el = activeCardContext.querySelector(`[data-original-id="${id}"], [id="${id}"]`);
+        if (el) return el;
+    }
+    return originalGetElement(id);
+};
+
+function setText(id, value) { let el = getElement(id); if (el) el.innerHTML = value; }
+function setValue(id, value) { let el = getElement(id); if (el) el.value = value; }
+function formatRM(value) { value = Number(value) || 0; return "RM " + value.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function formatSafeRM(val) {
+    let num = evaluateSmartMath(val);
+    if (num === 0 && !val.toString().includes("0")) return "";
+    return "RM" + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function evaluateSmartMath(inputStr) {
+    if (!inputStr) return 0;
+    let cleanStr = inputStr.toString().toLowerCase().replace(/rm/g, '').replace(/bulan/g, '').replace(/x/g, '*').replace(/\[/g, '(').replace(/\]/g, ')').replace(/[^\d\.\+\-\*\/\(\)]/g, ''); 
+    if (cleanStr === "") return 0; 
+    try { return eval(cleanStr) || 0; } catch (e) { return 0; }
+}
+
+function getInputNumber(id) {
+    let el = getElement(id);
+    if (!el) return 0;
+    return evaluateSmartMath(el.value);
+}
+
+function toggleResult(prefix, showData) {
+    let pending = document.getElementById(prefix + "Pending");
+    let data = document.getElementById(prefix + "Data");
+    if (pending && data) {
+        pending.style.display = showData ? "none" : "block";
+        data.style.display = showData ? "block" : "none";
+    }
+}
+
+// =====================================================
+// 2. INPUT ENGINE, FORMULA PARSER & SALARY MAP (SINGLE SOURCE)
+// =====================================================
+const salaryMap = {
+    "orpBasicSalary": ["orpAllowance", "orpTotalSalary"],
+    "otBasicSalary": ["otAllowance", "otTotalSalary"],
+    "otRHBasicSalary": ["otRHAllowance", "otRHTotalSalary"],
+    "section18ABasicSalary": ["section18AAllowance", "section18ATotalSalary"],
+    "ggnUniBasic": ["ggnUniAllowance", "ggnUniTotal"],
+    "rhBasicSalary": ["rhAllowance", "rhTotalSalary"],
+    "rhMoreBasicSalary": ["rhMoreAllowance", "rhMoreTotalSalary"],
+    "phBasicSalary": ["phAllowance", "phTotalSalary"],
+    "otPHBasicSalary": ["otPHAllowance", "otPHTotalSalary"],
+    "tbbBasicSalary": ["tbbAllowance", "tbbTotalSalary"]
+};
+
+function updateSalaryTotal(basicID, allowanceID, totalID) {
+    let basic = getInputNumber(basicID); 
+    let allowance = getInputNumber(allowanceID);
+    let total = basic + allowance; 
+    let tEl = getElement(totalID);
+    if(tEl) tEl.value = "RM" + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
+    return total;
+}
+
+document.addEventListener("focusin", function(e) {
+    if (e.target.tagName !== "INPUT" || e.target.type === "date") return;
+    let label = e.target.parentElement.querySelector("label");
+    let isCurrency = e.target.classList.contains("salary-input") || e.target.classList.contains("salary-total") || (label && label.innerText.includes("(RM)"));
+    if (isCurrency && (e.target.value.includes("RM") || e.target.value.includes(","))) {
+        let cleanVal = evaluateSmartMath(e.target.value);
+        e.target.value = cleanVal === 0 && !e.target.value.includes("0") ? "" : cleanVal;
+    }
+});
+
+document.addEventListener("focusout", function(e) {
+    if (e.target.tagName !== "INPUT" || e.target.type === "date") return;
+    let label = e.target.parentElement.querySelector("label");
+    let isCurrency = e.target.classList.contains("salary-input") || e.target.classList.contains("salary-total") || (label && label.innerText.includes("(RM)"));
+    if (isCurrency && e.target.value.trim() !== "") {
+        e.target.value = formatSafeRM(e.target.value);
+    }
+});
+
+document.addEventListener("input", function(e) {
+    if (e.target.tagName !== "INPUT") return;
+    
+    let nilai = e.target.value.trim();
+    if (!/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) && !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai) && /[+\-*/()]/.test(nilai) && !nilai.includes("RM")) {
+        try {
+            let hasil = evaluateSmartMath(nilai);
+            if (hasil !== undefined && !isNaN(hasil) && !e.target.value.endsWith("+") && !e.target.value.endsWith("-") && !e.target.value.endsWith("*") && !e.target.value.endsWith("/")) {}
+        } catch (err) {}
+    }
+
+    let originalId = e.target.getAttribute('data-original-id') || e.target.id;
+    activeCardContext = e.target.closest('.calculator-card');
+
+    try {
+        if (originalId === "orpBasicSalary" || originalId === "orpAllowance") {
+            Object.keys(salaryMap).forEach(key => {
+                if (key !== "orpBasicSalary") {
+                    let bID = key, aID = salaryMap[key][0], tID = salaryMap[key][1];
+                    if (originalId === "orpBasicSalary") {
+                        let el = getElement(bID);
+                        if (el) el.value = e.target.value; 
+                    }
+                    if (originalId === "orpAllowance") {
+                        let el = getElement(aID);
+                        if (el) el.value = e.target.value;
+                    }
+                    updateSalaryTotal(bID, aID, tID);
+                }
+            });
+        }
+        Object.keys(salaryMap).forEach(key => {
+            let data = salaryMap[key];
+            if (originalId === key || originalId === data[0]) {
+                updateSalaryTotal(key, data[0], data[1]);
+            }
+        });
+    } finally {
+        activeCardContext = null; 
+    }
+});
+
 document.addEventListener("DOMContentLoaded", function() {
     let semuaInput = document.querySelectorAll('input');
-    
     semuaInput.forEach(input => {
-        if (input.type === "date") return;
         if (input.type === "number") input.setAttribute("type", "text");
-        
-        // BILA USER KLIK KELUAR (BLUR) -> FORMAT JADI RM1,700.00
-        input.addEventListener("blur", function() {
-            let label = this.parentElement.querySelector("label");
-            let isCurrency = this.classList.contains("salary-input") || 
-                             this.classList.contains("salary-total") ||
-                             (label && label.innerText.includes("(RM)"));
-            
-            if (isCurrency && this.value.trim() !== "") {
-                let cleanVal = evaluateSmartMath(this.value);
-                if (cleanVal !== 0 || this.value.includes("0")) {
-                    this.value = "RM" + cleanVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                }
-            }
-        });
-
-        // BILA USER KLIK MASUK KOTAK (FOCUS) -> BUANG RM SUPAYA SENANG TAIP
-        input.addEventListener("focus", function() {
-            let label = this.parentElement.querySelector("label");
-            let isCurrency = this.classList.contains("salary-input") || 
-                             this.classList.contains("salary-total") ||
-                             (label && label.innerText.includes("(RM)"));
-                             
-            if (isCurrency && (this.value.includes("RM") || this.value.includes(","))) {
-                let cleanVal = evaluateSmartMath(this.value);
-                this.value = cleanVal === 0 && !this.value.includes("0") ? "" : cleanVal;
-            }
-        });
-
-        // BILA ADA SIMBOL TAMBAH TOLAK -> KIRA AUTOMATIK
-        input.addEventListener("change", function() {
-            try {
-                let nilai = this.value.trim();
-                if (/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) || /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai)) return; 
-                if (/[+\-*/()]/.test(nilai) && !nilai.includes("RM")) {
-                    let hasil = evaluateSmartMath(nilai);
-                    if (hasil !== undefined && !isNaN(hasil)) {
-                        this.value = hasil; 
-                        this.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                }
-            } catch (e) {}
-        });
     });
 });
 
 // =====================================================
-// 2. CIRI BAHARU: KAWALAN STATUS NOTIS (GGN)
+// 3. KALKULATOR TERAS (FORMULA ASAL DIKEKALKAN)
 // =====================================================
+
+// --- 3.1 ORP & BAKI UPAH ---
+function getORP() { let totalSalary = updateSalaryTotal("orpBasicSalary", "orpAllowance", "orpTotalSalary"); return totalSalary / 26; }
+
+function calculateORP() {
+    let totalSalary = updateSalaryTotal("orpBasicSalary", "orpAllowance", "orpTotalSalary"); 
+    let ORP = totalSalary / 26;
+    setText("orpResultTotal", formatRM(totalSalary)); 
+    setText("orpResult", formatRM(ORP)); 
+    document.getElementById("orpPending").style.display = "none";
+    document.getElementById("orpData").style.display = "block";
+}
+
+function resetORP() {
+    ["orpBasicSalary", "orpAllowance"].forEach(id => setValue(id, "")); 
+    setValue("orpTotalSalary", "RM 0.00");
+    ["orpResultTotal", "orpResult"].forEach(id => setText(id, "RM 0.00"));
+    document.getElementById("orpData").style.display = "none";
+    if (document.getElementById("bakiData").style.display === "none" || document.getElementById("bakiData").style.display === "") {
+        document.getElementById("orpPending").style.display = "block";
+    }
+}
+
+function calculateBakiUpah() {
+    let patutTerima = getInputNumber("orpPatutTerima");
+    let telahTerima = getInputNumber("orpTelahTerima");
+    let baki = telahTerima - patutTerima; 
+    let bakiEl = document.getElementById("orpBakiAmount");
+    if(bakiEl) {
+        if (baki < 0) {
+            bakiEl.innerText = "-" + formatRM(Math.abs(baki));
+            bakiEl.style.color = "#d9534f"; 
+        } else if (baki > 0) {
+            bakiEl.innerText = "+" + formatRM(baki);
+            bakiEl.style.color = "#28a745"; 
+        } else {
+            bakiEl.innerText = formatRM(0);
+            bakiEl.style.color = "#1f4e79";
+        }
+    }
+    document.getElementById("orpPending").style.display = "none";
+    document.getElementById("bakiData").style.display = "block";
+}
+
+function resetBakiUpah() {
+    ["orpPatutTerima", "orpTelahTerima"].forEach(id => setValue(id, "")); 
+    let el = getElement("orpBakiAmount");
+    if(el) { el.innerText = "RM 0.00"; el.style.color = ""; }
+    document.getElementById("bakiData").style.display = "none";
+    if (document.getElementById("orpData").style.display === "none" || document.getElementById("orpData").style.display === "") {
+        document.getElementById("orpPending").style.display = "block";
+    }
+}
+
+// --- 3.2 OT ---
+function calculateOTBiasa() {
+    let totalSalary = updateSalaryTotal("otBasicSalary", "otAllowance", "otTotalSalary");
+    let hours = Number(getElement("otHours").value); let workingHours = Number(getElement("normalWorkingHours").value);
+    if (!workingHours) { alert("Sila pilih jam kerja normal sehari."); return; }
+    let ORP = totalSalary / 26; let hourly = (ORP / workingHours) * 1.5; let amount = hourly * hours;
+    setText("otResultTotal", formatRM(totalSalary)); setText("otORP", formatRM(ORP));
+    setText("otHourly", formatRM(hourly)); setText("otAmount", formatRM(amount)); toggleResult("ot", true);
+}
+function resetOTBiasa() {
+    ["otBasicSalary", "otAllowance", "otHours"].forEach(id => setValue(id, ""));
+    setValue("otTotalSalary", "RM 0.00"); setValue("normalWorkingHours", "");
+    ["otResultTotal", "otORP", "otHourly", "otAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("ot", false);
+}
+
+function calculateOTRH() {
+    let totalSalary = updateSalaryTotal("otRHBasicSalary", "otRHAllowance", "otRHTotalSalary");
+    let hours = Number(getElement("otRHHours").value); let workingHours = Number(getElement("otRHNormalWorkingHours").value);
+    if (!workingHours) { alert("Sila pilih jam kerja normal sehari."); return; }
+    let ORP = totalSalary / 26; let hourly = (ORP / workingHours) * 2.0; let amount = hourly * hours;
+    setText("otRHResultTotal", formatRM(totalSalary)); setText("otRHORP", formatRM(ORP));
+    setText("otRHHourly", formatRM(hourly)); setText("otRHAmount", formatRM(amount)); toggleResult("otRH", true);
+}
+function resetOTRH() {
+    ["otRHBasicSalary", "otRHAllowance", "otRHHours"].forEach(id => setValue(id, ""));
+    setValue("otRHTotalSalary", "RM 0.00"); setValue("otRHNormalWorkingHours", "");
+    ["otRHResultTotal", "otRHORP", "otRHHourly", "otRHAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("otRH", false);
+}
+
+function calculateOTPH() {
+    let totalSalary = updateSalaryTotal("otPHBasicSalary", "otPHAllowance", "otPHTotalSalary");
+    let hours = Number(getElement("otPHHours").value); let workingHours = Number(getElement("otPHWorkingHours").value);
+    if (!workingHours) { alert("Sila pilih jam kerja normal sehari."); return; }
+    let ORP = totalSalary / 26; let hourly = (ORP / workingHours) * 3.0; let amount = hourly * hours;
+    setText("otPHResultTotal", formatRM(totalSalary)); setText("otPHORP", formatRM(ORP));
+    setText("otPHHourly", formatRM(hourly)); setText("otPHAmount", formatRM(amount)); toggleResult("otPH", true);
+}
+function resetOTPH() {
+    ["otPHBasicSalary", "otPHAllowance", "otPHHours"].forEach(id => setValue(id, ""));
+    setValue("otPHTotalSalary", "RM 0.00"); setValue("otPHWorkingHours", "");
+    ["otPHResultTotal", "otPHORP", "otPHHourly", "otPHAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("otPH", false);
+}
+
+// --- 3.3 HARI REHAT & KELEPASAN ---
+function calculateHariRehat() {
+    let totalSalary = updateSalaryTotal("rhBasicSalary", "rhAllowance", "rhTotalSalary");
+    let days = Number(getElement("rhDays").value); let ORP = totalSalary / 26; let daily = ORP * 0.5; let amount = daily * days;
+    setText("rhResultTotal", formatRM(totalSalary)); setText("rhORP", formatRM(ORP));
+    setText("rhDaily", formatRM(daily)); setText("rhAmount", formatRM(amount)); toggleResult("rh", true);
+}
+function resetHariRehat() {
+    ["rhBasicSalary", "rhAllowance", "rhDays"].forEach(id => setValue(id, "")); setValue("rhTotalSalary", "RM 0.00");
+    ["rhResultTotal", "rhORP", "rhDaily", "rhAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("rh", false);
+}
+
+function calculateHariRehatLebih() {
+    let totalSalary = updateSalaryTotal("rhMoreBasicSalary", "rhMoreAllowance", "rhMoreTotalSalary");
+    let days = Number(getElement("rhMoreDays").value); let ORP = totalSalary / 26; let daily = ORP; let amount = daily * days;
+    setText("rhMoreResultTotal", formatRM(totalSalary)); setText("rhMoreORP", formatRM(ORP));
+    setText("rhMoreDaily", formatRM(daily)); setText("rhMoreAmount", formatRM(amount)); toggleResult("rhMore", true);
+}
+function resetHariRehatLebih() {
+    ["rhMoreBasicSalary", "rhMoreAllowance", "rhMoreDays"].forEach(id => setValue(id, "")); setValue("rhMoreTotalSalary", "RM 0.00");
+    ["rhMoreResultTotal", "rhMoreORP", "rhMoreDaily", "rhMoreAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("rhMore", false);
+}
+
+function calculatePH() {
+    let totalSalary = updateSalaryTotal("phBasicSalary", "phAllowance", "phTotalSalary");
+    let days = Number(getElement("phDays").value); let ORP = totalSalary / 26; let daily = ORP * 2; let amount = daily * days;
+    setText("phResultTotal", formatRM(totalSalary)); setText("phORP", formatRM(ORP));
+    setText("phDaily", formatRM(daily)); setText("phAmount", formatRM(amount)); toggleResult("ph", true);
+}
+function resetPH() {
+    ["phBasicSalary", "phAllowance", "phDays"].forEach(id => setValue(id, "")); setValue("phTotalSalary", "RM 0.00");
+    ["phResultTotal", "phORP", "phDaily", "phAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("ph", false);
+}
+
+// --- 3.4 SEKSYEN 18A & CALENDAR ENGINE ---
+function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+function getMonthlyBreakdown(salary, startDate, endDate) {
+    let result = []; let current = new Date(startDate);
+    while (current <= endDate) {
+        let year = current.getFullYear(); let month = current.getMonth();
+        let daysInMonth = getDaysInMonth(year, month);
+        let firstDay = current.getDate(); let lastDay = daysInMonth;
+        if (year === endDate.getFullYear() && month === endDate.getMonth()) lastDay = endDate.getDate();
+        let days = lastDay - firstDay + 1;
+        let dailyRate = salary / daysInMonth; let amount = dailyRate * days;
+        result.push({ year: year, month: month, daysInMonth: daysInMonth, days: days, dailyRate: dailyRate, amount: amount });
+        current = new Date(year, month + 1, 1);
+    }
+    return result;
+}
+
+function calculate18ANew() {
+    let totalSalary = updateSalaryTotal("section18ABasicSalary", "section18AAllowance", "section18ATotalSalary");
+    let startDate = getElement("section18AStartDate").value; let endDate = getElement("section18AEndDate").value;
+    if (!startDate || !endDate) { alert("Sila masukkan tarikh mula dan tarikh akhir."); return; }
+    let start = new Date(startDate); let end = new Date(endDate);
+    if (end < start) { alert("Tarikh akhir tidak boleh lebih awal daripada tarikh mula."); return; }
+    let breakdown = getMonthlyBreakdown(totalSalary, start, end);
+    let totalAmount = 0; breakdown.forEach(item => { totalAmount += item.amount; });
+    setText("resultTotalSalary", formatRM(totalSalary));
+    if (breakdown.length > 0) {
+        let first = breakdown[0]; let firstDate = new Date(first.year, first.month, 1);
+        setText("month1Title", firstDate.toLocaleString("ms-MY", {month:"long", year:"numeric"}));
+        setText("month1Days", first.days + " Hari"); setText("month1Daily", formatRM(first.dailyRate)); setText("month1Amount", formatRM(first.amount));
+    }
+    if (breakdown.length > 1) {
+        let second = breakdown[1]; let secondDate = new Date(second.year, second.month, 1);
+        setText("month2Title", secondDate.toLocaleString("ms-MY", {month:"long", year:"numeric"}));
+        setText("month2Days", second.days + " Hari"); setText("month2Daily", formatRM(second.dailyRate)); setText("month2Amount", formatRM(second.amount));
+    } else { setText("month2Title", "-"); setText("month2Days", "-"); setText("month2Daily", "-"); setText("month2Amount", "-"); }
+    setText("amount18A", formatRM(totalAmount)); toggleResult("sec18A", true);
+}
+function resetSeksyen18A() {
+    ["section18ABasicSalary", "section18AAllowance", "section18AStartDate", "section18AEndDate"].forEach(id => setValue(id, ""));
+    setValue("section18ATotalSalary", "RM 0.00");
+    ["resultTotalSalary", "month1Daily", "month2Daily", "month1Amount", "month2Amount", "amount18A"].forEach(id => setText(id, "RM 0.00"));
+    ["month1Title", "month2Title", "month1Days", "month2Days"].forEach(id => setText(id, "-")); toggleResult("sec18A", false);
+}
+
+// --- 3.5 CUTI & HOSPITALISASI ---
+function calculateCutiTahunan() {
+    let ORP = getORP(); let days = Number(getElement("annualLeaveDays").value); let amount = ORP * days;
+    setText("annualLeaveORP", formatRM(ORP)); setText("annualLeaveAmount", formatRM(amount)); toggleResult("annualLeave", true);
+}
+function resetCutiTahunan() {
+    setValue("cutiLayak", ""); setValue("cutiGuna", ""); setValue("annualLeaveDays", "");
+    setText("annualLeaveORP", "RM 0.00"); setText("annualLeaveAmount", "RM 0.00"); toggleResult("annualLeave", false);
+}
+function autoKiraBakiCuti() {
+    const layakInput = document.getElementById('cutiLayak').value; const gunaInput = document.getElementById('cutiGuna').value;
+    if (layakInput === "" && gunaInput === "") { document.getElementById('annualLeaveDays').value = ""; return; }
+    let baki = (parseFloat(layakInput) || 0) - (parseFloat(gunaInput) || 0);
+    if (baki < 0) baki = 0; document.getElementById('annualLeaveDays').value = baki;
+}
+
+function calculateCutiSakit() {
+    let ORP = getORP(); let days = Number(getElement("sickLeaveDays").value); let amount = ORP * days;
+    setText("sickLeaveORP", formatRM(ORP)); setText("sickLeaveAmount", formatRM(amount)); toggleResult("sickLeave", true);
+}
+function resetCutiSakit() {
+    setValue("sickLeaveDays", ""); setText("sickLeaveORP", "RM 0.00"); setText("sickLeaveAmount", "RM 0.00"); toggleResult("sickLeave", false);
+}
+
+function calculateKelayakanCuti() {
+    const startVal = getElement('kelayakanCutiMula').value; const endVal = getElement('kelayakanCutiAkhir').value;
+    if (!startVal || !endVal) { alert("Sila masukkan Tarikh Mula Kerja dan Tarikh Kiraan / Akhir."); return; }
+    const startDate = new Date(startVal); const endDate = new Date(endVal);
+    if (endDate < startDate) { alert("Tarikh Kiraan tidak boleh lebih awal daripada Tarikh Mula Kerja."); return; }
+    let totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 - startDate.getMonth() + endDate.getMonth();
+    if (endDate.getDate() < startDate.getDate()) { totalMonths--; } if (totalMonths < 0) totalMonths = 0;
+    const yearsCompleted = Math.floor(totalMonths / 12); const remainingMonths = totalMonths % 12;
+    let currentTier = (yearsCompleted >= 5) ? 16 : (yearsCompleted >= 2) ? 12 : 8;
+    let prorataDays = remainingMonths > 0 ? Math.round((remainingMonths / 12) * currentTier) : 0;
+    let totalTerkumpul = 0; for (let i = 1; i <= yearsCompleted; i++) { totalTerkumpul += (i <= 2) ? 8 : (i <= 5) ? 12 : 16; }
+    let tempohText = (yearsCompleted > 0 ? `${yearsCompleted} Tahun ` : "") + (remainingMonths > 0 ? `${remainingMonths} Bulan` : "");
+    if (totalMonths === 0) tempohText = "Kurang 1 Bulan";
+    setText('kelayakanCutiTempoh', tempohText.trim()); setText('kelayakanCutiKategori', yearsCompleted === 0 ? "Tidak Layak (< 12 Bulan)" : `${currentTier} Hari / Tahun`);
+    setText('kelayakanCutiTerkumpul', `${totalTerkumpul} Hari`); setText('kelayakanCutiHari', `${prorataDays} Hari`); toggleResult("kelayakanCuti", true);
+}
+function resetKelayakanCuti() {
+    ['kelayakanCutiMula', 'kelayakanCutiAkhir'].forEach(id => setValue(id, ""));
+    ['kelayakanCutiTempoh', 'kelayakanCutiKategori', 'kelayakanCutiTerkumpul'].forEach(id => setText(id, "-"));
+    setText('kelayakanCutiHari', '0 Hari'); toggleResult("kelayakanCuti", false);
+}
+
+function calculateKelayakanCutiSakit() {
+    const startVal = getElement('kelayakanCutiSakitMula').value; const endVal = getElement('kelayakanCutiSakitAkhir').value;
+    if (!startVal || !endVal) { alert("Sila masukkan Tarikh Mula Kerja dan Tarikh Kiraan / Akhir."); return; }
+    const startDate = new Date(startVal); const endDate = new Date(endVal);
+    if (endDate < startDate) { alert("Tarikh Kiraan tidak boleh lebih awal."); return; }
+    let totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 - startDate.getMonth() + endDate.getMonth();
+    if (endDate.getDate() < startDate.getDate()) { totalMonths--; } if (totalMonths < 0) totalMonths = 0;
+    const yearsCompleted = Math.floor(totalMonths / 12); const remainingMonths = totalMonths % 12;
+    let kelayakanBiasa = (yearsCompleted >= 5) ? 22 : (yearsCompleted >= 2) ? 18 : 14;
+    let tempohText = (yearsCompleted > 0 ? `${yearsCompleted} Tahun ` : "") + (remainingMonths > 0 ? `${remainingMonths} Bulan` : "");
+    if (totalMonths === 0) tempohText = "Kurang 1 Bulan";
+    setText('kelayakanCutiSakitTempoh', tempohText.trim()); setText('kelayakanCutiSakitBiasa', `${kelayakanBiasa} Hari`); setText('kelayakanCutiSakitHospital', `60 Hari`);
+    setValue('sakitLayak', kelayakanBiasa); setValue('hospLayak', 60); autoKiraBakiSakit(); toggleResult("kelayakanSakit", true);
+}
+function resetKelayakanCutiSakit() {
+    ['kelayakanCutiSakitMula', 'kelayakanCutiSakitAkhir'].forEach(id => setValue(id, ""));
+    setText('kelayakanCutiSakitTempoh', "-"); setText('kelayakanCutiSakitBiasa', '0 Hari'); setText('kelayakanCutiSakitHospital', '60 Hari');
+    resetBakiCutiSakit(); toggleResult("kelayakanSakit", false);
+}
+function autoKiraBakiSakit() {
+    let bBiasa = (parseFloat(getElement('sakitLayak').value) || 0) - (parseFloat(getElement('sakitGuna').value) || 0);
+    let bHosp = (parseFloat(getElement('hospLayak').value) || 0) - (parseFloat(getElement('hospGuna').value) || 0);
+    setValue('bakiSakitBiasa', bBiasa < 0 ? 0 : bBiasa); setValue('bakiHosp', bHosp < 0 ? 0 : bHosp);
+}
+function resetBakiCutiSakit() { ['sakitLayak', 'sakitGuna', 'bakiSakitBiasa', 'hospLayak', 'hospGuna', 'bakiHosp'].forEach(id => setValue(id, "")); }
+
+// --- 3.6 GAJI GANTI NOTIS (GGN) ---
 function toggleNotisStatus() {
     let statusEl = document.getElementById("ggnStatusNotis");
     if (!statusEl) return;
     let status = statusEl.value;
-    
-    let elsStart = ["ggnUniWeekStart", "ggnUniDayStart"];
-    let elsEnd = ["ggnUniWeekEnd", "ggnUniDayEnd"];
-
+    let elsStart = ["ggnUniWeekStart", "ggnUniDayStart"], elsEnd = ["ggnUniWeekEnd", "ggnUniDayEnd"];
     elsStart.forEach(id => {
         let el = document.getElementById(id);
         if (el && el.parentElement) {
@@ -76,12 +406,9 @@ function toggleNotisStatus() {
             if (lbl) lbl.innerText = (status === "tiada") ? "Tarikh Penamatan (Serta-merta)" : "Tarikh Mula Notis";
         }
     });
-
     elsEnd.forEach(id => {
         let el = document.getElementById(id);
-        if (el && el.parentElement) {
-            el.parentElement.style.display = (status === "tiada") ? "none" : "block";
-        }
+        if (el && el.parentElement) el.parentElement.style.display = (status === "tiada") ? "none" : "block";
     });
 }
 
@@ -103,11 +430,15 @@ function toggleGGNMode() {
     document.getElementById("ggnResPending").style.display = "block";
 }
 
+function formatDateInput(date) {
+    let year = date.getFullYear(); let month = String(date.getMonth() + 1).padStart(2, "0"); let day = String(date.getDate()).padStart(2, "0");
+    return year + "-" + month + "-" + day;
+}
+
 function autoGGNEndDate(type) {
     let startId = type === 'minggu' ? 'ggnUniWeekStart' : 'ggnUniDayStart';
     let valId = type === 'minggu' ? 'ggnUniWeekVal' : 'ggnUniDayVal';
     let endId = type === 'minggu' ? 'ggnUniWeekEnd' : 'ggnUniDayEnd';
-
     let start = getElement(startId); let val = getElement(valId); let end = getElement(endId);
     if (!start || !val || !end) return;
 
@@ -189,368 +520,8 @@ function resetGGNUnified() {
     setValue("ggnUniTotal", "RM 0.00"); toggleGGNMode(); 
 }
 
-// =====================================================
-// 3. GLOBAL HELPER FUNCTION
-// =====================================================
-function getElement(id) { return document.getElementById(id); }
-function setText(id, value) { let element = getElement(id); if (element) element.innerHTML = value; }
-function setValue(id, value) { let element = getElement(id); if (element) element.value = value; }
-function formatRM(value) { value = Number(value) || 0; return "RM " + value.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-
-function toggleResult(prefix, showData) {
-    let pending = document.getElementById(prefix + "Pending");
-    let data = document.getElementById(prefix + "Data");
-    if (pending && data) {
-        pending.style.display = showData ? "none" : "block";
-        data.style.display = showData ? "block" : "none";
-    }
-}
-
-// =====================================================
-// 4. SHARED CALENDAR ENGINE FOUNDATION
-// =====================================================
-function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
-function getMonthlyBreakdown(salary, startDate, endDate) {
-    let result = []; let current = new Date(startDate);
-    while (current <= endDate) {
-        let year = current.getFullYear(); let month = current.getMonth();
-        let daysInMonth = getDaysInMonth(year, month);
-        let firstDay = current.getDate(); let lastDay = daysInMonth;
-        if (year === endDate.getFullYear() && month === endDate.getMonth()) lastDay = endDate.getDate();
-        let days = lastDay - firstDay + 1;
-        let dailyRate = salary / daysInMonth; let amount = dailyRate * days;
-        result.push({ year: year, month: month, daysInMonth: daysInMonth, days: days, dailyRate: dailyRate, amount: amount });
-        current = new Date(year, month + 1, 1);
-    }
-    return result;
-}
-
-// =====================================================
-// 5. INPUT FORMULA ENGINE & SALARY MAP (FIX AUTO-FORMAT RM)
-// =====================================================
-function calculateInput(value) { if (!value) return 0; try { return Function("return " + value)(); } catch (error) { return 0; } }
-
-function getInputNumber(id) {
-    let element = getElement(id);
-    if (!element) return 0;
-    // Guna evaluateSmartMath untuk membersihkan RM dan koma sebelum kira
-    return evaluateSmartMath(element.value);
-}
-
-function updateSalaryTotal(basicID, allowanceID, totalID) {
-    let basic = getInputNumber(basicID); 
-    let allowance = getInputNumber(allowanceID);
-    let total = basic + allowance; 
-    let tEl = getElement(totalID);
-    // Paksa format RM1,700.00 untuk kotak Jumlah
-    if(tEl) tEl.value = "RM" + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
-    return total;
-}
-
-const salaryMap = {
-    "orpBasicSalary": ["orpAllowance", "orpTotalSalary"],
-    "otBasicSalary": ["otAllowance", "otTotalSalary"],
-    "otRHBasicSalary": ["otRHAllowance", "otRHTotalSalary"],
-    "section18ABasicSalary": ["section18AAllowance", "section18ATotalSalary"],
-    "ggnUniBasic": ["ggnUniAllowance", "ggnUniTotal"],
-    "rhBasicSalary": ["rhAllowance", "rhTotalSalary"],
-    "rhMoreBasicSalary": ["rhMoreAllowance", "rhMoreTotalSalary"],
-    "phBasicSalary": ["phAllowance", "phTotalSalary"],
-    "otPHBasicSalary": ["otPHAllowance", "otPHTotalSalary"],
-    "tbbBasicSalary": ["tbbAllowance", "tbbTotalSalary"]
-};
-
-// Enjin khas untuk letak "RM" secara pantas sewaktu salin (sync)
-function formatAutoSyncRM(valStr) {
-    if (!valStr) return "";
-    let val = evaluateSmartMath(valStr);
-    if (val === 0 && !valStr.toString().includes("0")) return "";
-    return "RM" + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-document.addEventListener("input", function(event) {
-    let id = event.target.id; let value = event.target.value;
-    
-    // Jika user taip di Kad ORP, kita salin ke tempat lain DENGAN FORMAT RM!
-    if (id === "orpBasicSalary" || id === "orpAllowance") {
-        Object.keys(salaryMap).forEach(function(key) {
-            if (key !== "orpBasicSalary") {
-                let basicID = key; let allowanceID = salaryMap[key][0]; let totalID = salaryMap[key][1];
-                
-                if (id === "orpBasicSalary") {
-                    let el = getElement(basicID);
-                    if(el) el.value = formatAutoSyncRM(value); // <-- Salinan kini dalam format RM1,700.00
-                }
-                if (id === "orpAllowance") {
-                    let el = getElement(allowanceID);
-                    if(el) el.value = formatAutoSyncRM(value);
-                }
-                updateSalaryTotal(basicID, allowanceID, totalID);
-            }
-        });
-    }
-    
-    // Kemaskini jumlah jika mana-mana kotak selain ORP berubah
-    Object.keys(salaryMap).forEach(function(key) {
-        let data = salaryMap[key];
-        if (id === key || id === data[0]) updateSalaryTotal(key, data[0], data[1]);
-    });
-});
-// =====================================================
-// 6. OTHER CALCULATORS (ORP, OT, RH, PH, LEAVES, 18A, TBB)
-// =====================================================
-function getORP() { let totalSalary = updateSalaryTotal("orpBasicSalary", "orpAllowance", "orpTotalSalary"); return totalSalary / 26; }
-
-// --- Fungsi Khas Bahagian 1 (ORP) ---
-function calculateORP() {
-    let totalSalary = updateSalaryTotal("orpBasicSalary", "orpAllowance", "orpTotalSalary"); 
-    let ORP = totalSalary / 26;
-    
-    setText("orpResultTotal", formatRM(totalSalary)); 
-    setText("orpResult", formatRM(ORP)); 
-    
-    document.getElementById("orpPending").style.display = "none";
-    document.getElementById("orpData").style.display = "block";
-}
-
-function resetORP() {
-    ["orpBasicSalary", "orpAllowance"].forEach(id => setValue(id, "")); 
-    setValue("orpTotalSalary", "RM 0.00");
-    ["orpResultTotal", "orpResult"].forEach(id => setText(id, "RM 0.00"));
-    
-    document.getElementById("orpData").style.display = "none";
-    
-    // Tunjuk balik teks 'Pending' jika bahagian bawah pun tak buka
-    if (document.getElementById("bakiData").style.display === "none" || document.getElementById("bakiData").style.display === "") {
-        document.getElementById("orpPending").style.display = "block";
-    }
-}
-// --- Fungsi Khas Bahagian 2 (Baki Upah) ---
-function calculateBakiUpah() {
-    let patutTerima = getInputNumber("orpPatutTerima");
-    let telahTerima = getInputNumber("orpTelahTerima");
-    
-    // FORMULA BARU: Telah Terima - Patut Terima
-    let baki = telahTerima - patutTerima; 
-    
-    let bakiEl = document.getElementById("orpBakiAmount");
-    if(bakiEl) {
-        if (baki < 0) {
-            // Jika negatif (Kurang bayar) -> Warna Merah
-            bakiEl.innerText = "-" + formatRM(Math.abs(baki));
-            bakiEl.style.color = "#d9534f"; // Warna merah
-        } else if (baki > 0) {
-            // Jika positif (Terlebih bayar) -> Warna Hijau / Biru
-            bakiEl.innerText = "+" + formatRM(baki);
-            bakiEl.style.color = "#28a745"; // Warna hijau
-        } else {
-            // Jika sifar
-            bakiEl.innerText = formatRM(0);
-            bakiEl.style.color = "#1f4e79";
-        }
-    }
-    
-    document.getElementById("orpPending").style.display = "none";
-    document.getElementById("bakiData").style.display = "block";
-}
-function resetBakiUpah() {
-    ["orpPatutTerima", "orpTelahTerima"].forEach(id => setValue(id, "")); 
-    let el = getElement("orpBakiAmount");
-    if(el) { el.innerText = "RM 0.00"; el.style.color = ""; }
-    
-    document.getElementById("bakiData").style.display = "none";
-    
-    // Tunjuk balik teks 'Pending' jika bahagian atas pun tak buka
-    if (document.getElementById("orpData").style.display === "none" || document.getElementById("orpData").style.display === "") {
-        document.getElementById("orpPending").style.display = "block";
-    }
-}
-
-function calculateOTBiasa() {
-    let totalSalary = updateSalaryTotal("otBasicSalary", "otAllowance", "otTotalSalary");
-    let hours = Number(getElement("otHours").value); let workingHours = Number(getElement("normalWorkingHours").value);
-    if (!workingHours) { alert("Sila pilih jam kerja normal sehari."); return; }
-    let ORP = totalSalary / 26; let hourly = (ORP / workingHours) * 1.5; let amount = hourly * hours;
-    setText("otResultTotal", formatRM(totalSalary)); setText("otORP", formatRM(ORP));
-    setText("otHourly", formatRM(hourly)); setText("otAmount", formatRM(amount)); toggleResult("ot", true);
-}
-function resetOTBiasa() {
-    ["otBasicSalary", "otAllowance", "otHours"].forEach(id => setValue(id, ""));
-    setValue("otTotalSalary", "RM 0.00"); setValue("normalWorkingHours", "");
-    ["otResultTotal", "otORP", "otHourly", "otAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("ot", false);
-}
-
-function calculateOTRH() {
-    let totalSalary = updateSalaryTotal("otRHBasicSalary", "otRHAllowance", "otRHTotalSalary");
-    let hours = Number(getElement("otRHHours").value); let workingHours = Number(getElement("otRHNormalWorkingHours").value);
-    if (!workingHours) { alert("Sila pilih jam kerja normal sehari."); return; }
-    let ORP = totalSalary / 26; let hourly = (ORP / workingHours) * 2.0; let amount = hourly * hours;
-    setText("otRHResultTotal", formatRM(totalSalary)); setText("otRHORP", formatRM(ORP));
-    setText("otRHHourly", formatRM(hourly)); setText("otRHAmount", formatRM(amount)); toggleResult("otRH", true);
-}
-function resetOTRH() {
-    ["otRHBasicSalary", "otRHAllowance", "otRHHours"].forEach(id => setValue(id, ""));
-    setValue("otRHTotalSalary", "RM 0.00"); setValue("otRHNormalWorkingHours", "");
-    ["otRHResultTotal", "otRHORP", "otRHHourly", "otRHAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("otRH", false);
-}
-
-function calculateHariRehat() {
-    let totalSalary = updateSalaryTotal("rhBasicSalary", "rhAllowance", "rhTotalSalary");
-    let days = Number(getElement("rhDays").value); let ORP = totalSalary / 26; let daily = ORP * 0.5; let amount = daily * days;
-    setText("rhResultTotal", formatRM(totalSalary)); setText("rhORP", formatRM(ORP));
-    setText("rhDaily", formatRM(daily)); setText("rhAmount", formatRM(amount)); toggleResult("rh", true);
-}
-function resetHariRehat() {
-    ["rhBasicSalary", "rhAllowance", "rhDays"].forEach(id => setValue(id, "")); setValue("rhTotalSalary", "RM 0.00");
-    ["rhResultTotal", "rhORP", "rhDaily", "rhAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("rh", false);
-}
-
-function calculateHariRehatLebih() {
-    let totalSalary = updateSalaryTotal("rhMoreBasicSalary", "rhMoreAllowance", "rhMoreTotalSalary");
-    let days = Number(getElement("rhMoreDays").value); let ORP = totalSalary / 26; let daily = ORP; let amount = daily * days;
-    setText("rhMoreResultTotal", formatRM(totalSalary)); setText("rhMoreORP", formatRM(ORP));
-    setText("rhMoreDaily", formatRM(daily)); setText("rhMoreAmount", formatRM(amount)); toggleResult("rhMore", true);
-}
-function resetHariRehatLebih() {
-    ["rhMoreBasicSalary", "rhMoreAllowance", "rhMoreDays"].forEach(id => setValue(id, "")); setValue("rhMoreTotalSalary", "RM 0.00");
-    ["rhMoreResultTotal", "rhMoreORP", "rhMoreDaily", "rhMoreAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("rhMore", false);
-}
-
-function calculatePH() {
-    let totalSalary = updateSalaryTotal("phBasicSalary", "phAllowance", "phTotalSalary");
-    let days = Number(getElement("phDays").value); let ORP = totalSalary / 26; let daily = ORP * 2; let amount = daily * days;
-    setText("phResultTotal", formatRM(totalSalary)); setText("phORP", formatRM(ORP));
-    setText("phDaily", formatRM(daily)); setText("phAmount", formatRM(amount)); toggleResult("ph", true);
-}
-function resetPH() {
-    ["phBasicSalary", "phAllowance", "phDays"].forEach(id => setValue(id, "")); setValue("phTotalSalary", "RM 0.00");
-    ["phResultTotal", "phORP", "phDaily", "phAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("ph", false);
-}
-
-function calculateOTPH() {
-    let totalSalary = updateSalaryTotal("otPHBasicSalary", "otPHAllowance", "otPHTotalSalary");
-    let hours = Number(getElement("otPHHours").value); let workingHours = Number(getElement("otPHWorkingHours").value);
-    if (!workingHours) { alert("Sila pilih jam kerja normal sehari."); return; }
-    let ORP = totalSalary / 26; let hourly = (ORP / workingHours) * 3.0; let amount = hourly * hours;
-    setText("otPHResultTotal", formatRM(totalSalary)); setText("otPHORP", formatRM(ORP));
-    setText("otPHHourly", formatRM(hourly)); setText("otPHAmount", formatRM(amount)); toggleResult("otPH", true);
-}
-function resetOTPH() {
-    ["otPHBasicSalary", "otPHAllowance", "otPHHours"].forEach(id => setValue(id, ""));
-    setValue("otPHTotalSalary", "RM 0.00"); setValue("otPHWorkingHours", "");
-    ["otPHResultTotal", "otPHORP", "otPHHourly", "otPHAmount"].forEach(id => setText(id, "RM 0.00")); toggleResult("otPH", false);
-}
-
-function calculate18ANew() {
-    let totalSalary = updateSalaryTotal("section18ABasicSalary", "section18AAllowance", "section18ATotalSalary");
-    let startDate = getElement("section18AStartDate").value; let endDate = getElement("section18AEndDate").value;
-    if (!startDate || !endDate) { alert("Sila masukkan tarikh mula dan tarikh akhir."); return; }
-    let start = new Date(startDate); let end = new Date(endDate);
-    if (end < start) { alert("Tarikh akhir tidak boleh lebih awal daripada tarikh mula."); return; }
-    let breakdown = getMonthlyBreakdown(totalSalary, start, end);
-    let totalAmount = 0; breakdown.forEach(item => { totalAmount += item.amount; });
-    setText("resultTotalSalary", formatRM(totalSalary));
-    if (breakdown.length > 0) {
-        let first = breakdown[0]; let firstDate = new Date(first.year, first.month, 1);
-        setText("month1Title", firstDate.toLocaleString("ms-MY", {month:"long", year:"numeric"}));
-        setText("month1Days", first.days + " Hari"); setText("month1Daily", formatRM(first.dailyRate)); setText("month1Amount", formatRM(first.amount));
-    }
-    if (breakdown.length > 1) {
-        let second = breakdown[1]; let secondDate = new Date(second.year, second.month, 1);
-        setText("month2Title", secondDate.toLocaleString("ms-MY", {month:"long", year:"numeric"}));
-        setText("month2Days", second.days + " Hari"); setText("month2Daily", formatRM(second.dailyRate)); setText("month2Amount", formatRM(second.amount));
-    } else { setText("month2Title", "-"); setText("month2Days", "-"); setText("month2Daily", "-"); setText("month2Amount", "-"); }
-    setText("amount18A", formatRM(totalAmount)); toggleResult("sec18A", true);
-}
-function resetSeksyen18A() {
-    ["section18ABasicSalary", "section18AAllowance", "section18AStartDate", "section18AEndDate"].forEach(id => setValue(id, ""));
-    setValue("section18ATotalSalary", "RM 0.00");
-    ["resultTotalSalary", "month1Daily", "month2Daily", "month1Amount", "month2Amount", "amount18A"].forEach(id => setText(id, "RM 0.00"));
-    ["month1Title", "month2Title", "month1Days", "month2Days"].forEach(id => setText(id, "-")); toggleResult("sec18A", false);
-}
-
-function calculateCutiTahunan() {
-    let ORP = getORP(); let days = Number(getElement("annualLeaveDays").value); let amount = ORP * days;
-    setText("annualLeaveORP", formatRM(ORP)); setText("annualLeaveAmount", formatRM(amount)); toggleResult("annualLeave", true);
-}
-function resetCutiTahunan() {
-    setValue("cutiLayak", ""); setValue("cutiGuna", ""); setValue("annualLeaveDays", "");
-    setText("annualLeaveORP", "RM 0.00"); setText("annualLeaveAmount", "RM 0.00"); toggleResult("annualLeave", false);
-}
-function autoKiraBakiCuti() {
-    const layakInput = document.getElementById('cutiLayak').value; const gunaInput = document.getElementById('cutiGuna').value;
-    if (layakInput === "" && gunaInput === "") { document.getElementById('annualLeaveDays').value = ""; return; }
-    let baki = (parseFloat(layakInput) || 0) - (parseFloat(gunaInput) || 0);
-    if (baki < 0) baki = 0; document.getElementById('annualLeaveDays').value = baki;
-}
-
-function calculateCutiSakit() {
-    let ORP = getORP(); let days = Number(getElement("sickLeaveDays").value); let amount = ORP * days;
-    setText("sickLeaveORP", formatRM(ORP)); setText("sickLeaveAmount", formatRM(amount)); toggleResult("sickLeave", true);
-}
-function resetCutiSakit() {
-    setValue("sickLeaveDays", ""); setText("sickLeaveORP", "RM 0.00"); setText("sickLeaveAmount", "RM 0.00"); toggleResult("sickLeave", false);
-}
-
-function calculateKelayakanCuti() {
-    const startVal = getElement('kelayakanCutiMula').value; const endVal = getElement('kelayakanCutiAkhir').value;
-    if (!startVal || !endVal) { alert("Sila masukkan Tarikh Mula Kerja dan Tarikh Kiraan / Akhir."); return; }
-    const startDate = new Date(startVal); const endDate = new Date(endVal);
-    if (endDate < startDate) { alert("Tarikh Kiraan tidak boleh lebih awal daripada Tarikh Mula Kerja."); return; }
-    let totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 - startDate.getMonth() + endDate.getMonth();
-    if (endDate.getDate() < startDate.getDate()) { totalMonths--; } if (totalMonths < 0) totalMonths = 0;
-    const yearsCompleted = Math.floor(totalMonths / 12); const remainingMonths = totalMonths % 12;
-    let currentTier = (yearsCompleted >= 5) ? 16 : (yearsCompleted >= 2) ? 12 : 8;
-    let prorataDays = remainingMonths > 0 ? Math.round((remainingMonths / 12) * currentTier) : 0;
-    let totalTerkumpul = 0; for (let i = 1; i <= yearsCompleted; i++) { totalTerkumpul += (i <= 2) ? 8 : (i <= 5) ? 12 : 16; }
-    let tempohText = (yearsCompleted > 0 ? `${yearsCompleted} Tahun ` : "") + (remainingMonths > 0 ? `${remainingMonths} Bulan` : "");
-    if (totalMonths === 0) tempohText = "Kurang 1 Bulan";
-    setText('kelayakanCutiTempoh', tempohText.trim()); setText('kelayakanCutiKategori', yearsCompleted === 0 ? "Tidak Layak (< 12 Bulan)" : `${currentTier} Hari / Tahun`);
-    setText('kelayakanCutiTerkumpul', `${totalTerkumpul} Hari`); setText('kelayakanCutiHari', `${prorataDays} Hari`); toggleResult("kelayakanCuti", true);
-}
-function resetKelayakanCuti() {
-    ['kelayakanCutiMula', 'kelayakanCutiAkhir'].forEach(id => setValue(id, ""));
-    ['kelayakanCutiTempoh', 'kelayakanCutiKategori', 'kelayakanCutiTerkumpul'].forEach(id => setText(id, "-"));
-    setText('kelayakanCutiHari', '0 Hari'); toggleResult("kelayakanCuti", false);
-}
-
-function calculateKelayakanCutiSakit() {
-    const startVal = getElement('kelayakanCutiSakitMula').value; const endVal = getElement('kelayakanCutiSakitAkhir').value;
-    if (!startVal || !endVal) { alert("Sila masukkan Tarikh Mula Kerja dan Tarikh Kiraan / Akhir."); return; }
-    const startDate = new Date(startVal); const endDate = new Date(endVal);
-    if (endDate < startDate) { alert("Tarikh Kiraan tidak boleh lebih awal."); return; }
-    let totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 - startDate.getMonth() + endDate.getMonth();
-    if (endDate.getDate() < startDate.getDate()) { totalMonths--; } if (totalMonths < 0) totalMonths = 0;
-    const yearsCompleted = Math.floor(totalMonths / 12); const remainingMonths = totalMonths % 12;
-    let kelayakanBiasa = (yearsCompleted >= 5) ? 22 : (yearsCompleted >= 2) ? 18 : 14;
-    let tempohText = (yearsCompleted > 0 ? `${yearsCompleted} Tahun ` : "") + (remainingMonths > 0 ? `${remainingMonths} Bulan` : "");
-    if (totalMonths === 0) tempohText = "Kurang 1 Bulan";
-    setText('kelayakanCutiSakitTempoh', tempohText.trim()); setText('kelayakanCutiSakitBiasa', `${kelayakanBiasa} Hari`); setText('kelayakanCutiSakitHospital', `60 Hari`);
-    setValue('sakitLayak', kelayakanBiasa); setValue('hospLayak', 60); autoKiraBakiSakit(); toggleResult("kelayakanSakit", true);
-}
-function resetKelayakanCutiSakit() {
-    ['kelayakanCutiSakitMula', 'kelayakanCutiSakitAkhir'].forEach(id => setValue(id, ""));
-    setText('kelayakanCutiSakitTempoh', "-"); setText('kelayakanCutiSakitBiasa', '0 Hari'); setText('kelayakanCutiSakitHospital', '60 Hari');
-    resetBakiCutiSakit(); toggleResult("kelayakanSakit", false);
-}
-function autoKiraBakiSakit() {
-    let bBiasa = (parseFloat(getElement('sakitLayak').value) || 0) - (parseFloat(getElement('sakitGuna').value) || 0);
-    let bHosp = (parseFloat(getElement('hospLayak').value) || 0) - (parseFloat(getElement('hospGuna').value) || 0);
-    setValue('bakiSakitBiasa', bBiasa < 0 ? 0 : bBiasa); setValue('bakiHosp', bHosp < 0 ? 0 : bHosp);
-}
-function resetBakiCutiSakit() { ['sakitLayak', 'sakitGuna', 'bakiSakitBiasa', 'hospLayak', 'hospGuna', 'bakiHosp'].forEach(id => setValue(id, "")); }
-
-function formatDateInput(date) {
-    let year = date.getFullYear(); let month = String(date.getMonth() + 1).padStart(2, "0"); let day = String(date.getDate()).padStart(2, "0");
-    return year + "-" + month + "-" + day;
-}
-
+// --- 3.7 FAEDAH PENAMATAN (TBB) ---
 const monthNames = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
-function evaluateSmartMath(inputStr) {
-    if (!inputStr) return 0;
-    let cleanStr = inputStr.toString().toLowerCase().replace(/rm/g, '').replace(/bulan/g, '').replace(/x/g, '*').replace(/\[/g, '(').replace(/\]/g, ')').replace(/[^\d\.\+\-\*\/\(\)]/g, ''); 
-    if (cleanStr === "") return 0; try { return eval(cleanStr) || 0; } catch (e) { return 0; }
-}
 
 function toggleTBBSalaryMode() {
     let mode = document.getElementById("tbbSalaryMode").value;
@@ -586,6 +557,7 @@ function calculateTBB() {
     let start = new Date(startVal); let end = new Date(endVal);
     if (end < start) { alert("Tarikh Penamatan tidak boleh lebih awal daripada Tarikh Mula."); return; }
     let mode = document.getElementById("tbbSalaryMode").value; let total12Months = 0;
+    
     if (mode === "tetap") {
         let monthly = evaluateSmartMath(getElement("tbbMonthlyTotal").value);
         if (monthly <= 0) { alert("Sila masukkan Jumlah Upah Sebulan."); return; }
@@ -599,6 +571,7 @@ function calculateTBB() {
         total12Months = evaluateSmartMath(getElement("tbbFormulaInput").value);
         if (total12Months <= 0) { alert("Sila semak semula format formula anda."); return; }
     }
+    
     let ORP = total12Months / 365;
     let totalMonths = (end.getFullYear() - start.getFullYear()) * 12 - start.getMonth() + end.getMonth();
     let dStart = start.getDate(); let dEnd = end.getDate(); let extraDays = 0;
@@ -610,11 +583,14 @@ function calculateTBB() {
     let years = Math.floor(totalMonths / 12); let remMonths = totalMonths % 12;
     let tempohText = (years > 0 ? `${years} Tahun ` : "") + (remMonths > 0 ? `${remMonths} Bulan` : "");
     if (totalMonths === 0) tempohText = "Kurang 1 Bulan";
+    
     let rate = (totalMonths < 24) ? 10 : (totalMonths < 60) ? 15 : 20;
     let entitledDays = (totalMonths / 12) * rate; let amount = entitledDays * ORP;
+    
     setText("tbbTempoh", tempohText.trim()); setText("tbbKadar", `${rate} Hari / Tahun`); setText("tbbHari", `${entitledDays.toFixed(2)} Hari`); 
     setText("tbbTotal12M", formatRM(total12Months)); setText("tbbORP", formatRM(ORP)); setText("tbbAmount", formatRM(amount)); toggleResult("tbb", true);
 }
+
 function resetTBB() {
     ["tbbStartDate", "tbbEndDate", "tbbMonthlyTotal", "tbb12MonthsTotalReadonly", "tbbFormulaInput"].forEach(id => setValue(id, ""));
     setValue("tbbSalaryMode", "tetap"); toggleTBBSalaryMode();
@@ -624,10 +600,11 @@ function resetTBB() {
 }
 
 // =====================================================
-// 7. ENJIN KALKULATOR RUMUSAN AKHIR (VERSI PRO + RESET)
+// 4. ENJIN KALKULATOR RUMUSAN AKHIR
 // =====================================================
 const senaraiKalkulatorRumusan = [
     { nilai: "", teks: "- Sila Pilih Jenis Bayaran -" },
+    { nilai: "orpBakiAmount", teks: "Baki Upah / Gaji (ORP)" },
     { nilai: "resUniMonthAmount", teks: "Gaji Ganti Notis (Bulan)" },
     { nilai: "resUni18AAmount", teks: "Gaji Ganti Notis (Hari / Minggu)" },
     { nilai: "tbbAmount", teks: "Faedah Penamatan" },
@@ -689,40 +666,25 @@ function kemaskiniPatutBayar(selectElement) {
     const baris = selectElement.closest('tr');
     const idSasaran = selectElement.value;
     const inputPatutBayar = baris.querySelector('.patut-bayar');
-    const inputTelahBayar = baris.querySelector('.telah-bayar'); // Kita target kotak Telah Bayar
-    
+    const inputTelahBayar = baris.querySelector('.telah-bayar'); 
     let nilaiDiambil = 0;
     
-    // RESET KOTAK TELAH BAYAR KEPADA ASAL (Boleh edit)
     inputTelahBayar.removeAttribute('readonly');
     inputTelahBayar.style.background = "#fff";
     
     if (idSasaran !== "") {
-        
-        // KES KHAS: JIKA USER PILIH 'BAKI UPAH (ORP)'
         if (idSasaran === "orpBakiAmount") {
             let orpPatut = document.getElementById("orpPatutTerima");
             let orpTelah = document.getElementById("orpTelahTerima");
-            
-            // Tarik kedua-dua nilai dari Bahagian 2 ORP
             nilaiDiambil = unformatRMRumusan(orpPatut ? orpPatut.value : "0");
             let nilaiTelah = unformatRMRumusan(orpTelah ? orpTelah.value : "0");
-            
-            // Auto isi kotak Telah Bayar
             inputTelahBayar.value = formatRMRumusan(nilaiTelah);
-            
-            // KUNCI kotak Telah Bayar supaya user tak perlu edit di jadual rumusan lagi!
             inputTelahBayar.setAttribute('readonly', true);
             inputTelahBayar.style.background = "#f4f4f4";
-            
-        } 
-        // KES NORMAL: KALKULATOR LAIN
-        else {
+        } else {
             const elemenKeputusan = document.getElementById(idSasaran);
-            if (elemenKeputusan) {
-                nilaiDiambil = unformatRMRumusan(elemenKeputusan.innerText);
-            }
-            inputTelahBayar.value = ""; // Kosongkan untuk user isi sendiri
+            if (elemenKeputusan) nilaiDiambil = unformatRMRumusan(elemenKeputusan.innerText);
+            inputTelahBayar.value = ""; 
         }
     } else {
         inputTelahBayar.value = "";
@@ -739,91 +701,121 @@ function kiraBakiBaris(elemenDalamBaris) {
     const inputBaki = baris.querySelector('.baki-baris');
     
     const baki = telahBayar - patutBayar; 
-    
-    // PENTING: Simpan nilai baki sebenar (berserta -/+) dalam 'data-value' 
-    // supaya pengiraan Jumlah Keseluruhan matematik tetap tepat.
     inputBaki.setAttribute('data-value', baki);
     
-    // PAPARAN VISUAL: Hanya tunjuk amaun tanpa simbol (-/+), bergantung sepenuhnya pada warna
     if (baki > 0) { 
         inputBaki.value = formatRMRumusan(baki); 
-        inputBaki.style.color = "#28a745"; // Hijau (Terlebih Bayar - Mengurangkan tuntutan)
-    } 
-    else if (baki < 0) { 
-        inputBaki.value = formatRMRumusan(Math.abs(baki)); // Math.abs membuang simbol tolak secara visual
-        inputBaki.style.color = "#d9534f"; // Merah (Kurang Bayar - Menambah tuntutan)
-    } 
-    else { 
+        inputBaki.style.color = "#28a745"; 
+    } else if (baki < 0) { 
+        inputBaki.value = formatRMRumusan(Math.abs(baki)); 
+        inputBaki.style.color = "#d9534f"; 
+    } else { 
         inputBaki.value = formatRMRumusan(0); 
         inputBaki.style.color = "#333"; 
     }
-    
     kiraJumlahKeseluruhanRumusan();
 }
 
-function buangBarisRumusan(butangPadam) { 
-    butangPadam.closest('tr').remove(); 
-    kiraJumlahKeseluruhanRumusan(); 
-}
-
-function resetRumusan() { 
-    document.getElementById('badanJadualRumusan').innerHTML = ''; 
-    kiraJumlahKeseluruhanRumusan(); 
-}
+function buangBarisRumusan(butangPadam) { butangPadam.closest('tr').remove(); kiraJumlahKeseluruhanRumusan(); }
+function resetRumusan() { document.getElementById('badanJadualRumusan').innerHTML = ''; kiraJumlahKeseluruhanRumusan(); }
 
 function kiraJumlahKeseluruhanRumusan() {
     const semuaBaki = document.querySelectorAll('.baki-baris'); 
     let jumlahBesar = 0;
     
     semuaBaki.forEach(input => { 
-        // BACA NILAI DARI MEMORI TERSEMBUNYI (data-value), BUKAN DARI KOTAK PAPARAN
-        // Ini memastikan logik penambahan tuntutan (-) dan penolakan tuntutan (+) kekal selamat 100%
         let nilaiSebenar = input.getAttribute('data-value');
-        if (nilaiSebenar !== null) {
-            jumlahBesar += parseFloat(nilaiSebenar); 
-        } else {
-            jumlahBesar += unformatRMRumusan(input.value); 
-        }
+        if (nilaiSebenar !== null) jumlahBesar += parseFloat(nilaiSebenar); 
+        else jumlahBesar += unformatRMRumusan(input.value); 
     });
     
     const teksJumlah = document.getElementById('jumlahKeseluruhanRumusan');
-    
-    // KEMAS KINI PAPARAN JUMLAH KESELURUHAN (Hanya tunjuk amaun & warna)
     if (jumlahBesar > 0) { 
         teksJumlah.innerText = formatRMRumusan(jumlahBesar); 
         teksJumlah.style.color = "#28a745"; 
-    } 
-    else if (jumlahBesar < 0) { 
+    } else if (jumlahBesar < 0) { 
         teksJumlah.innerText = formatRMRumusan(Math.abs(jumlahBesar)); 
         teksJumlah.style.color = "#d9534f"; 
-    } 
-    else { 
+    } else { 
         teksJumlah.innerText = formatRMRumusan(0); 
         teksJumlah.style.color = "#1f4e79"; 
     }
 }
 
-// =====================================================
-// 8. FUNGSI JANA LAPORAN PENUH (PDF + RUMUSAN)
-// =====================================================
+// SMART EXTRACT RUMUSAN
+document.addEventListener('click', function(event) {
+    let btn = event.target.closest('button');
+    if (!btn) return;
+    let fungsiKira = btn.getAttribute('data-action-func') || btn.getAttribute('onclick');
+    if (!fungsiKira) return;
 
-// --- 8.1 FUNGSI FORMAT AUTO UNTUK POP-UP ---
-function formatTitleCase(str) {
-    return str.toLowerCase().split(' ').map(function(word) {
-        return (word.charAt(0).toUpperCase() + word.slice(1));
-    }).join(' ');
+    let idSasaran = "";
+    if (fungsiKira.includes("calculateOTBiasa")) idSasaran = "otAmount";
+    else if (fungsiKira.includes("calculateHariRehat")) idSasaran = "rhAmount";
+    else if (fungsiKira.includes("calculateHariRehatLebih")) idSasaran = "rhMoreAmount";
+    else if (fungsiKira.includes("calculate18ANew")) idSasaran = "amount18A";
+    else if (fungsiKira.includes("calculateOTRH")) idSasaran = "otRHAmount";
+    else if (fungsiKira.includes("calculatePH")) idSasaran = "phAmount";
+    else if (fungsiKira.includes("calculateOTPH")) idSasaran = "otPHAmount";
+    else if (fungsiKira.includes("calculateCutiTahunan")) idSasaran = "annualLeaveAmount";
+    else if (fungsiKira.includes("calculateCutiSakit")) idSasaran = "sickLeaveAmount";
+    else if (fungsiKira.includes("calculateTBB")) idSasaran = "tbbAmount";
+    else if (fungsiKira.includes("calculateBakiUpah")) idSasaran = "orpBakiAmount";
+    else if (fungsiKira.includes("calculateGGNUnified")) {
+        let mode = activeCardContext ? activeCardContext.querySelector("#ggnUniType, [data-original-id='ggnUniType']").value : document.getElementById("ggnUniType").value;
+        if (mode === "bulan") idSasaran = "resUniMonthAmount";
+        else if (mode === "minggu" || mode === "hari") idSasaran = "resUni18AAmount";
+    }
+
+    if (idSasaran !== "") {
+        setTimeout(() => {
+            let valid = false;
+            let elemenSasaran = activeCardContext ? activeCardContext.querySelector(`[id="${idSasaran}"], [data-original-id="${idSasaran}"]`) : document.getElementById(idSasaran);
+            
+            if (idSasaran === "orpBakiAmount") {
+                let patut = document.getElementById("orpPatutTerima");
+                if (patut && patut.value && patut.value.trim() !== "") valid = true;
+            } else if (elemenSasaran) {
+                let nilaiDuit = unformatRMRumusan(elemenSasaran.innerText);
+                if (nilaiDuit > 0) valid = true;
+            }
+            if (valid) autoMasukRumusan(idSasaran);
+        }, 200);
+    }
+});
+
+function autoMasukRumusan(idSasaran) {
+    const jadual = document.getElementById('badanJadualRumusan');
+    const senaraiSelect = jadual.querySelectorAll('select');
+    let barisWujud = null;
+    
+    senaraiSelect.forEach(select => { if (select.value === idSasaran) barisWujud = select; });
+
+    if (barisWujud) {
+        kemaskiniPatutBayar(barisWujud);
+    } else {
+        tambahBarisRumusan(); 
+        let semuaSelectBaru = jadual.querySelectorAll('select');
+        let selectTerbaru = semuaSelectBaru[semuaSelectBaru.length - 1];
+        selectTerbaru.value = idSasaran;
+        kemaskiniPatutBayar(selectTerbaru);
+    }
 }
 
+// =====================================================
+// 5. LAPORAN PENUH (PDF)
+// =====================================================
+function formatTitleCase(str) {
+    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
 function formatIC(str) {
     let val = str.replace(/\D/g, ''); 
-    if (val.length <= 6) { return val; } 
-    else if (val.length <= 8) { return val.slice(0,6) + '-' + val.slice(6); } 
-    else { return val.slice(0,6) + '-' + val.slice(6,8) + '-' + val.slice(8,12); }
+    if (val.length <= 6) return val; 
+    if (val.length <= 8) return val.slice(0,6) + '-' + val.slice(6); 
+    return val.slice(0,6) + '-' + val.slice(6,8) + '-' + val.slice(8,12);
 }
 
-// --- 8.2 FUNGSI POP-UP MAKLUMAT (MENGGANTIKAN TRIGGER ASAL) ---
 function janaLaporanPenuh() {
-    // Buang pop-up lama jika ada (elak duplicate)
     let existingModal = document.getElementById('modalLaporanPenuh');
     if(existingModal) existingModal.remove();
 
@@ -831,24 +823,20 @@ function janaLaporanPenuh() {
     <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
         <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
             <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 18px;">Maklumat Pekerja</h3>
-            
             <div style="margin-bottom: 15px; margin-top: 15px;">
                 <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama:</label>
                 <input type="text" id="inputNamaLaporan" placeholder="Contoh: Ahmad Bin Abu" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
             </div>
-            
             <div style="margin-bottom: 25px;">
                 <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Kad Pengenalan:</label>
                 <input type="text" id="inputICLaporan" placeholder="Contoh: 900101-01-1234" maxlength="14" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatIC(this.value)">
             </div>
-            
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button onclick="document.getElementById('modalLaporanPenuh').remove()" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Kemaskini</button>
                 <button onclick="teruskanJanaLaporan()" style="background: #1f4e79; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Jana</button>
             </div>
         </div>
     </div>`;
-    
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
@@ -856,12 +844,9 @@ function teruskanJanaLaporan() {
     let namaPekerja = document.getElementById('inputNamaLaporan').value.trim();
     let icPekerja = document.getElementById('inputICLaporan').value.trim();
     document.getElementById('modalLaporanPenuh').remove();
-    
-    // Hantar data Nama dan IC ke enjin laporan asal
     prosesJanaLaporanPenuh(namaPekerja, icPekerja);
 }
 
-// --- 8.3 ENJIN ASAL JANA LAPORAN DENGAN PREVIEW & BUTANG TERAPUNG ---
 function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     const senaraiKalkulator = [
         { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, 
@@ -1058,361 +1043,113 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
             </table>
         </div>`;
     }
-    
-// PENAMBAHBAIKAN CSS UNTUK FLOATING BUTTONS & MENU KEBAB
+
     let cssBaru = `
-    .floating-action-bar {
-        position: fixed;
-        top: 25px; /* Kedudukan di penjuru atas */
-        right: 25px; /* Kedudukan di penjuru kanan */
-        display: flex;
-        z-index: 9999;
-        align-items: center;
-    }
-    .kebab-btn {
-        background: #0d6efd; /* Warna biru sepadan dengan sistem */
-        border: none;
-        border-radius: 50%; /* Jadikan butang bulat */
-        width: 45px;
-        height: 45px;
-        font-size: 24px;
-        cursor: pointer;
-        color: white; /* Titik warna putih */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        transition: 0.2s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        line-height: 1;
-        padding-bottom: 5px; /* Seimbangkan titik ke tengah bulat */
-    }
-    .kebab-btn:hover {
-        background: #0b5ed7; /* Warna biru gelap sedikit bila sentuh (hover) */
-        transform: scale(1.05); /* Efek membesar sikit bila disentuh */
-    }
-    .kebab-dropdown {
-        display: none;
-        position: absolute;
-        right: 0;
-        top: 115%; /* Menu dropdown buka ke bawah memandangkan butang di atas */
-        background-color: white;
-        min-width: 170px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #ddd;
-        text-align: left;
-    }
-    .kebab-dropdown a {
-        color: #333;
-        padding: 12px 16px;
-        text-decoration: none;
-        display: block;
-        font-size: 13px;
-        font-weight: bold;
-        transition: 0.2s;
-    }
-    .kebab-dropdown a:hover {
-        background-color: #f4f6f9;
-    }
-    .kebab-dropdown a:first-child {
-        border-bottom: 1px solid #eee;
-    }
-    @media print {
-        .floating-action-bar, .print-btn-container { display: none !important; }
-    }
+    .floating-action-bar { position: fixed; top: 25px; right: 25px; display: flex; z-index: 9999; align-items: center; }
+    .kebab-btn { background: #0d6efd; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; line-height: 1; padding-bottom: 5px; }
+    .kebab-btn:hover { background: #0b5ed7; transform: scale(1.05); }
+    .kebab-dropdown { display: none; position: absolute; right: 0; top: 115%; background-color: white; min-width: 170px; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid #ddd; text-align: left; }
+    .kebab-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; font-weight: bold; transition: 0.2s; }
+    .kebab-dropdown a:hover { background-color: #f4f6f9; }
+    .kebab-dropdown a:first-child { border-bottom: 1px solid #eee; }
+    @media print { .floating-action-bar, .print-btn-container { display: none !important; } }
     `;
 
-let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body>
-    
+    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body>
     <div class="floating-action-bar">
-        <!-- Action Menu Kebab -->
         <div style="position: relative;">
             <button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button>
-            
             <div id="kebabDropdown" class="kebab-dropdown">
                 <a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a>
                 <a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a>
             </div>
         </div>
     </div>
-
     <h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1>
     <p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p>
     <div class="grid-container">${maklumatPekerjaHTML}${htmlLaporan}</div>
-    
     <div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;">
         <p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p>
     </div>
-    
-    <!-- Skrip untuk auto-tutup tab laporan selepas proses cetak (print) selesai -->
-    <script>
-        window.addEventListener('afterprint', function() {
-            window.close();
-        });
-    </script>
+    <script>window.addEventListener('afterprint', function() { window.close(); });<\\/script>
     </body></html>`;
     
     let tetingkapCetak = window.open('', '_blank'); 
-    
-    // Perlindungan tambahan jika Pop-up disekat oleh browser
     if (!tetingkapCetak) {
         alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan.");
         return;
     }
-    
     tetingkapCetak.document.write(cetakHTML); 
     tetingkapCetak.document.close();
     tetingkapCetak.focus(); 
 }
 
 // =====================================================
-// 9. SISTEM LOGIN SIMPLE (DIKEMAS KINI: TOGGLE MASUK/KELUAR)
+// 6. SISTEM LOGIN & RESET 
 // =====================================================
-
-// 1. Fungsi untuk tunjukkan skrin Login apabila butang "Log Masuk" ditekan
 function paparLogMasuk() {
     document.getElementById("loginOverlay").style.display = "flex";
     document.getElementById("loginPassword").value = "";
     document.getElementById("loginError").style.display = "none";
 }
 
-// 2. Fungsi Semak Password
 function semakLogin() {
     let inputLaluan = document.getElementById("loginPassword").value;
     let ralatMesej = document.getElementById("loginError");
-    
-    // TUKAR KATA LALUAN ANDA DI SINI
     let kataLaluanSebenar = "kerja1955"; 
     
     if (inputLaluan === kataLaluanSebenar) {
-        // Jika betul, sembunyikan tirai login
         document.getElementById("loginOverlay").style.display = "none";
-        
-        // Tukar butang kepada "Log Keluar" (Warna Merah)
         let btn = document.getElementById("butangAuth");
         if (btn) {
             btn.innerHTML = "⏻ Log Keluar";
-            btn.style.background = "#dc3545"; // Warna merah
+            btn.style.background = "#dc3545"; 
             btn.style.borderColor = "#dc3545";
             btn.setAttribute("onclick", "logKeluar()");
         }
     } else {
-        // Jika salah, tunjukkan amaran warna merah
         ralatMesej.style.display = "block";
     }
 }
 
-// Boleh tekan 'Enter' di keyboard untuk terus login (Tak perlu klik butang)
 document.addEventListener("DOMContentLoaded", function() {
     let kotakPassword = document.getElementById("loginPassword");
     if (kotakPassword) {
         kotakPassword.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                semakLogin();
-            }
+            if (event.key === "Enter") semakLogin();
         });
     }
 });
 
-// 3. Fungsi Log Keluar
 function logKeluar() {
-    // Tukar butang kembali kepada "Log Masuk" (Warna Biru dan Ikon Power)
     let btn = document.getElementById("butangAuth");
     if (btn) {
         btn.innerHTML = "⏻ Log Masuk";
-        btn.style.background = "#1f4e79"; // Warna biru
+        btn.style.background = "#1f4e79"; 
         btn.style.borderColor = "#1f4e79";
         btn.setAttribute("onclick", "paparLogMasuk()");
     }
-    
-    // Pilihan: Beri amaran pop-up kecil kepada user
     alert("Anda telah berjaya log keluar dari sistem.");
 }
 
-// =====================================================
-// 10. FUNGSI RESET SEMUA (KOSONGKAN KESELURUHAN)
-// =====================================================
 function resetSemua() {
-    // Berikan amaran pengesahan supaya tidak tertekan secara tak sengaja
     let sah = confirm("Adakah anda pasti mahu memadam KESEMUA data pengiraan? Tindakan ini tidak boleh diundur.");
-    
     if (sah) {
-        // Panggil semua fungsi reset yang sedia ada tanpa mengganggu sistem
-        resetORP();
-        resetBakiUpah();
-        resetOTBiasa();
-        resetHariRehat();
-        resetHariRehatLebih();
-        resetSeksyen18A();
-        resetOTRH();
-        resetPH();
-        resetOTPH();
-        resetKelayakanCuti();
-        resetCutiTahunan();
-        resetKelayakanCutiSakit();
-        resetCutiSakit();
-        resetGGNUnified();
-        resetTBB();
-        resetRumusan();
-        
-        // Bawa paparan pengguna kembali ke paling atas
+        resetORP(); resetBakiUpah(); resetOTBiasa(); resetHariRehat(); resetHariRehatLebih();
+        resetSeksyen18A(); resetOTRH(); resetPH(); resetOTPH(); resetKelayakanCuti();
+        resetCutiTahunan(); resetKelayakanCutiSakit(); resetCutiSakit(); resetGGNUnified();
+        resetTBB(); resetRumusan();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
 // =====================================================
-// 11. SISTEM AUTO-TAMBAH RUMUSAN (SMART EXTRACT)
+// 7. ENGINE 2026: CLONE & MULTI-INSTANCE (TANPA EVAL)
 // =====================================================
-
-// Tambah 'Baki Upah' ke dalam senarai dropdown secara automatik (Jika belum wujud)
-let semakBaki = senaraiKalkulatorRumusan.find(item => item.nilai === "orpBakiAmount");
-if (!semakBaki) {
-    senaraiKalkulatorRumusan.push({ nilai: "orpBakiAmount", teks: "Baki Upah / Gaji (ORP)" });
-}
-
-// Pemerhati (Listener) untuk mengesan setiap butang yang ditekan dalam sistem
-document.addEventListener('click', function(event) {
-    let btn = event.target.closest('button');
-    if (!btn) return;
-
-    let fungsiKira = btn.getAttribute('onclick');
-    if (!fungsiKira) return;
-
-    let idSasaran = "";
-
-    // Kenal pasti butang "Kira" mana yang ditekan dan padankan dengan ID Rumusan
-    if (fungsiKira.includes("calculateOTBiasa()")) idSasaran = "otAmount";
-    else if (fungsiKira.includes("calculateHariRehat()")) idSasaran = "rhAmount";
-    else if (fungsiKira.includes("calculateHariRehatLebih()")) idSasaran = "rhMoreAmount";
-    else if (fungsiKira.includes("calculate18ANew()")) idSasaran = "amount18A";
-    else if (fungsiKira.includes("calculateOTRH()")) idSasaran = "otRHAmount";
-    else if (fungsiKira.includes("calculatePH()")) idSasaran = "phAmount";
-    else if (fungsiKira.includes("calculateOTPH()")) idSasaran = "otPHAmount";
-    else if (fungsiKira.includes("calculateCutiTahunan()")) idSasaran = "annualLeaveAmount";
-    else if (fungsiKira.includes("calculateCutiSakit()")) idSasaran = "sickLeaveAmount";
-    else if (fungsiKira.includes("calculateTBB()")) idSasaran = "tbbAmount";
-    else if (fungsiKira.includes("calculateBakiUpah()")) idSasaran = "orpBakiAmount";
-    else if (fungsiKira.includes("calculateGGNUnified()")) {
-        let mode = document.getElementById("ggnUniType").value;
-        if (mode === "bulan") idSasaran = "resUniMonthAmount";
-        else if (mode === "minggu" || mode === "hari") idSasaran = "resUni18AAmount";
-    }
-
-    if (idSasaran !== "") {
-        // Tunggu 200ms untuk biarkan fungsi pengiraan asal anda selesai bertugas dahulu
-        setTimeout(() => {
-            let valid = false;
-            let elemenSasaran = document.getElementById(idSasaran);
-            
-            // Semak adakah hasil pengiraan sah (melebihi RM 0 atau berisi)
-            if (idSasaran === "orpBakiAmount") {
-                let patut = document.getElementById("orpPatutTerima");
-                if (patut && patut.value && patut.value.trim() !== "") valid = true;
-            } else if (elemenSasaran) {
-                let nilaiDuit = unformatRMRumusan(elemenSasaran.innerText);
-                if (nilaiDuit > 0) valid = true;
-            }
-
-            // Jika sah dan ada keputusan, tolak masuk ke jadual Rumusan
-            if (valid) {
-                autoMasukRumusan(idSasaran);
-            }
-        }, 200);
-    }
-});
-
-function autoMasukRumusan(idSasaran) {
-    const jadual = document.getElementById('badanJadualRumusan');
-    const senaraiSelect = jadual.querySelectorAll('select');
-    let barisWujud = null;
-    
-    // 1. Semak kalau jenis bayaran ini dah ada dalam jadual (Elak duplicate row)
-    senaraiSelect.forEach(select => {
-        if (select.value === idSasaran) barisWujud = select;
-    });
-
-    // 2. Jika dah wujud, kita cuma update nilai dia (Refresh)
-    if (barisWujud) {
-        kemaskiniPatutBayar(barisWujud);
-    } 
-    // 3. Jika belum wujud, kita bina baris baharu!
-    else {
-        tambahBarisRumusan(); // Panggil fungsi manual sedia ada
-        
-        // Cari kotak select dropdown di baris yang paling terbaharu ditambah
-        let semuaSelectBaru = jadual.querySelectorAll('select');
-        let selectTerbaru = semuaSelectBaru[semuaSelectBaru.length - 1];
-        
-        // Pilih jenis bayaran secara automatik
-        selectTerbaru.value = idSasaran;
-        
-        // Trigger / paksa pengiraan rumusan berlaku
-        kemaskiniPatutBayar(selectTerbaru);
-    }
-}
-
-// =====================================================
-// ENGINE 2026: MULTI-INSTANCE & CONTEXT SWITCHER
-// Amaran: Modul ini ditambah tanpa merosakkan fungsi asal
-// =====================================================
-
-// 1. Gantikan fungsi getElement() asal supaya ia faham "Kad mana yang sedang aktif?"
-let activeCardContext = null;
-const originalGetElement = getElement;
-
-window.getElement = function(id) {
-    // Jika sistem sedang mengira di dalam satu kad klon tertentu
-    if (activeCardContext) {
-        // Cari ID yang telah diubah suai atau ID asal yang diikat dalam 'data-original-id'
-        let el = activeCardContext.querySelector(`[data-original-id="${id}"]`);
-        if (el) return el;
-    }
-    // Jatuh semula ke fungsi asal
-    return originalGetElement(id);
-};
-
-// 2. Override addEventListener untuk auto-update RM supaya sokong clone
-document.addEventListener("input", function(event) {
-    // Override 'id' value untuk event dari kad yang diklon
-    let originalId = event.target.getAttribute('data-original-id');
-    let idToUse = originalId ? originalId : event.target.id;
-    
-    // Set konteks kepada kad tempat event ini berlaku supaya fungsi kiraan RM tahu cari elemen mana
-    activeCardContext = event.target.closest('.calculator-card');
-    
-    // Jalankan logik salaryMap yang sedia ada di atas
-    if (idToUse === "orpBasicSalary" || idToUse === "orpAllowance") {
-        Object.keys(salaryMap).forEach(function(key) {
-            if (key !== "orpBasicSalary") {
-                let basicID = key; let allowanceID = salaryMap[key][0]; let totalID = salaryMap[key][1];
-                if (idToUse === "orpBasicSalary") {
-                    let el = getElement(basicID);
-                    if(el) el.value = formatAutoSyncRM(event.target.value); 
-                }
-                if (idToUse === "orpAllowance") {
-                    let el = getElement(allowanceID);
-                    if(el) el.value = formatAutoSyncRM(event.target.value);
-                }
-                updateSalaryTotal(basicID, allowanceID, totalID);
-            }
-        });
-    }
-    
-    Object.keys(salaryMap).forEach(function(key) {
-        let data = salaryMap[key];
-        if (idToUse === key || idToUse === data[0]) updateSalaryTotal(key, data[0], data[1]);
-    });
-    
-    // Clear context lepas selesai
-    activeCardContext = null;
-});
-
-// 3. Fungsi Tambah Kalkulator (SideBar Click)
 window.tambahKalkulator = function(templateId) {
-    // Highlight butang sidebar
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    let activeBtn = document.querySelector(`.menu-btn[onclick*="${templateId}"]`);
+    if(activeBtn) activeBtn.classList.add('active');
 
     let templateCard = document.getElementById('card-' + templateId);
     if (!templateCard) return alert('Kalkulator tidak ditemui!');
@@ -1420,29 +1157,24 @@ window.tambahKalkulator = function(templateId) {
     let grid = document.getElementById('active-calculators-grid');
     let rumusanCard = document.querySelector('.rumusan-card');
     
-    // Klon kad (Deep Clone)
     let clone = templateCard.cloneNode(true);
     clone.classList.remove('hidden-template');
     
-    // Hasilkan ID unik rawak untuk clone ini
     let uniqueSuffix = '_' + Math.random().toString(36).substr(2, 9);
     clone.id = clone.id + uniqueSuffix;
-    clone.style.position = "relative"; // Untuk butang tutup
+    clone.style.position = "relative";
 
-    // Tambah butang Pangkah (Tutup)
     let closeBtn = document.createElement('button');
     closeBtn.className = "close-card-btn";
     closeBtn.innerHTML = "X";
     closeBtn.onclick = function() { clone.remove(); };
     clone.appendChild(closeBtn);
 
-    // Tukar ID elemen di dalam clone supaya tidak clash, tapi simpan rekod 'data-original-id'
     let allElementsWithId = clone.querySelectorAll('[id]');
     allElementsWithId.forEach(el => {
         el.setAttribute('data-original-id', el.id);
         el.id = el.id + uniqueSuffix;
         
-        // Bersihkan data jika ini adalah kad kedua (Klon) supaya kosong
         if(el.tagName === 'INPUT' && el.type !== 'button') el.value = "";
         if(el.tagName === 'STRONG' || el.tagName === 'SPAN') {
             if(el.innerText.includes('RM')) el.innerText = 'RM 0.00';
@@ -1450,28 +1182,29 @@ window.tambahKalkulator = function(templateId) {
         }
     });
 
-    // Menipu onClick attribute pada butang supaya ia set konteks terlebih dahulu
     let allButtons = clone.querySelectorAll('button');
     allButtons.forEach(btn => {
         let oriClick = btn.getAttribute('onclick');
         if (oriClick && !oriClick.includes('clone.remove')) {
-            // Wrapper function yang set activeCardContext sebelum jalankan function asal
+            let funcName = oriClick.replace('()', '').trim();
             btn.removeAttribute('onclick');
+            
+            // Simpan nama fungsi dalam data attribute untuk dipanggil oleh Rumusan Auto Extract
+            btn.setAttribute('data-action-func', oriClick);
+            
             btn.addEventListener('click', function(e) {
-                activeCardContext = clone;
-                eval(oriClick); // Run fungsi asal (cth: calculateOTBiasa())
-                activeCardContext = null;
+                activeCardContext = clone; 
+                try {
+                    if (typeof window[funcName] === 'function') window[funcName]();
+                } finally {
+                    activeCardContext = null; 
+                }
             });
         }
     });
 
-    // Letakkan kad baharu sebelum kad Rumusan
-    if (rumusanCard) {
-        grid.insertBefore(clone, rumusanCard);
-    } else {
-        grid.appendChild(clone);
-    }
+    if (rumusanCard) grid.insertBefore(clone, rumusanCard);
+    else grid.appendChild(clone);
 
-    // Scroll ke kalkulator yang baru ditambah
     clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
