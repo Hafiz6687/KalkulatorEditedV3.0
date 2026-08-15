@@ -1,6 +1,6 @@
 // =====================================================
 // KALKULATOR AKTA KERJA 1955
-// SCRIPT.JS - FINAL CLEAN ENGINE (ROMBAKAN PENUH 2026)
+// SCRIPT.JS - MASTER KARYA AGUNG (FINAL BULLETPROOF)
 // =====================================================
 
 // =====================================================
@@ -10,8 +10,13 @@ let activeCardContext = null;
 const originalGetElement = document.getElementById.bind(document);
 
 window.getElement = function(id) {
-    if (activeCardContext) {
-        let el = activeCardContext.querySelector(`[data-original-id="${id}"], [id="${id}"]`);
+    let context = activeCardContext;
+    // Jika tiada konteks (cth: event inline 'oninput'), kesan dari punca event
+    if (!context && window.event && window.event.target && window.event.target instanceof Element) {
+        context = window.event.target.closest('.calculator-card');
+    }
+    if (context) {
+        let el = context.querySelector(`[data-original-id="${id}"], [id="${id}"]`);
         if (el) return el;
     }
     return originalGetElement(id);
@@ -21,28 +26,9 @@ function setText(id, value) { let el = getElement(id); if (el) el.innerHTML = va
 function setValue(id, value) { let el = getElement(id); if (el) el.value = value; }
 function formatRM(value) { value = Number(value) || 0; return "RM " + value.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
-function formatSafeRM(val) {
-    let num = evaluateSmartMath(val);
-    if (num === 0 && !val.toString().includes("0")) return "";
-    return "RM" + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function evaluateSmartMath(inputStr) {
-    if (!inputStr) return 0;
-    let cleanStr = inputStr.toString().toLowerCase().replace(/rm/g, '').replace(/bulan/g, '').replace(/x/g, '*').replace(/\[/g, '(').replace(/\]/g, ')').replace(/[^\d\.\+\-\*\/\(\)]/g, ''); 
-    if (cleanStr === "") return 0; 
-    try { return eval(cleanStr) || 0; } catch (e) { return 0; }
-}
-
-function getInputNumber(id) {
-    let el = getElement(id);
-    if (!el) return 0;
-    return evaluateSmartMath(el.value);
-}
-
 function toggleResult(prefix, showData) {
-    let pending = document.getElementById(prefix + "Pending");
-    let data = document.getElementById(prefix + "Data");
+    let pending = getElement(prefix + "Pending");
+    let data = getElement(prefix + "Data");
     if (pending && data) {
         pending.style.display = showData ? "none" : "block";
         data.style.display = showData ? "block" : "none";
@@ -50,7 +36,7 @@ function toggleResult(prefix, showData) {
 }
 
 // =====================================================
-// 2. INPUT ENGINE, FORMULA PARSER & SALARY MAP (SINGLE SOURCE)
+// 2. ENJIN INPUT, FORMAT RM & MATEMATIK
 // =====================================================
 const salaryMap = {
     "orpBasicSalary": ["orpAllowance", "orpTotalSalary"],
@@ -65,6 +51,23 @@ const salaryMap = {
     "tbbBasicSalary": ["tbbAllowance", "tbbTotalSalary"]
 };
 
+function evaluateSmartMath(inputStr) {
+    if (!inputStr) return 0;
+    let cleanStr = inputStr.toString().toLowerCase().replace(/rm/g, '').replace(/bulan/g, '').replace(/x/g, '*').replace(/\[/g, '(').replace(/\]/g, ')').replace(/[^\d\.\+\-\*\/\(\)]/g, ''); 
+    if (cleanStr === "") return 0; try { return eval(cleanStr) || 0; } catch (e) { return 0; }
+}
+
+function getInputNumber(id) {
+    let el = getElement(id);
+    return el ? evaluateSmartMath(el.value) : 0;
+}
+
+function formatSafeRM(val) {
+    let num = evaluateSmartMath(val);
+    if (num === 0 && !val.toString().includes("0")) return "";
+    return "RM" + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function updateSalaryTotal(basicID, allowanceID, totalID) {
     let basic = getInputNumber(basicID); 
     let allowance = getInputNumber(allowanceID);
@@ -73,6 +76,11 @@ function updateSalaryTotal(basicID, allowanceID, totalID) {
     if(tEl) tEl.value = "RM" + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
     return total;
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    let semuaInput = document.querySelectorAll('input');
+    semuaInput.forEach(input => { if (input.type === "number") input.setAttribute("type", "text"); });
+});
 
 document.addEventListener("focusin", function(e) {
     if (e.target.tagName !== "INPUT" || e.target.type === "date") return;
@@ -88,19 +96,20 @@ document.addEventListener("focusout", function(e) {
     if (e.target.tagName !== "INPUT" || e.target.type === "date") return;
     let label = e.target.parentElement.querySelector("label");
     let isCurrency = e.target.classList.contains("salary-input") || e.target.classList.contains("salary-total") || (label && label.innerText.includes("(RM)"));
-    if (isCurrency && e.target.value.trim() !== "") {
-        e.target.value = formatSafeRM(e.target.value);
-    }
+    if (isCurrency && e.target.value.trim() !== "") e.target.value = formatSafeRM(e.target.value);
 });
 
 document.addEventListener("input", function(e) {
     if (e.target.tagName !== "INPUT") return;
     
+    // Auto-Kira Matematik (Dikembalikan & Berfungsi)
     let nilai = e.target.value.trim();
     if (!/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) && !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai) && /[+\-*/()]/.test(nilai) && !nilai.includes("RM")) {
         try {
             let hasil = evaluateSmartMath(nilai);
-            if (hasil !== undefined && !isNaN(hasil) && !e.target.value.endsWith("+") && !e.target.value.endsWith("-") && !e.target.value.endsWith("*") && !e.target.value.endsWith("/")) {}
+            if (hasil !== undefined && !isNaN(hasil) && !e.target.value.endsWith("+") && !e.target.value.endsWith("-") && !e.target.value.endsWith("*") && !e.target.value.endsWith("/")) {
+                e.target.value = hasil; // Assign kembali nilai yang dah dikira
+            }
         } catch (err) {}
     }
 
@@ -108,38 +117,43 @@ document.addEventListener("input", function(e) {
     activeCardContext = e.target.closest('.calculator-card');
 
     try {
+        // Sync ORP Global Tanpa Sekatan
         if (originalId === "orpBasicSalary" || originalId === "orpAllowance") {
+            let tempContext = activeCardContext;
+            activeCardContext = null; // Lepaskan kunci carian
+            
             Object.keys(salaryMap).forEach(key => {
                 if (key !== "orpBasicSalary") {
                     let bID = key, aID = salaryMap[key][0], tID = salaryMap[key][1];
-                    if (originalId === "orpBasicSalary") {
-                        let el = getElement(bID);
-                        if (el) el.value = e.target.value; 
-                    }
-                    if (originalId === "orpAllowance") {
-                        let el = getElement(aID);
-                        if (el) el.value = e.target.value;
-                    }
-                    updateSalaryTotal(bID, aID, tID);
+                    let sasaranB = document.querySelectorAll(`[id="${bID}"], [data-original-id="${bID}"]`);
+                    let sasaranA = document.querySelectorAll(`[id="${aID}"], [data-original-id="${aID}"]`);
+                    
+                    if (originalId === "orpBasicSalary") sasaranB.forEach(el => el.value = e.target.value);
+                    if (originalId === "orpAllowance") sasaranA.forEach(el => el.value = e.target.value);
+                    
+                    sasaranB.forEach(bEl => {
+                        let kad = bEl.closest('.calculator-card');
+                        if (kad) {
+                            let aEl = kad.querySelector(`[id="${aID}"], [data-original-id="${aID}"]`);
+                            let tEl = kad.querySelector(`[id="${tID}"], [data-original-id="${tID}"]`);
+                            let basicVal = evaluateSmartMath(bEl.value);
+                            let allowVal = aEl ? evaluateSmartMath(aEl.value) : 0;
+                            if (tEl) tEl.value = "RM" + (basicVal + allowVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    });
                 }
             });
+            activeCardContext = tempContext; // Kunci semula
         }
+
+        // Kemas kini jumlah gaji kad semasa
         Object.keys(salaryMap).forEach(key => {
             let data = salaryMap[key];
-            if (originalId === key || originalId === data[0]) {
-                updateSalaryTotal(key, data[0], data[1]);
-            }
+            if (originalId === key || originalId === data[0]) updateSalaryTotal(key, data[0], data[1]);
         });
     } finally {
         activeCardContext = null; 
     }
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-    let semuaInput = document.querySelectorAll('input');
-    semuaInput.forEach(input => {
-        if (input.type === "number") input.setAttribute("type", "text");
-    });
 });
 
 // =====================================================
@@ -154,17 +168,17 @@ function calculateORP() {
     let ORP = totalSalary / 26;
     setText("orpResultTotal", formatRM(totalSalary)); 
     setText("orpResult", formatRM(ORP)); 
-    document.getElementById("orpPending").style.display = "none";
-    document.getElementById("orpData").style.display = "block";
+    getElement("orpPending").style.display = "none";
+    getElement("orpData").style.display = "block";
 }
 
 function resetORP() {
     ["orpBasicSalary", "orpAllowance"].forEach(id => setValue(id, "")); 
     setValue("orpTotalSalary", "RM 0.00");
     ["orpResultTotal", "orpResult"].forEach(id => setText(id, "RM 0.00"));
-    document.getElementById("orpData").style.display = "none";
-    if (document.getElementById("bakiData").style.display === "none" || document.getElementById("bakiData").style.display === "") {
-        document.getElementById("orpPending").style.display = "block";
+    getElement("orpData").style.display = "none";
+    if (getElement("bakiData").style.display === "none" || getElement("bakiData").style.display === "") {
+        getElement("orpPending").style.display = "block";
     }
 }
 
@@ -172,7 +186,7 @@ function calculateBakiUpah() {
     let patutTerima = getInputNumber("orpPatutTerima");
     let telahTerima = getInputNumber("orpTelahTerima");
     let baki = telahTerima - patutTerima; 
-    let bakiEl = document.getElementById("orpBakiAmount");
+    let bakiEl = getElement("orpBakiAmount");
     if(bakiEl) {
         if (baki < 0) {
             bakiEl.innerText = "-" + formatRM(Math.abs(baki));
@@ -185,17 +199,17 @@ function calculateBakiUpah() {
             bakiEl.style.color = "#1f4e79";
         }
     }
-    document.getElementById("orpPending").style.display = "none";
-    document.getElementById("bakiData").style.display = "block";
+    getElement("orpPending").style.display = "none";
+    getElement("bakiData").style.display = "block";
 }
 
 function resetBakiUpah() {
     ["orpPatutTerima", "orpTelahTerima"].forEach(id => setValue(id, "")); 
     let el = getElement("orpBakiAmount");
     if(el) { el.innerText = "RM 0.00"; el.style.color = ""; }
-    document.getElementById("bakiData").style.display = "none";
-    if (document.getElementById("orpData").style.display === "none" || document.getElementById("orpData").style.display === "") {
-        document.getElementById("orpPending").style.display = "block";
+    getElement("bakiData").style.display = "none";
+    if (getElement("orpData").style.display === "none" || getElement("orpData").style.display === "") {
+        getElement("orpPending").style.display = "block";
     }
 }
 
@@ -331,10 +345,10 @@ function resetCutiTahunan() {
     setText("annualLeaveORP", "RM 0.00"); setText("annualLeaveAmount", "RM 0.00"); toggleResult("annualLeave", false);
 }
 function autoKiraBakiCuti() {
-    const layakInput = document.getElementById('cutiLayak').value; const gunaInput = document.getElementById('cutiGuna').value;
-    if (layakInput === "" && gunaInput === "") { document.getElementById('annualLeaveDays').value = ""; return; }
+    const layakInput = getElement('cutiLayak').value; const gunaInput = getElement('cutiGuna').value;
+    if (layakInput === "" && gunaInput === "") { getElement('annualLeaveDays').value = ""; return; }
     let baki = (parseFloat(layakInput) || 0) - (parseFloat(gunaInput) || 0);
-    if (baki < 0) baki = 0; document.getElementById('annualLeaveDays').value = baki;
+    if (baki < 0) baki = 0; getElement('annualLeaveDays').value = baki;
 }
 
 function calculateCutiSakit() {
@@ -395,39 +409,39 @@ function resetBakiCutiSakit() { ['sakitLayak', 'sakitGuna', 'bakiSakitBiasa', 'h
 
 // --- 3.6 GAJI GANTI NOTIS (GGN) ---
 function toggleNotisStatus() {
-    let statusEl = document.getElementById("ggnStatusNotis");
+    let statusEl = getElement("ggnStatusNotis");
     if (!statusEl) return;
     let status = statusEl.value;
     let elsStart = ["ggnUniWeekStart", "ggnUniDayStart"], elsEnd = ["ggnUniWeekEnd", "ggnUniDayEnd"];
     elsStart.forEach(id => {
-        let el = document.getElementById(id);
+        let el = getElement(id);
         if (el && el.parentElement) {
             let lbl = el.parentElement.querySelector("label");
             if (lbl) lbl.innerText = (status === "tiada") ? "Tarikh Penamatan (Serta-merta)" : "Tarikh Mula Notis";
         }
     });
     elsEnd.forEach(id => {
-        let el = document.getElementById(id);
+        let el = getElement(id);
         if (el && el.parentElement) el.parentElement.style.display = (status === "tiada") ? "none" : "block";
     });
 }
 
 function toggleGGNMode() {
-    let mode = document.getElementById("ggnUniType").value;
-    document.getElementById("ggnGroupBulan").style.display = "none";
-    document.getElementById("ggnGroupMinggu").style.display = "none";
-    document.getElementById("ggnGroupHari").style.display = "none";
+    let mode = getElement("ggnUniType").value;
+    getElement("ggnGroupBulan").style.display = "none";
+    getElement("ggnGroupMinggu").style.display = "none";
+    getElement("ggnGroupHari").style.display = "none";
     
-    let statusGroup = document.getElementById("ggnStatusGroup");
+    let statusGroup = getElement("ggnStatusGroup");
     if (statusGroup) statusGroup.style.display = (mode === "minggu" || mode === "hari") ? "block" : "none";
 
-    if (mode === "bulan") document.getElementById("ggnGroupBulan").style.display = "block";
-    else if (mode === "minggu") { document.getElementById("ggnGroupMinggu").style.display = "block"; toggleNotisStatus(); } 
-    else if (mode === "hari") { document.getElementById("ggnGroupHari").style.display = "block"; toggleNotisStatus(); }
+    if (mode === "bulan") getElement("ggnGroupBulan").style.display = "block";
+    else if (mode === "minggu") { getElement("ggnGroupMinggu").style.display = "block"; toggleNotisStatus(); } 
+    else if (mode === "hari") { getElement("ggnGroupHari").style.display = "block"; toggleNotisStatus(); }
 
-    document.getElementById("ggnResBulan").style.display = "none";
-    document.getElementById("ggnRes18A").style.display = "none";
-    document.getElementById("ggnResPending").style.display = "block";
+    getElement("ggnResBulan").style.display = "none";
+    getElement("ggnRes18A").style.display = "none";
+    getElement("ggnResPending").style.display = "block";
 }
 
 function formatDateInput(date) {
@@ -451,10 +465,10 @@ function autoGGNEndDate(type) {
 }
 
 function calculateGGNUnified() {
-    let mode = document.getElementById("ggnUniType").value;
+    let mode = getElement("ggnUniType").value;
     if (!mode) { alert("Sila pilih Jenis Notis terlebih dahulu."); return; }
     let totalSalary = updateSalaryTotal("ggnUniBasic", "ggnUniAllowance", "ggnUniTotal");
-    let statusNotisEl = document.getElementById("ggnStatusNotis");
+    let statusNotisEl = getElement("ggnStatusNotis");
     let isTanpaNotis = statusNotisEl && statusNotisEl.value === "tiada";
     
     if (mode === "bulan") {
@@ -462,9 +476,9 @@ function calculateGGNUnified() {
         if (months <= 0) { alert("Sila masukkan bilangan bulan notis."); return; }
         let amount = totalSalary * months;
         setText("resUniMonthCount", months + " Bulan"); setText("resUniMonthAmount", formatRM(amount));
-        document.getElementById("ggnResPending").style.display = "none";
-        document.getElementById("ggnRes18A").style.display = "none";
-        document.getElementById("ggnResBulan").style.display = "block";
+        getElement("ggnResPending").style.display = "none";
+        getElement("ggnRes18A").style.display = "none";
+        getElement("ggnResBulan").style.display = "block";
     } else {
         let valId = mode === 'minggu' ? 'ggnUniWeekVal' : 'ggnUniDayVal';
         let startId = mode === 'minggu' ? 'ggnUniWeekStart' : 'ggnUniDayStart';
@@ -485,7 +499,7 @@ function calculateGGNUnified() {
         setValue(endId, formatDateInput(end)); setText("resUni18ATotal", formatRM(totalSalary));
         setText("resUni18AEnd", `${end.getDate()}-${end.getMonth() + 1}-${end.getFullYear()}`);
         
-        let endResultEl = document.getElementById("resUni18AEnd");
+        let endResultEl = getElement("resUni18AEnd");
         if(endResultEl && endResultEl.parentElement) {
             let lbl = endResultEl.parentElement.querySelector("span");
             if(lbl) lbl.innerText = isTanpaNotis ? "Tamat Tempoh Indemniti" : "Tarikh Akhir Notis";
@@ -504,9 +518,9 @@ function calculateGGNUnified() {
             setText("resUniM2Title", "-"); setText("resUniM2Days", "-"); setText("resUniM2Daily", "-"); setText("resUniM2Amount", "-");
         }
         setText("resUni18AAmount", formatRM(totalAmount));
-        document.getElementById("ggnResPending").style.display = "none";
-        document.getElementById("ggnResBulan").style.display = "none";
-        document.getElementById("ggnRes18A").style.display = "block";
+        getElement("ggnResPending").style.display = "none";
+        getElement("ggnResBulan").style.display = "none";
+        getElement("ggnRes18A").style.display = "block";
     }
 }
 
@@ -524,16 +538,16 @@ function resetGGNUnified() {
 const monthNames = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
 
 function toggleTBBSalaryMode() {
-    let mode = document.getElementById("tbbSalaryMode").value;
-    document.getElementById("tbbFixedSalaryGroup").style.display = (mode === "tetap") ? "block" : "none";
-    document.getElementById("tbbVariableSalaryGroup").style.display = (mode === "berubah") ? "block" : "none";
-    document.getElementById("tbbFormulaSalaryGroup").style.display = (mode === "formula") ? "block" : "none";
+    let mode = getElement("tbbSalaryMode").value;
+    getElement("tbbFixedSalaryGroup").style.display = (mode === "tetap") ? "block" : "none";
+    getElement("tbbVariableSalaryGroup").style.display = (mode === "berubah") ? "block" : "none";
+    getElement("tbbFormulaSalaryGroup").style.display = (mode === "formula") ? "block" : "none";
     if (mode === "berubah") generate12MonthsTable();
 }
 
 function generate12MonthsTable() {
-    let endDateVal = document.getElementById("tbbEndDate").value;
-    let container = document.getElementById("tbb12MonthsContainer");
+    let endDateVal = getElement("tbbEndDate").value;
+    let container = getElement("tbb12MonthsContainer");
     if (!endDateVal) { container.innerHTML = '<span style="color:#1f4e79; font-weight:bold;">Menunggu Tarikh Penamatan dipilih...</span>'; return; }
     let end = new Date(endDateVal); let currentMonth = end.getMonth(); let currentYear = end.getFullYear();
     let lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -556,14 +570,16 @@ function calculateTBB() {
     if (!startVal || !endVal) { alert("Sila masukkan Tarikh Mula Kerja dan Tarikh Penamatan."); return; }
     let start = new Date(startVal); let end = new Date(endVal);
     if (end < start) { alert("Tarikh Penamatan tidak boleh lebih awal daripada Tarikh Mula."); return; }
-    let mode = document.getElementById("tbbSalaryMode").value; let total12Months = 0;
+    let mode = getElement("tbbSalaryMode").value; let total12Months = 0;
     
     if (mode === "tetap") {
         let monthly = evaluateSmartMath(getElement("tbbMonthlyTotal").value);
         if (monthly <= 0) { alert("Sila masukkan Jumlah Upah Sebulan."); return; }
         total12Months = monthly * 12;
     } else if (mode === "berubah") {
-        let inputs = document.querySelectorAll(".tbb-monthly-input");
+        // Dalam clone, querySelector perlu dipanggil dari konteks yang betul
+        let parentCard = getElement("tbbEndDate").closest('.calculator-card');
+        let inputs = parentCard.querySelectorAll(".tbb-monthly-input");
         if (inputs.length === 0) { alert("Sila masukkan Tarikh Penamatan untuk menjana jadual."); return; }
         inputs.forEach(input => { total12Months += evaluateSmartMath(input.value); });
         if (total12Months <= 0) { alert("Sila isi upah bulanan pada jadual."); return; }
@@ -674,6 +690,7 @@ function kemaskiniPatutBayar(selectElement) {
     
     if (idSasaran !== "") {
         if (idSasaran === "orpBakiAmount") {
+            // Untuk rumusan sentiasa baca nilai asal
             let orpPatut = document.getElementById("orpPatutTerima");
             let orpTelah = document.getElementById("orpTelahTerima");
             nilaiDiambil = unformatRMRumusan(orpPatut ? orpPatut.value : "0");
@@ -682,8 +699,15 @@ function kemaskiniPatutBayar(selectElement) {
             inputTelahBayar.setAttribute('readonly', true);
             inputTelahBayar.style.background = "#f4f4f4";
         } else {
-            const elemenKeputusan = document.getElementById(idSasaran);
-            if (elemenKeputusan) nilaiDiambil = unformatRMRumusan(elemenKeputusan.innerText);
+            // Memandangkan element sasaran berada dalam kad, cari yg terpapar (aktif)
+            let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template)');
+            for(let kad of semuaKadAktif) {
+                let elemenKeputusan = kad.querySelector(`[id="${idSasaran}"], [data-original-id="${idSasaran}"]`);
+                if (elemenKeputusan && elemenKeputusan.innerText && unformatRMRumusan(elemenKeputusan.innerText) !== 0) {
+                    nilaiDiambil = unformatRMRumusan(elemenKeputusan.innerText);
+                    break;
+                }
+            }
             inputTelahBayar.value = ""; 
         }
     } else {
@@ -762,7 +786,8 @@ document.addEventListener('click', function(event) {
     else if (fungsiKira.includes("calculateTBB")) idSasaran = "tbbAmount";
     else if (fungsiKira.includes("calculateBakiUpah")) idSasaran = "orpBakiAmount";
     else if (fungsiKira.includes("calculateGGNUnified")) {
-        let mode = activeCardContext ? activeCardContext.querySelector("#ggnUniType, [data-original-id='ggnUniType']").value : document.getElementById("ggnUniType").value;
+        let kad = btn.closest('.calculator-card');
+        let mode = kad ? kad.querySelector("#ggnUniType, [data-original-id='ggnUniType']").value : document.getElementById("ggnUniType").value;
         if (mode === "bulan") idSasaran = "resUniMonthAmount";
         else if (mode === "minggu" || mode === "hari") idSasaran = "resUni18AAmount";
     }
@@ -770,7 +795,8 @@ document.addEventListener('click', function(event) {
     if (idSasaran !== "") {
         setTimeout(() => {
             let valid = false;
-            let elemenSasaran = activeCardContext ? activeCardContext.querySelector(`[id="${idSasaran}"], [data-original-id="${idSasaran}"]`) : document.getElementById(idSasaran);
+            let kadContext = btn.closest('.calculator-card');
+            let elemenSasaran = kadContext ? kadContext.querySelector(`[id="${idSasaran}"], [data-original-id="${idSasaran}"]`) : document.getElementById(idSasaran);
             
             if (idSasaran === "orpBakiAmount") {
                 let patut = document.getElementById("orpPatutTerima");
@@ -788,7 +814,6 @@ function autoMasukRumusan(idSasaran) {
     const jadual = document.getElementById('badanJadualRumusan');
     const senaraiSelect = jadual.querySelectorAll('select');
     let barisWujud = null;
-    
     senaraiSelect.forEach(select => { if (select.value === idSasaran) barisWujud = select; });
 
     if (barisWujud) {
@@ -805,9 +830,7 @@ function autoMasukRumusan(idSasaran) {
 // =====================================================
 // 5. LAPORAN PENUH (PDF)
 // =====================================================
-function formatTitleCase(str) {
-    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-}
+function formatTitleCase(str) { return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); }
 function formatIC(str) {
     let val = str.replace(/\D/g, ''); 
     if (val.length <= 6) return val; 
@@ -849,28 +872,20 @@ function teruskanJanaLaporan() {
 
 function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     const senaraiKalkulator = [
-        { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, 
-        { id: "bakiData", tajuk: "Baki Upah / Gaji" }, 
-        { id: "otData", tajuk: "OT Hari Biasa" },
-        { id: "rhData", tajuk: "Kerja Hari Rehat (½ Hari @ Kurang)" }, 
-        { id: "rhMoreData", tajuk: "Kerja Hari Rehat (Lebih ½ Hari)" },
-        { id: "sec18AData", tajuk: "Pengiraan Seksyen 18A" }, 
-        { id: "otRHData", tajuk: "OT Hari Rehat" },
-        { id: "phData", tajuk: "Kerja Pada Hari Kelepasan" }, 
-        { id: "otPHData", tajuk: "OT Hari Kelepasan" },
-        { id: "sickLeaveData", tajuk: "Bayaran Cuti Sakit" }, 
-        { id: "kelayakanCutiData", tajuk: "Kelayakan Cuti Tahunan" },
-        { id: "annualLeaveData", tajuk: "Bayaran Cuti Tahunan" }, 
-        { id: "ggnResBulan", tajuk: "Gaji Ganti Notis (Kiraan Bulan)" },
-        { id: "ggnRes18A", tajuk: "Gaji Ganti Notis (Kiraan Hari/Minggu)" }, 
-        { id: "kelayakanSakitData", tajuk: "Kelayakan Cuti Sakit & Hospitalisasi" },
-        { id: "tbbData", tajuk: "Faedah Penamatan" }
+        { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, { id: "bakiData", tajuk: "Baki Upah / Gaji" }, 
+        { id: "otData", tajuk: "OT Hari Biasa" }, { id: "rhData", tajuk: "Kerja Hari Rehat (½ Hari @ Kurang)" }, 
+        { id: "rhMoreData", tajuk: "Kerja Hari Rehat (Lebih ½ Hari)" }, { id: "sec18AData", tajuk: "Pengiraan Seksyen 18A" }, 
+        { id: "otRHData", tajuk: "OT Hari Rehat" }, { id: "phData", tajuk: "Kerja Pada Hari Kelepasan" }, 
+        { id: "otPHData", tajuk: "OT Hari Kelepasan" }, { id: "sickLeaveData", tajuk: "Bayaran Cuti Sakit" }, 
+        { id: "kelayakanCutiData", tajuk: "Kelayakan Cuti Tahunan" }, { id: "annualLeaveData", tajuk: "Bayaran Cuti Tahunan" }, 
+        { id: "ggnResBulan", tajuk: "Gaji Ganti Notis (Kiraan Bulan)" }, { id: "ggnRes18A", tajuk: "Gaji Ganti Notis (Kiraan Hari/Minggu)" }, 
+        { id: "kelayakanSakitData", tajuk: "Kelayakan Cuti Sakit & Hospitalisasi" }, { id: "tbbData", tajuk: "Faedah Penamatan" }
     ];
 
-    function getJalanKira(id) {
-        let d = (el) => { let e = document.getElementById(el); return e ? e.innerText.trim() : ""; };
-        let v = (el) => { let e = document.getElementById(el); return e ? e.value.trim() : ""; };
-        let s = (el) => { let e = document.getElementById(el); return e && e.options[e.selectedIndex] ? e.options[e.selectedIndex].text : ""; };
+    function getJalanKira(id, kadAsal) {
+        let d = (el) => { let e = kadAsal.querySelector(`[id="${el}"], [data-original-id="${el}"]`); return e ? e.innerText.trim() : ""; };
+        let v = (el) => { let e = kadAsal.querySelector(`[id="${el}"], [data-original-id="${el}"]`); return e ? e.value.trim() : ""; };
+        let s = (el) => { let e = kadAsal.querySelector(`[id="${el}"], [data-original-id="${el}"]`); return e && e.options[e.selectedIndex] ? e.options[e.selectedIndex].text : ""; };
         function getDaysInMonthStr(monthYearStr) {
             if (!monthYearStr || monthYearStr === "-") return 30; let parts = monthYearStr.trim().split(/\s+/); if (parts.length < 2) return 30;
             let mNames = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
@@ -919,35 +934,33 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     }
 
     let adaData = false; let htmlLaporan = "";
+    
+    // Pastikan bacaan hanya dari kad yang aktif (bukan templat yang disembunyikan)
+    let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template)');
 
     senaraiKalkulator.forEach(kalkulator => {
-        try {
-            let elemenKeputusan = document.getElementById(kalkulator.id);
-            if (elemenKeputusan && elemenKeputusan.style.display !== "none") {
-                adaData = true; 
-                let kadAsal = elemenKeputusan.closest('.pdf-module, .calculator-card');
-                let kadUtama = elemenKeputusan.closest('.calculator-card');
-                if (kadAsal) {
+        semuaKadAktif.forEach(kadUtama => {
+            try {
+                let elemenKeputusan = kadUtama.querySelector(`[id="${kalkulator.id}"], [data-original-id="${kalkulator.id}"]`);
+                if (elemenKeputusan && window.getComputedStyle(elemenKeputusan).display !== "none") {
+                    adaData = true; 
+                    let kadAsal = elemenKeputusan.closest('.pdf-module') || kadUtama;
                     let tajukKalkulator = kalkulator.tajuk; 
-                    if (kadUtama) {
-                        let mainH2 = kadUtama.querySelector('h2');
-                        if (mainH2) {
-                            let cleanMain = mainH2.innerText.replace(/\n/g, ' ').replace(/Kalkulator\s*/i, '').replace(/Bersepadu:\s*/i, '');
-                            tajukKalkulator = cleanMain;
-                            if (kadAsal.classList.contains('pdf-module')) {
-                                let subH3 = kadAsal.querySelector('h3');
-                                if (subH3) { tajukKalkulator += " - " + subH3.innerText.split(':')[0]; }
-                            }
+                    let mainH2 = kadUtama.querySelector('h2');
+                    if (mainH2) {
+                        tajukKalkulator = mainH2.innerText.replace(/\n/g, ' ').replace(/Kalkulator\s*/i, '').replace(/Bersepadu:\s*/i, '');
+                        if (kadAsal.classList.contains('pdf-module')) {
+                            let subH3 = kadAsal.querySelector('h3');
+                            if (subH3) tajukKalkulator += " - " + subH3.innerText.split(':')[0]; 
                         }
                     }
-
                     if (kalkulator.id === "orpData") tajukKalkulator = "Kadar Upah Biasa (ORP)";
                     if (kalkulator.id === "bakiData") tajukKalkulator = "Baki Upah / Gaji";
 
                     let paramHtml = `<table class="param-table">`; 
                     let barisInput = kadAsal.querySelectorAll('.form-group');
                     barisInput.forEach(fg => {
-                        if (fg.offsetParent === null || window.getComputedStyle(fg).display === 'none' || fg.closest('[style*="display: none"]')) return; 
+                        if (window.getComputedStyle(fg).display === 'none') return; 
                         let labelEl = fg.querySelector('label'); let inputEl = fg.querySelector('input, select');
                         if (labelEl && inputEl) {
                             let namaLabel = labelEl.innerText.split('\n')[0]; 
@@ -967,7 +980,8 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
                     });
                     paramHtml += `</table>`;
 
-                    let jalanKiraHtml = getJalanKira(kalkulator.id); let salinanKeputusan = elemenKeputusan.cloneNode(true);
+                    let jalanKiraHtml = getJalanKira(kalkulator.id, kadAsal); 
+                    let salinanKeputusan = elemenKeputusan.cloneNode(true);
                     salinanKeputusan.querySelectorAll('button, h4, hr').forEach(b => b.remove()); 
                     salinanKeputusan.querySelectorAll('.result-row, .section18a-header, .section18a-row').forEach(row => {
                         let text = row.innerText || "";
@@ -983,27 +997,28 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
 
                     if (kalkulator.id === "orpData" || kalkulator.id === "bakiData") {
                         let semuaBarisKeputusan = salinanKeputusan.querySelectorAll('.result-row');
-                        if (semuaBarisKeputusan.length > 0) { semuaBarisKeputusan[semuaBarisKeputusan.length - 1].classList.add('highlight-row'); }
+                        if (semuaBarisKeputusan.length > 0) semuaBarisKeputusan[semuaBarisKeputusan.length - 1].classList.add('highlight-row');
                     }
 
                     if (kalkulator.id === "ggnRes18A") {
-                        let getD = (el) => { let e = document.getElementById(el); return e ? e.innerText.trim() : ""; };
+                        let getD = (el) => { let e = kadAsal.querySelector(`[id="${el}"], [data-original-id="${el}"]`); return e ? e.innerText.trim() : ""; };
                         let m1 = getD("resUniM1Title"); let m2 = getD("resUniM2Title"); let h1 = getD("resUniM1Days"); let h2 = getD("resUniM2Days");
                         let r1 = getD("resUniM1Daily"); let r2 = getD("resUniM2Daily"); let a1 = getD("resUniM1Amount"); let a2 = getD("resUniM2Amount");
-                        let stEl = document.getElementById("ggnStatusNotis"); let lblTamat = (stEl && stEl.value === "tiada") ? "Tamat Tempoh Indemniti" : "Tarikh Akhir Notis";
+                        let stEl = kadAsal.querySelector("#ggnStatusNotis, [data-original-id='ggnStatusNotis']"); 
+                        let lblTamat = (stEl && stEl.value === "tiada") ? "Tamat Tempoh Indemniti" : "Tarikh Akhir Notis";
                         let tDateStr = getD("resUni18AEnd"); let tDate = tDateStr ? tDateStr.replace(/\//g, "-") : "";  let tTotal = getD("resUni18AAmount");
                         salinanKeputusan.innerHTML = `<div class="result-row" style="margin-bottom:8px;"><span>${lblTamat}</span><strong>${tDate}</strong></div><table class="clean-table"><tr><td></td><td style="font-weight:bold;">${m1}</td><td style="font-weight:bold;">${m2}</td></tr><tr><td>Hari Bekerja</td><td>${h1}</td><td>${h2}</td></tr><tr><td>Kadar Sehari</td><td>${r1}</td><td>${r2}</td></tr><tr><td>Bayaran</td><td>${a1}</td><td>${a2}</td></tr></table><div class="result-row highlight-row" style="margin-top:10px;"><span>Bayaran Gaji Ganti Notis</span><strong>${tTotal}</strong></div>`;
                     }
                     if (kalkulator.id === "sec18AData") {
-                        let getD = (el) => { let e = document.getElementById(el); return e ? e.innerText.trim() : ""; };
+                        let getD = (el) => { let e = kadAsal.querySelector(`[id="${el}"], [data-original-id="${el}"]`); return e ? e.innerText.trim() : ""; };
                         let m1 = getD("month1Title"); let m2 = getD("month2Title"); let h1 = getD("month1Days"); let h2 = getD("month2Days");
                         let r1 = getD("month1Daily"); let r2 = getD("month2Daily"); let a1 = getD("month1Amount"); let a2 = getD("month2Amount"); let tTotal = getD("amount18A");
                         salinanKeputusan.innerHTML = `<table class="clean-table" style="margin-top:5px;"><tr><td></td><td style="font-weight:bold;">${m1}</td><td style="font-weight:bold;">${m2}</td></tr><tr><td>Hari Bekerja</td><td>${h1}</td><td>${h2}</td></tr><tr><td>Kadar Sehari</td><td>${r1}</td><td>${r2}</td></tr><tr><td>Bayaran</td><td>${a1}</td><td>${a2}</td></tr></table><div class="result-row highlight-row" style="margin-top:10px;"><span>Jumlah Bayaran Upah</span><strong>${tTotal}</strong></div>`;
                     }
                     htmlLaporan += `<div class="report-box"><div class="report-header">${tajukKalkulator}</div><div class="report-section-title">PARAMETER / INPUT:</div>${paramHtml}${jalanKiraHtml}<div class="report-section-title" style="margin-top:10px;">KEPUTUSAN:</div><div class="compact-result">${salinanKeputusan.innerHTML}</div></div>`;
                 }
-            }
-        } catch (error) { console.error("Ralat pada kalkulator:", kalkulator.id, error); }
+            } catch (error) { console.error("Ralat pada kalkulator:", kalkulator.id, error); }
+        });
     });
 
     let rumusanTbody = document.getElementById('badanJadualRumusan');
@@ -1025,120 +1040,36 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan atau isi Jadual Rumusan terlebih dahulu."); return; }
     
     let tarikhHariIni = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
-    
     let maklumatPekerjaHTML = "";
     if (namaPekerja !== "" || icPekerja !== "") {
-        maklumatPekerjaHTML = `
-        <div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
-            <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA</div>
-            <table class="param-table" style="margin-bottom: 0;">
-                <tr>
-                    <td class="param-label" style="width: 20%; font-weight: bold;">Nama</td>
-                    <td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja || '-'}</td>
-                </tr>
-                <tr>
-                    <td class="param-label" style="width: 20%; font-weight: bold;">No. Kad Pengenalan</td>
-                    <td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td>
-                </tr>
-            </table>
-        </div>`;
+        maklumatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;"><div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA</div><table class="param-table" style="margin-bottom: 0;"><tr><td class="param-label" style="width: 20%; font-weight: bold;">Nama</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja || '-'}</td></tr><tr><td class="param-label" style="width: 20%; font-weight: bold;">No. Kad Pengenalan</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td></tr></table></div>`;
     }
-
-    let cssBaru = `
-    .floating-action-bar { position: fixed; top: 25px; right: 25px; display: flex; z-index: 9999; align-items: center; }
-    .kebab-btn { background: #0d6efd; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; line-height: 1; padding-bottom: 5px; }
-    .kebab-btn:hover { background: #0b5ed7; transform: scale(1.05); }
-    .kebab-dropdown { display: none; position: absolute; right: 0; top: 115%; background-color: white; min-width: 170px; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid #ddd; text-align: left; }
-    .kebab-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; font-weight: bold; transition: 0.2s; }
-    .kebab-dropdown a:hover { background-color: #f4f6f9; }
-    .kebab-dropdown a:first-child { border-bottom: 1px solid #eee; }
-    @media print { .floating-action-bar, .print-btn-container { display: none !important; } }
-    `;
-
-    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body>
-    <div class="floating-action-bar">
-        <div style="position: relative;">
-            <button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button>
-            <div id="kebabDropdown" class="kebab-dropdown">
-                <a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a>
-                <a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a>
-            </div>
-        </div>
-    </div>
-    <h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1>
-    <p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p>
-    <div class="grid-container">${maklumatPekerjaHTML}${htmlLaporan}</div>
-    <div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;">
-        <p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p>
-    </div>
-    <script>window.addEventListener('afterprint', function() { window.close(); });<\\/script>
-    </body></html>`;
+    
+    let cssBaru = `.floating-action-bar { position: fixed; top: 25px; right: 25px; display: flex; z-index: 9999; align-items: center; } .kebab-btn { background: #0d6efd; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; line-height: 1; padding-bottom: 5px; } .kebab-btn:hover { background: #0b5ed7; transform: scale(1.05); } .kebab-dropdown { display: none; position: absolute; right: 0; top: 115%; background-color: white; min-width: 170px; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid #ddd; text-align: left; } .kebab-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; font-weight: bold; transition: 0.2s; } .kebab-dropdown a:hover { background-color: #f4f6f9; } .kebab-dropdown a:first-child { border-bottom: 1px solid #eee; } @media print { .floating-action-bar, .print-btn-container { display: none !important; } }`;
+    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a></div></div></div><h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1><p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p><div class="grid-container">${maklumatPekerjaHTML}${htmlLaporan}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div><script>window.addEventListener('afterprint', function() { window.close(); });<\\/script></body></html>`;
     
     let tetingkapCetak = window.open('', '_blank'); 
-    if (!tetingkapCetak) {
-        alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan.");
-        return;
-    }
-    tetingkapCetak.document.write(cetakHTML); 
-    tetingkapCetak.document.close();
-    tetingkapCetak.focus(); 
+    if (!tetingkapCetak) { alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan."); return; }
+    tetingkapCetak.document.write(cetakHTML); tetingkapCetak.document.close(); tetingkapCetak.focus(); 
 }
 
 // =====================================================
 // 6. SISTEM LOGIN & RESET 
 // =====================================================
-function paparLogMasuk() {
-    document.getElementById("loginOverlay").style.display = "flex";
-    document.getElementById("loginPassword").value = "";
-    document.getElementById("loginError").style.display = "none";
-}
-
+function paparLogMasuk() { document.getElementById("loginOverlay").style.display = "flex"; document.getElementById("loginPassword").value = ""; document.getElementById("loginError").style.display = "none"; }
 function semakLogin() {
-    let inputLaluan = document.getElementById("loginPassword").value;
-    let ralatMesej = document.getElementById("loginError");
-    let kataLaluanSebenar = "kerja1955"; 
-    
+    let inputLaluan = document.getElementById("loginPassword").value; let ralatMesej = document.getElementById("loginError"); let kataLaluanSebenar = "kerja1955"; 
     if (inputLaluan === kataLaluanSebenar) {
-        document.getElementById("loginOverlay").style.display = "none";
-        let btn = document.getElementById("butangAuth");
-        if (btn) {
-            btn.innerHTML = "⏻ Log Keluar";
-            btn.style.background = "#dc3545"; 
-            btn.style.borderColor = "#dc3545";
-            btn.setAttribute("onclick", "logKeluar()");
-        }
-    } else {
-        ralatMesej.style.display = "block";
-    }
+        document.getElementById("loginOverlay").style.display = "none"; let btn = document.getElementById("butangAuth");
+        if (btn) { btn.innerHTML = "⏻ Log Keluar"; btn.style.background = "#dc3545"; btn.style.borderColor = "#dc3545"; btn.setAttribute("onclick", "logKeluar()"); }
+    } else { ralatMesej.style.display = "block"; }
 }
-
-document.addEventListener("DOMContentLoaded", function() {
-    let kotakPassword = document.getElementById("loginPassword");
-    if (kotakPassword) {
-        kotakPassword.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") semakLogin();
-        });
-    }
-});
-
-function logKeluar() {
-    let btn = document.getElementById("butangAuth");
-    if (btn) {
-        btn.innerHTML = "⏻ Log Masuk";
-        btn.style.background = "#1f4e79"; 
-        btn.style.borderColor = "#1f4e79";
-        btn.setAttribute("onclick", "paparLogMasuk()");
-    }
-    alert("Anda telah berjaya log keluar dari sistem.");
-}
-
+document.addEventListener("DOMContentLoaded", function() { let kotakPassword = document.getElementById("loginPassword"); if (kotakPassword) { kotakPassword.addEventListener("keypress", function(event) { if (event.key === "Enter") semakLogin(); }); } });
+function logKeluar() { let btn = document.getElementById("butangAuth"); if (btn) { btn.innerHTML = "⏻ Log Masuk"; btn.style.background = "#1f4e79"; btn.style.borderColor = "#1f4e79"; btn.setAttribute("onclick", "paparLogMasuk()"); } alert("Anda telah berjaya log keluar dari sistem."); }
 function resetSemua() {
     let sah = confirm("Adakah anda pasti mahu memadam KESEMUA data pengiraan? Tindakan ini tidak boleh diundur.");
     if (sah) {
-        resetORP(); resetBakiUpah(); resetOTBiasa(); resetHariRehat(); resetHariRehatLebih();
-        resetSeksyen18A(); resetOTRH(); resetPH(); resetOTPH(); resetKelayakanCuti();
-        resetCutiTahunan(); resetKelayakanCutiSakit(); resetCutiSakit(); resetGGNUnified();
-        resetTBB(); resetRumusan();
+        resetORP(); resetBakiUpah(); resetOTBiasa(); resetHariRehat(); resetHariRehatLebih(); resetSeksyen18A(); resetOTRH(); resetPH(); resetOTPH(); resetKelayakanCuti(); resetCutiTahunan(); resetKelayakanCutiSakit(); resetCutiSakit(); resetGGNUnified(); resetTBB(); resetRumusan();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
@@ -1174,7 +1105,6 @@ window.tambahKalkulator = function(templateId) {
     allElementsWithId.forEach(el => {
         el.setAttribute('data-original-id', el.id);
         el.id = el.id + uniqueSuffix;
-        
         if(el.tagName === 'INPUT' && el.type !== 'button') el.value = "";
         if(el.tagName === 'STRONG' || el.tagName === 'SPAN') {
             if(el.innerText.includes('RM')) el.innerText = 'RM 0.00';
@@ -1188,23 +1118,14 @@ window.tambahKalkulator = function(templateId) {
         if (oriClick && !oriClick.includes('clone.remove')) {
             let funcName = oriClick.replace('()', '').trim();
             btn.removeAttribute('onclick');
-            
-            // Simpan nama fungsi dalam data attribute untuk dipanggil oleh Rumusan Auto Extract
             btn.setAttribute('data-action-func', oriClick);
-            
             btn.addEventListener('click', function(e) {
                 activeCardContext = clone; 
-                try {
-                    if (typeof window[funcName] === 'function') window[funcName]();
-                } finally {
-                    activeCardContext = null; 
-                }
+                try { if (typeof window[funcName] === 'function') window[funcName](); } finally { activeCardContext = null; }
             });
         }
     });
 
-    if (rumusanCard) grid.insertBefore(clone, rumusanCard);
-    else grid.appendChild(clone);
-
+    if (rumusanCard) grid.insertBefore(clone, rumusanCard); else grid.appendChild(clone);
     clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
