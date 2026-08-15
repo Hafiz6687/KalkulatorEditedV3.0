@@ -54,7 +54,8 @@ const salaryMap = {
 function evaluateSmartMath(inputStr) {
     if (!inputStr) return 0;
     let cleanStr = inputStr.toString().toLowerCase().replace(/rm/g, '').replace(/bulan/g, '').replace(/x/g, '*').replace(/\[/g, '(').replace(/\]/g, ')').replace(/[^\d\.\+\-\*\/\(\)]/g, ''); 
-    if (cleanStr === "") return 0; try { return eval(cleanStr) || 0; } catch (e) { return 0; }
+    if (cleanStr === "") return 0; 
+    try { return eval(cleanStr) || 0; } catch (e) { return 0; }
 }
 
 function getInputNumber(id) {
@@ -62,6 +63,7 @@ function getInputNumber(id) {
     return el ? evaluateSmartMath(el.value) : 0;
 }
 
+// Format yang digunakan khas untuk auto-sync (tiada jarak selepas RM)
 function formatSafeRM(val) {
     let num = evaluateSmartMath(val);
     if (num === 0 && !val.toString().includes("0")) return "";
@@ -99,25 +101,30 @@ document.addEventListener("focusout", function(e) {
     if (isCurrency && e.target.value.trim() !== "") e.target.value = formatSafeRM(e.target.value);
 });
 
+// ENJIN MATEMATIK (KEMBALI KE 'CHANGE' SUPAYA TAK GANGGU MASA MENAIP)
+document.addEventListener("change", function(e) {
+    if (e.target.tagName !== "INPUT") return;
+    try {
+        let nilai = e.target.value.trim();
+        if (/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) || /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai)) return; 
+        if (/[+\-*/()]/.test(nilai) && !nilai.includes("RM")) {
+            let hasil = evaluateSmartMath(nilai);
+            if (hasil !== undefined && !isNaN(hasil)) {
+                e.target.value = hasil; 
+                e.target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+    } catch (err) {}
+});
+
 document.addEventListener("input", function(e) {
     if (e.target.tagName !== "INPUT") return;
-    
-    // Auto-Kira Matematik (Dikembalikan & Berfungsi)
-    let nilai = e.target.value.trim();
-    if (!/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) && !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai) && /[+\-*/()]/.test(nilai) && !nilai.includes("RM")) {
-        try {
-            let hasil = evaluateSmartMath(nilai);
-            if (hasil !== undefined && !isNaN(hasil) && !e.target.value.endsWith("+") && !e.target.value.endsWith("-") && !e.target.value.endsWith("*") && !e.target.value.endsWith("/")) {
-                e.target.value = hasil; // Assign kembali nilai yang dah dikira
-            }
-        } catch (err) {}
-    }
 
     let originalId = e.target.getAttribute('data-original-id') || e.target.id;
     activeCardContext = e.target.closest('.calculator-card');
 
     try {
-        // Sync ORP Global Tanpa Sekatan
+        // Sync ORP Global secara telus & berformat
         if (originalId === "orpBasicSalary" || originalId === "orpAllowance") {
             let tempContext = activeCardContext;
             activeCardContext = null; // Lepaskan kunci carian
@@ -128,8 +135,11 @@ document.addEventListener("input", function(e) {
                     let sasaranB = document.querySelectorAll(`[id="${bID}"], [data-original-id="${bID}"]`);
                     let sasaranA = document.querySelectorAll(`[id="${aID}"], [data-original-id="${aID}"]`);
                     
-                    if (originalId === "orpBasicSalary") sasaranB.forEach(el => el.value = e.target.value);
-                    if (originalId === "orpAllowance") sasaranA.forEach(el => el.value = e.target.value);
+                    // Formatkan nilai yang disalin
+                    let formatRMValue = formatSafeRM(e.target.value);
+                    
+                    if (originalId === "orpBasicSalary") sasaranB.forEach(el => el.value = formatRMValue);
+                    if (originalId === "orpAllowance") sasaranA.forEach(el => el.value = formatRMValue);
                     
                     sasaranB.forEach(bEl => {
                         let kad = bEl.closest('.calculator-card');
@@ -577,9 +587,8 @@ function calculateTBB() {
         if (monthly <= 0) { alert("Sila masukkan Jumlah Upah Sebulan."); return; }
         total12Months = monthly * 12;
     } else if (mode === "berubah") {
-        // Dalam clone, querySelector perlu dipanggil dari konteks yang betul
         let parentCard = getElement("tbbEndDate").closest('.calculator-card');
-        let inputs = parentCard.querySelectorAll(".tbb-monthly-input");
+        let inputs = parentCard ? parentCard.querySelectorAll(".tbb-monthly-input") : document.querySelectorAll(".tbb-monthly-input");
         if (inputs.length === 0) { alert("Sila masukkan Tarikh Penamatan untuk menjana jadual."); return; }
         inputs.forEach(input => { total12Months += evaluateSmartMath(input.value); });
         if (total12Months <= 0) { alert("Sila isi upah bulanan pada jadual."); return; }
@@ -649,28 +658,15 @@ function tambahBarisRumusan() {
     const tbody = document.getElementById('badanJadualRumusan');
     const tr = document.createElement('tr');
     tr.style.borderBottom = "1px dashed #ddd";
-
     let pilihanHTML = '';
     senaraiKalkulatorRumusan.forEach(item => { pilihanHTML += `<option value="${item.nilai}">${item.teks}</option>`; });
 
     tr.innerHTML = `
-        <td style="padding: 10px;">
-            <select class="select-input" style="width: 100%; border-color: #1f4e79;" onchange="kemaskiniPatutBayar(this)">
-                ${pilihanHTML}
-            </select>
-        </td>
-        <td style="padding: 10px;">
-            <input type="text" class="number-input patut-bayar" value="RM0.00" readonly style="background: #f4f4f4; font-weight: bold; width: 100%; text-align: right;">
-        </td>
-        <td style="padding: 10px;">
-            <input type="text" class="number-input telah-bayar" placeholder="Contoh: 599.00" style="width: 100%; text-align: right;" onblur="formatTelahBayar(this)" onfocus="unformatTelahBayar(this)">
-        </td>
-        <td style="padding: 10px;">
-            <input type="text" class="number-input baki-baris" value="RM0.00" readonly style="background: #fff; font-weight: bold; width: 100%; border: none; text-align: right;">
-        </td>
-        <td style="padding: 10px; text-align: center;">
-            <button onclick="buangBarisRumusan(this)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
-        </td>
+        <td style="padding: 10px;"><select class="select-input" style="width: 100%; border-color: #1f4e79;" onchange="kemaskiniPatutBayar(this)">${pilihanHTML}</select></td>
+        <td style="padding: 10px;"><input type="text" class="number-input patut-bayar" value="RM0.00" readonly style="background: #f4f4f4; font-weight: bold; width: 100%; text-align: right;"></td>
+        <td style="padding: 10px;"><input type="text" class="number-input telah-bayar" placeholder="Contoh: 599.00" style="width: 100%; text-align: right;" onblur="formatTelahBayar(this)" onfocus="unformatTelahBayar(this)"></td>
+        <td style="padding: 10px;"><input type="text" class="number-input baki-baris" value="RM0.00" readonly style="background: #fff; font-weight: bold; width: 100%; border: none; text-align: right;"></td>
+        <td style="padding: 10px; text-align: center;"><button onclick="buangBarisRumusan(this)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button></td>
     `;
     tbody.appendChild(tr);
 }
@@ -690,7 +686,6 @@ function kemaskiniPatutBayar(selectElement) {
     
     if (idSasaran !== "") {
         if (idSasaran === "orpBakiAmount") {
-            // Untuk rumusan sentiasa baca nilai asal
             let orpPatut = document.getElementById("orpPatutTerima");
             let orpTelah = document.getElementById("orpTelahTerima");
             nilaiDiambil = unformatRMRumusan(orpPatut ? orpPatut.value : "0");
@@ -699,7 +694,6 @@ function kemaskiniPatutBayar(selectElement) {
             inputTelahBayar.setAttribute('readonly', true);
             inputTelahBayar.style.background = "#f4f4f4";
         } else {
-            // Memandangkan element sasaran berada dalam kad, cari yg terpapar (aktif)
             let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template)');
             for(let kad of semuaKadAktif) {
                 let elemenKeputusan = kad.querySelector(`[id="${idSasaran}"], [data-original-id="${idSasaran}"]`);
@@ -710,9 +704,7 @@ function kemaskiniPatutBayar(selectElement) {
             }
             inputTelahBayar.value = ""; 
         }
-    } else {
-        inputTelahBayar.value = "";
-    }
+    } else { inputTelahBayar.value = ""; }
     
     inputPatutBayar.value = formatRMRumusan(nilaiDiambil);
     kiraBakiBaris(selectElement);
@@ -727,16 +719,9 @@ function kiraBakiBaris(elemenDalamBaris) {
     const baki = telahBayar - patutBayar; 
     inputBaki.setAttribute('data-value', baki);
     
-    if (baki > 0) { 
-        inputBaki.value = formatRMRumusan(baki); 
-        inputBaki.style.color = "#28a745"; 
-    } else if (baki < 0) { 
-        inputBaki.value = formatRMRumusan(Math.abs(baki)); 
-        inputBaki.style.color = "#d9534f"; 
-    } else { 
-        inputBaki.value = formatRMRumusan(0); 
-        inputBaki.style.color = "#333"; 
-    }
+    if (baki > 0) { inputBaki.value = formatRMRumusan(baki); inputBaki.style.color = "#28a745"; } 
+    else if (baki < 0) { inputBaki.value = formatRMRumusan(Math.abs(baki)); inputBaki.style.color = "#d9534f"; } 
+    else { inputBaki.value = formatRMRumusan(0); inputBaki.style.color = "#333"; }
     kiraJumlahKeseluruhanRumusan();
 }
 
@@ -746,7 +731,6 @@ function resetRumusan() { document.getElementById('badanJadualRumusan').innerHTM
 function kiraJumlahKeseluruhanRumusan() {
     const semuaBaki = document.querySelectorAll('.baki-baris'); 
     let jumlahBesar = 0;
-    
     semuaBaki.forEach(input => { 
         let nilaiSebenar = input.getAttribute('data-value');
         if (nilaiSebenar !== null) jumlahBesar += parseFloat(nilaiSebenar); 
@@ -754,19 +738,11 @@ function kiraJumlahKeseluruhanRumusan() {
     });
     
     const teksJumlah = document.getElementById('jumlahKeseluruhanRumusan');
-    if (jumlahBesar > 0) { 
-        teksJumlah.innerText = formatRMRumusan(jumlahBesar); 
-        teksJumlah.style.color = "#28a745"; 
-    } else if (jumlahBesar < 0) { 
-        teksJumlah.innerText = formatRMRumusan(Math.abs(jumlahBesar)); 
-        teksJumlah.style.color = "#d9534f"; 
-    } else { 
-        teksJumlah.innerText = formatRMRumusan(0); 
-        teksJumlah.style.color = "#1f4e79"; 
-    }
+    if (jumlahBesar > 0) { teksJumlah.innerText = formatRMRumusan(jumlahBesar); teksJumlah.style.color = "#28a745"; } 
+    else if (jumlahBesar < 0) { teksJumlah.innerText = formatRMRumusan(Math.abs(jumlahBesar)); teksJumlah.style.color = "#d9534f"; } 
+    else { teksJumlah.innerText = formatRMRumusan(0); teksJumlah.style.color = "#1f4e79"; }
 }
 
-// SMART EXTRACT RUMUSAN
 document.addEventListener('click', function(event) {
     let btn = event.target.closest('button');
     if (!btn) return;
@@ -934,8 +910,6 @@ function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     }
 
     let adaData = false; let htmlLaporan = "";
-    
-    // Pastikan bacaan hanya dari kad yang aktif (bukan templat yang disembunyikan)
     let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template)');
 
     senaraiKalkulator.forEach(kalkulator => {
