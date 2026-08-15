@@ -805,7 +805,63 @@ function kiraJumlahKeseluruhanRumusan() {
 // =====================================================
 // 8. FUNGSI JANA LAPORAN PENUH (PDF + RUMUSAN)
 // =====================================================
+
+// --- 8.1 FUNGSI FORMAT AUTO UNTUK POP-UP ---
+function formatTitleCase(str) {
+    return str.toLowerCase().split(' ').map(function(word) {
+        return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
+}
+
+function formatIC(str) {
+    let val = str.replace(/\D/g, ''); 
+    if (val.length <= 6) { return val; } 
+    else if (val.length <= 8) { return val.slice(0,6) + '-' + val.slice(6); } 
+    else { return val.slice(0,6) + '-' + val.slice(6,8) + '-' + val.slice(8,12); }
+}
+
+// --- 8.2 FUNGSI POP-UP MAKLUMAT (MENGGANTIKAN TRIGGER ASAL) ---
 function janaLaporanPenuh() {
+    // Buang pop-up lama jika ada (elak duplicate)
+    let existingModal = document.getElementById('modalLaporanPenuh');
+    if(existingModal) existingModal.remove();
+
+    let modalHtml = `
+    <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+        <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
+            <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 18px;">Maklumat Pekerja</h3>
+            
+            <div style="margin-bottom: 15px; margin-top: 15px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama:</label>
+                <input type="text" id="inputNamaLaporan" placeholder="Contoh: Ahmad Bin Abu" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Kad Pengenalan:</label>
+                <input type="text" id="inputICLaporan" placeholder="Contoh: 900101-01-1234" maxlength="14" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatIC(this.value)">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="document.getElementById('modalLaporanPenuh').remove()" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Kemaskini</button>
+                <button onclick="teruskanJanaLaporan()" style="background: #1f4e79; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Jana</button>
+            </div>
+        </div>
+    </div>`;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function teruskanJanaLaporan() {
+    let namaPekerja = document.getElementById('inputNamaLaporan').value.trim();
+    let icPekerja = document.getElementById('inputICLaporan').value.trim();
+    document.getElementById('modalLaporanPenuh').remove();
+    
+    // Hantar data Nama dan IC ke enjin laporan asal
+    prosesJanaLaporanPenuh(namaPekerja, icPekerja);
+}
+
+// --- 8.3 ENJIN ASAL JANA LAPORAN (DENGAN TAMBAHAN BLOK MAKLUMAT PEKERJA) ---
+function prosesJanaLaporanPenuh(namaPekerja, icPekerja) {
     const senaraiKalkulator = [
         { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, 
         { id: "bakiData", tajuk: "Baki Upah / Gaji" }, 
@@ -839,10 +895,7 @@ function janaLaporanPenuh() {
 
         switch(id) {
             case "orpData": html = `Formula:<br>Jumlah Upah ÷ 26<br>${d("orpResultTotal")} ÷ 26<br>= <b>${d("orpResult")}</b>`; break;
-            
-            // --- Formula dibetulkan supaya tiada RMRM berganda ---
             case "bakiData": html = `Formula:<br>Telah Terima - Patut Terima<br>${v("orpTelahTerima")} - ${v("orpPatutTerima")}<br>= <b>${d("orpBakiAmount")}</b>`; break;
-
             case "otData": html = `Formula:<br>[(Jumlah Upah / 26) ÷ Jam Kerja] x 1.5 x Jam OT<br>[(${d("otResultTotal")} / 26) ÷ ${s("normalWorkingHours")}] x 1.5 x ${v("otHours")} jam<br>= <b>${d("otAmount")}</b>`; break;
             case "rhData": html = `Formula:<br>[(Jumlah Upah / 26) x 0.5] x Bilangan Hari<br>[(${d("rhResultTotal")} / 26) x 0.5] x ${v("rhDays")} hari<br>= <b>${d("rhAmount")}</b>`; break;
             case "rhMoreData": html = `Formula:<br>(Jumlah Upah / 26) x Bilangan Hari<br>(${d("rhMoreResultTotal")} / 26) x ${v("rhMoreDays")} hari<br>= <b>${d("rhMoreAmount")}</b>`; break;
@@ -886,50 +939,34 @@ function janaLaporanPenuh() {
             let elemenKeputusan = document.getElementById(kalkulator.id);
             if (elemenKeputusan && elemenKeputusan.style.display !== "none") {
                 adaData = true; 
-                
                 let kadAsal = elemenKeputusan.closest('.pdf-module, .calculator-card');
                 let kadUtama = elemenKeputusan.closest('.calculator-card');
-                
                 if (kadAsal) {
                     let tajukKalkulator = kalkulator.tajuk; 
-                    
                     if (kadUtama) {
                         let mainH2 = kadUtama.querySelector('h2');
                         if (mainH2) {
                             let cleanMain = mainH2.innerText.replace(/\n/g, ' ').replace(/Kalkulator\s*/i, '').replace(/Bersepadu:\s*/i, '');
                             tajukKalkulator = cleanMain;
-                            
                             if (kadAsal.classList.contains('pdf-module')) {
                                 let subH3 = kadAsal.querySelector('h3');
-                                if (subH3) {
-                                    tajukKalkulator += " - " + subH3.innerText.split(':')[0]; 
-                                }
+                                if (subH3) { tajukKalkulator += " - " + subH3.innerText.split(':')[0]; }
                             }
                         }
                     }
 
-                    // --- LOGIK BARU: Paksa tetapan Tajuk untuk ORP dan Baki ---
                     if (kalkulator.id === "orpData") tajukKalkulator = "Kadar Upah Biasa (ORP)";
                     if (kalkulator.id === "bakiData") tajukKalkulator = "Baki Upah / Gaji";
-                    // ----------------------------------------------------------
 
                     let paramHtml = `<table class="param-table">`; 
                     let barisInput = kadAsal.querySelectorAll('.form-group');
-                    
                     barisInput.forEach(fg => {
                         if (fg.offsetParent === null || window.getComputedStyle(fg).display === 'none' || fg.closest('[style*="display: none"]')) return; 
                         let labelEl = fg.querySelector('label'); let inputEl = fg.querySelector('input, select');
-                        
                         if (labelEl && inputEl) {
                             let namaLabel = labelEl.innerText.split('\n')[0]; 
-                            
-                            // --- LOGIK BARU: Sembunyikan Label Spesifik ---
-                            // 1. Buang Patut/Telah Terima dari laporan ORP
                             if (kalkulator.id === "orpData" && (namaLabel.includes("Patut Terima") || namaLabel.includes("Telah Terima"))) return;
-                            
-                            // 2. Buang Gaji Pokok/Elaun/Jumlah Upah dari laporan Baki
                             if (kalkulator.id === "bakiData" && (namaLabel.includes("Gaji Pokok") || namaLabel.includes("Elaun") || namaLabel.includes("Jumlah Upah"))) return;
-                            // ----------------------------------------------
 
                             let nilai = (inputEl.tagName.toLowerCase() === 'select' && inputEl.selectedIndex >= 0) ? inputEl.options[inputEl.selectedIndex].text : inputEl.value || "";
                             if (nilai && nilai.trim() !== "" && !nilai.includes("- Sila Pilih -")) {
@@ -946,7 +983,6 @@ function janaLaporanPenuh() {
 
                     let jalanKiraHtml = getJalanKira(kalkulator.id); let salinanKeputusan = elemenKeputusan.cloneNode(true);
                     salinanKeputusan.querySelectorAll('button, h4, hr').forEach(b => b.remove()); 
-
                     salinanKeputusan.querySelectorAll('.result-row, .section18a-header, .section18a-row').forEach(row => {
                         let text = row.innerText || "";
                         if (row.innerHTML.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) row.innerHTML = row.innerHTML.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, "$1-$2-$3");
@@ -959,58 +995,25 @@ function janaLaporanPenuh() {
                         if (kalkulator.id === "tbbData" && (text.includes("Keseluruhan Upah (12 Bulan)") || text.includes("Kadar Upah Biasa (ORP)"))) row.remove();
                     });
 
-                    // --- LOGIK BARU: Tambah kotak (border biru) pada Keputusan Akhir ORP & Baki ---
                     if (kalkulator.id === "orpData" || kalkulator.id === "bakiData") {
                         let semuaBarisKeputusan = salinanKeputusan.querySelectorAll('.result-row');
-                        if (semuaBarisKeputusan.length > 0) {
-                            semuaBarisKeputusan[semuaBarisKeputusan.length - 1].classList.add('highlight-row');
-                        }
+                        if (semuaBarisKeputusan.length > 0) { semuaBarisKeputusan[semuaBarisKeputusan.length - 1].classList.add('highlight-row'); }
                     }
-                    // ------------------------------------------------------------------------------
 
                     if (kalkulator.id === "ggnRes18A") {
                         let getD = (el) => { let e = document.getElementById(el); return e ? e.innerText.trim() : ""; };
-                        let m1 = getD("resUniM1Title"); let m2 = getD("resUniM2Title");
-                        let h1 = getD("resUniM1Days"); let h2 = getD("resUniM2Days");
-                        let r1 = getD("resUniM1Daily"); let r2 = getD("resUniM2Daily");
-                        let a1 = getD("resUniM1Amount"); let a2 = getD("resUniM2Amount");
-                        
-                        let stEl = document.getElementById("ggnStatusNotis");
-                        let lblTamat = (stEl && stEl.value === "tiada") ? "Tamat Tempoh Indemniti" : "Tarikh Akhir Notis";
-                        let tDateStr = getD("resUni18AEnd"); let tDate = tDateStr ? tDateStr.replace(/\//g, "-") : ""; 
-                        let tTotal = getD("resUni18AAmount");
-
-                        salinanKeputusan.innerHTML = `
-                            <div class="result-row" style="margin-bottom:8px;"><span>${lblTamat}</span><strong>${tDate}</strong></div>
-                            <table class="clean-table">
-                                <tr><td></td><td style="font-weight:bold;">${m1}</td><td style="font-weight:bold;">${m2}</td></tr>
-                                <tr><td>Hari Bekerja</td><td>${h1}</td><td>${h2}</td></tr>
-                                <tr><td>Kadar Sehari</td><td>${r1}</td><td>${r2}</td></tr>
-                                <tr><td>Bayaran</td><td>${a1}</td><td>${a2}</td></tr>
-                            </table>
-                            <div class="result-row highlight-row" style="margin-top:10px;"><span>Bayaran Gaji Ganti Notis</span><strong>${tTotal}</strong></div>
-                        `;
+                        let m1 = getD("resUniM1Title"); let m2 = getD("resUniM2Title"); let h1 = getD("resUniM1Days"); let h2 = getD("resUniM2Days");
+                        let r1 = getD("resUniM1Daily"); let r2 = getD("resUniM2Daily"); let a1 = getD("resUniM1Amount"); let a2 = getD("resUniM2Amount");
+                        let stEl = document.getElementById("ggnStatusNotis"); let lblTamat = (stEl && stEl.value === "tiada") ? "Tamat Tempoh Indemniti" : "Tarikh Akhir Notis";
+                        let tDateStr = getD("resUni18AEnd"); let tDate = tDateStr ? tDateStr.replace(/\//g, "-") : "";  let tTotal = getD("resUni18AAmount");
+                        salinanKeputusan.innerHTML = `<div class="result-row" style="margin-bottom:8px;"><span>${lblTamat}</span><strong>${tDate}</strong></div><table class="clean-table"><tr><td></td><td style="font-weight:bold;">${m1}</td><td style="font-weight:bold;">${m2}</td></tr><tr><td>Hari Bekerja</td><td>${h1}</td><td>${h2}</td></tr><tr><td>Kadar Sehari</td><td>${r1}</td><td>${r2}</td></tr><tr><td>Bayaran</td><td>${a1}</td><td>${a2}</td></tr></table><div class="result-row highlight-row" style="margin-top:10px;"><span>Bayaran Gaji Ganti Notis</span><strong>${tTotal}</strong></div>`;
                     }
-// --- LOGIK BARU: Susun atur Jadual Seksyen 18A ---
                     if (kalkulator.id === "sec18AData") {
                         let getD = (el) => { let e = document.getElementById(el); return e ? e.innerText.trim() : ""; };
-                        let m1 = getD("month1Title"); let m2 = getD("month2Title");
-                        let h1 = getD("month1Days"); let h2 = getD("month2Days");
-                        let r1 = getD("month1Daily"); let r2 = getD("month2Daily");
-                        let a1 = getD("month1Amount"); let a2 = getD("month2Amount");
-                        let tTotal = getD("amount18A");
-
-                        salinanKeputusan.innerHTML = `
-                            <table class="clean-table" style="margin-top:5px;">
-                                <tr><td></td><td style="font-weight:bold;">${m1}</td><td style="font-weight:bold;">${m2}</td></tr>
-                                <tr><td>Hari Bekerja</td><td>${h1}</td><td>${h2}</td></tr>
-                                <tr><td>Kadar Sehari</td><td>${r1}</td><td>${r2}</td></tr>
-                                <tr><td>Bayaran</td><td>${a1}</td><td>${a2}</td></tr>
-                            </table>
-                            <div class="result-row highlight-row" style="margin-top:10px;"><span>Jumlah Bayaran Upah</span><strong>${tTotal}</strong></div>
-                        `;
+                        let m1 = getD("month1Title"); let m2 = getD("month2Title"); let h1 = getD("month1Days"); let h2 = getD("month2Days");
+                        let r1 = getD("month1Daily"); let r2 = getD("month2Daily"); let a1 = getD("month1Amount"); let a2 = getD("month2Amount"); let tTotal = getD("amount18A");
+                        salinanKeputusan.innerHTML = `<table class="clean-table" style="margin-top:5px;"><tr><td></td><td style="font-weight:bold;">${m1}</td><td style="font-weight:bold;">${m2}</td></tr><tr><td>Hari Bekerja</td><td>${h1}</td><td>${h2}</td></tr><tr><td>Kadar Sehari</td><td>${r1}</td><td>${r2}</td></tr><tr><td>Bayaran</td><td>${a1}</td><td>${a2}</td></tr></table><div class="result-row highlight-row" style="margin-top:10px;"><span>Jumlah Bayaran Upah</span><strong>${tTotal}</strong></div>`;
                     }
-                    // --------------------------------------------------
                     htmlLaporan += `<div class="report-box"><div class="report-header">${tajukKalkulator}</div><div class="report-section-title">PARAMETER / INPUT:</div>${paramHtml}${jalanKiraHtml}<div class="report-section-title" style="margin-top:10px;">KEPUTUSAN:</div><div class="compact-result">${salinanKeputusan.innerHTML}</div></div>`;
                 }
             }
@@ -1020,54 +1023,43 @@ function janaLaporanPenuh() {
     let rumusanTbody = document.getElementById('badanJadualRumusan');
     if (rumusanTbody && rumusanTbody.children.length > 0) {
         adaData = true; 
-        let rumusanHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; border: 1px solid #ccc;">
-            <thead>
-                <tr style="background: #1f4e79; color: white;">
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ccc;">Jenis Bayaran</th>
-                    <th style="padding: 8px; text-align: right; border: 1px solid #ccc;">Patut Bayar</th>
-                    <th style="padding: 8px; text-align: right; border: 1px solid #ccc;">Telah Bayar</th>
-                    <th style="padding: 8px; text-align: right; border: 1px solid #ccc;">Baki (+/-)</th>
-                </tr>
-            </thead>
-            <tbody>`;
-            
+        let rumusanHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; border: 1px solid #ccc;"><thead><tr style="background: #1f4e79; color: white;"><th style="padding: 8px; text-align: left; border: 1px solid #ccc;">Jenis Bayaran</th><th style="padding: 8px; text-align: right; border: 1px solid #ccc;">Patut Bayar</th><th style="padding: 8px; text-align: right; border: 1px solid #ccc;">Telah Bayar</th><th style="padding: 8px; text-align: right; border: 1px solid #ccc;">Baki (+/-)</th></tr></thead><tbody>`;
         let barisRumusan = rumusanTbody.querySelectorAll('tr');
         barisRumusan.forEach(tr => {
-            let select = tr.querySelector('select');
-            let jenis = select.options[select.selectedIndex].text;
-            let patut = tr.querySelector('.patut-bayar').value;
-            let telah = tr.querySelector('.telah-bayar').value;
-            let bakiInput = tr.querySelector('.baki-baris');
-            let baki = bakiInput.value;
-            let bakiWarna = bakiInput.style.color;
-            
-            rumusanHTML += `<tr>
-                <td style="padding: 8px; border: 1px solid #ccc;">${jenis}</td>
-                <td style="padding: 8px; text-align: right; border: 1px solid #ccc; font-weight: bold;">${patut}</td>
-                <td style="padding: 8px; text-align: right; border: 1px solid #ccc;">${telah || "RM0.00"}</td>
-                <td style="padding: 8px; text-align: right; border: 1px solid #ccc; color: ${bakiWarna}; font-weight: bold;">${baki}</td>
-            </tr>`;
+            let select = tr.querySelector('select'); let jenis = select.options[select.selectedIndex].text;
+            let patut = tr.querySelector('.patut-bayar').value; let telah = tr.querySelector('.telah-bayar').value;
+            let bakiInput = tr.querySelector('.baki-baris'); let baki = bakiInput.value; let bakiWarna = bakiInput.style.color;
+            rumusanHTML += `<tr><td style="padding: 8px; border: 1px solid #ccc;">${jenis}</td><td style="padding: 8px; text-align: right; border: 1px solid #ccc; font-weight: bold;">${patut}</td><td style="padding: 8px; text-align: right; border: 1px solid #ccc;">${telah || "RM0.00"}</td><td style="padding: 8px; text-align: right; border: 1px solid #ccc; color: ${bakiWarna}; font-weight: bold;">${baki}</td></tr>`;
         });
-        
         let jumlahTeks = document.getElementById('jumlahKeseluruhanRumusan');
-        
-        rumusanHTML += `</tbody></table>
-        <div style="text-align: right; margin-top: 10px; padding: 12px; background: #f4f6f9; border-radius: 6px; border: 1px solid #ccc;">
-            <span style="font-size: 12px; font-weight: bold; color: #333;">Jumlah Keseluruhan Terlebih / Terkurang Bayar: </span>
-            <strong style="font-size: 16px; color: ${jumlahTeks.style.color}; margin-left: 10px;">${jumlahTeks.innerText}</strong>
-        </div>`;
-        
-        htmlLaporan += `<div class="report-box" style="grid-column: 1 / -1; border-left: 5px solid #1f4e79; margin-top: 10px;">
-            <div class="report-header" style="background:#e8eaed; color:#1a1a1a;">RUMUSAN AKHIR BAYARAN</div>
-            ${rumusanHTML}
-        </div>`;
+        rumusanHTML += `</tbody></table><div style="text-align: right; margin-top: 10px; padding: 12px; background: #f4f6f9; border-radius: 6px; border: 1px solid #ccc;"><span style="font-size: 12px; font-weight: bold; color: #333;">Jumlah Keseluruhan Terlebih / Terkurang Bayar: </span><strong style="font-size: 16px; color: ${jumlahTeks.style.color}; margin-left: 10px;">${jumlahTeks.innerText}</strong></div>`;
+        htmlLaporan += `<div class="report-box" style="grid-column: 1 / -1; border-left: 5px solid #1f4e79; margin-top: 10px;"><div class="report-header" style="background:#e8eaed; color:#1a1a1a;">RUMUSAN AKHIR BAYARAN</div>${rumusanHTML}</div>`;
     }
 
     if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan atau isi Jadual Rumusan terlebih dahulu."); return; }
     
     let tarikhHariIni = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
     
-    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } .print-btn-container { text-align: center; margin-top: 30px; grid-column: 1 / -1; } .print-btn { background-color: #1f4e79; color: white; border: none; padding: 12px 30px; font-size: 14px; cursor: pointer; font-weight: bold; border-radius: 5px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); } @media print { body { padding: 0; background: #fff; } .print-btn-container { display: none !important; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }</style></head><body><h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1><p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p><div class="grid-container">${htmlLaporan}</div><div class="print-btn-container"><button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan PDF</button><p style="font-size: 11px; margin-top: 8px; color:#666;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div></body></html>`;
+    // --- BLOK BARU: BINA KOTAK MAKLUMAT PEKERJA JIKA DIISI ---
+    let maklumatPekerjaHTML = "";
+    if (namaPekerja !== "" || icPekerja !== "") {
+        maklumatPekerjaHTML = `
+        <div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
+            <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA</div>
+            <table class="param-table" style="margin-bottom: 0;">
+                <tr>
+                    <td class="param-label" style="width: 20%; font-weight: bold;">Nama</td>
+                    <td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja || '-'}</td>
+                </tr>
+                <tr>
+                    <td class="param-label" style="width: 20%; font-weight: bold;">No. Kad Pengenalan</td>
+                    <td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td>
+                </tr>
+            </table>
+        </div>`;
+    }
+    
+    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } .print-btn-container { text-align: center; margin-top: 30px; grid-column: 1 / -1; } .print-btn { background-color: #1f4e79; color: white; border: none; padding: 12px 30px; font-size: 14px; cursor: pointer; font-weight: bold; border-radius: 5px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); } @media print { body { padding: 0; background: #fff; } .print-btn-container { display: none !important; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }</style></head><body><h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1><p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p><div class="grid-container">${maklumatPekerjaHTML}${htmlLaporan}</div><div class="print-btn-container"><button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan PDF</button><p style="font-size: 11px; margin-top: 8px; color:#666;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div></body></html>`;
     
     let tetingkapCetak = window.open('', '_blank'); tetingkapCetak.document.write(cetakHTML); tetingkapCetak.document.close();
     setTimeout(() => { tetingkapCetak.focus(); tetingkapCetak.print(); }, 500);
