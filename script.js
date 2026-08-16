@@ -148,14 +148,17 @@ document.addEventListener("input", function(e) {
             let tempContext = activeCardContext;
             activeCardContext = null; 
             
-            Object.keys(salaryMap).forEach(key => {
-                if (key !== "orpBasicSalary") {
-                    let bID = key, aID = salaryMap[key][0], tID = salaryMap[key][1];
-                    let sasaranB = document.querySelectorAll(`[id="${bID}"], [data-original-id="${bID}"]`);
-                    let sasaranA = document.querySelectorAll(`[id="${aID}"], [data-original-id="${aID}"]`);
-                    
-                    if (originalId === "orpBasicSalary") sasaranB.forEach(el => el.value = rawValue);
-                    if (originalId === "orpAllowance") sasaranA.forEach(el => el.value = rawValue);
+Object.keys(salaryMap).forEach(key => {
+                let bID = key, aID = salaryMap[key][0], tID = salaryMap[key][1];
+                let sasaranB = document.querySelectorAll(`[id="${bID}"], [data-original-id="${bID}"]`);
+                let sasaranA = document.querySelectorAll(`[id="${aID}"], [data-original-id="${aID}"]`);
+                
+                if (originalId === "orpBasicSalary") {
+                    sasaranB.forEach(el => { if (el !== e.target) el.value = rawValue; });
+                }
+                if (originalId === "orpAllowance") {
+                    sasaranA.forEach(el => { if (el !== e.target) el.value = rawValue; });
+                }
                     
                     sasaranB.forEach(bEl => {
                         let kad = bEl.closest('.calculator-card');
@@ -167,7 +170,7 @@ document.addEventListener("input", function(e) {
                             if (tEl) tEl.value = "RM" + (basicVal + allowVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         }
                     });
-                }
+    
             });
             activeCardContext = tempContext; 
         }
