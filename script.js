@@ -115,6 +115,13 @@ document.addEventListener("focusout", function(e) {
 
 document.addEventListener("change", function(e) {
     if (e.target.tagName !== "INPUT") return;
+    
+    // PENTING: Pagar (filter) ni akan sekat enjin matematik dari serang kotak Nama & IC
+    let isMathInput = e.target.classList.contains("salary-input") || 
+                      e.target.classList.contains("number-input") || 
+                      e.target.classList.contains("tbb-monthly-input");
+    if (!isMathInput) return;
+
     try {
         let nilai = e.target.value.trim();
         if (/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) || /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai)) return; 
