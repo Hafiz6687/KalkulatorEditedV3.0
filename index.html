@@ -54,6 +54,11 @@
         <span class="icon">📊</span> 
         <span style="font-size: 14px; text-transform: uppercase;">Kadar Upah Biasa (ORP)</span>
       </button>
+
+        <button class="menu-btn" onclick="tambahKalkulator('baki')">
+          <span class="icon">💰</span> 
+          <span style="font-size: 14px; text-transform: uppercase;">Baki Upah / Gaji</span>
+        </button>
       
       <button class="menu-btn" onclick="tambahKalkulator('otBiasa')">
         <span class="icon">⏱️</span> 
@@ -139,67 +144,71 @@
       <!-- =====================================================
            KAD 1: ORP (Satu-satunya yang TIDAK disembunyikan)
       ===================================================== -->
-      <section class="calculator-card" id="card-orp" data-template-id="orp">
-        <h2>Kalkulator<br>Kadar Upah Biasa (ORP)</h2>
-        
-        <h3 style="font-size: 14px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 1: Kadar Upah Biasa</h3>
+<!-- 1. KALKULATOR KADAR UPAH BIASA (ORP) -->
+<div id="card-orp" class="calculator-card">
+        <div class="card-header">
+          <h2>Kalkulator<br>Kadar Upah Biasa (ORP)</h2>
+        </div>
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
-          <input type="text" id="orpBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
+          <input type="text" id="orpBasicSalary" class="number-input salary-input" placeholder="Contoh: 2500 atau 2500+300">
         </div>
         <div class="form-group">
           <label>Elaun (RM)</label>
-          <input type="text" id="orpAllowance" class="salary-input" placeholder="Contoh: 300 atau 100">
+          <input type="text" id="orpAllowance" class="number-input salary-input" placeholder="Contoh: 300 atau 100">
         </div>
         <div class="form-group">
           <label>Jumlah Upah (RM)</label>
-          <input type="text" id="orpTotalSalary" class="salary-total" value="RM 0.00" readonly>
+          <input type="text" id="orpTotalSalary" class="number-input salary-total" readonly value="RM 0.00" style="background-color: #f4f6f9; font-weight: bold;">
         </div>
-        
-        <div class="button-group" style="margin-top: 15px; margin-bottom: 25px;">
+        <div class="button-group" style="margin-top: 15px;">
           <button class="btn btn-primary" onclick="calculateORP()">Kira ORP</button>
           <button class="btn btn-reset" onclick="resetORP()">Reset</button>
         </div>
-
-        <h3 style="font-size: 14px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 2: Baki Upah / Gaji</h3>
-        <div class="form-group">
-          <label>Patut Terima (RM)</label>
-          <input type="text" id="orpPatutTerima" class="salary-input" placeholder="0.00">
-        </div>
-        <div class="form-group">
-          <label>Telah Terima (RM)</label>
-          <input type="text" id="orpTelahTerima" class="salary-input" placeholder="0.00">
-        </div>
-        
-        <div class="button-group" style="margin-top: 15px; margin-bottom: 20px;">
-          <button class="btn btn-primary" onclick="calculateBakiUpah()">Kira Baki</button>
-          <button class="btn btn-reset" onclick="resetBakiUpah()">Reset</button>
-        </div>
-
         <div class="result-box">
-          <h3>Keputusan</h3>
-          <div id="orpPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
-          
+          <h4 style="margin-top: 0; margin-bottom: 15px; color: #1f4e79; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px;">KEPUTUSAN</h4>
+          <div id="orpPending" class="pending-state">Sila masukkan maklumat dan klik Kira.</div>
           <div id="orpData" style="display: none;">
             <div class="result-row">
               <span>Jumlah Upah</span>
               <strong id="orpResultTotal">RM 0.00</strong>
             </div>
-            <div class="result-row" style="margin-bottom: 10px;">
+            <div class="result-row highlight-row">
               <span>Kadar Upah Biasa (ORP)</span>
               <strong id="orpResult">RM 0.00</strong>
             </div>
           </div>
+        </div>
+      </div>
 
+<!-- 2. KALKULATOR BAKI UPAH / GAJI -->
+<div id="card-baki" class="calculator-card">
+        <div class="card-header">
+          <h2>Kalkulator<br>Baki Upah / Gaji</h2>
+        </div>
+        <div class="form-group">
+          <label>Patut Terima (RM)</label>
+          <input type="text" id="orpPatutTerima" class="number-input" placeholder="Contoh: 1500.00">
+        </div>
+        <div class="form-group">
+          <label>Telah Terima (RM)</label>
+          <input type="text" id="orpTelahTerima" class="number-input" placeholder="Contoh: 1000.00">
+        </div>
+        <div class="button-group" style="margin-top: 15px;">
+          <button class="btn btn-primary" onclick="calculateBakiUpah()">Kira Baki</button>
+          <button class="btn btn-reset" onclick="resetBakiUpah()">Reset</button>
+        </div>
+        <div class="result-box">
+          <h4 style="margin-top: 0; margin-bottom: 15px; color: #1f4e79; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px;">KEPUTUSAN</h4>
+          <div id="bakiPending" class="pending-state">Sila masukkan maklumat dan klik Kira.</div>
           <div id="bakiData" style="display: none;">
-            <hr style="border-top: 1px dashed #ccc; margin: 12px 0;">
-            <div class="result-row" style="background: #e8f0fe; padding: 12px; border-radius: 8px;">
-              <span style="color: #1f4e79; font-weight: bold; font-size: 14px;">Baki (+/-)</span>
-              <strong id="orpBakiAmount" style="font-size: 20px; color: #1f4e79;">RM 0.00</strong>
+            <div class="result-row highlight-row">
+              <span>Baki Upah / Gaji</span>
+              <strong id="orpBakiAmount">RM 0.00</strong>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       <!-- =====================================================
            KAD 2: OT HARI BIASA
