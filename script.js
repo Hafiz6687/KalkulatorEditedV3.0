@@ -202,9 +202,7 @@ function resetORP() {
     setValue("orpTotalSalary", "RM 0.00");
     ["orpResultTotal", "orpResult"].forEach(id => setText(id, "RM 0.00"));
     getElement("orpData").style.display = "none";
-    if (getElement("bakiData").style.display === "none" || getElement("bakiData").style.display === "") {
-        getElement("orpPending").style.display = "block";
-    }
+    getElement("orpPending").style.display = "block"; // Dipisahkan sepenuhnya
 }
 
 function calculateBakiUpah() {
@@ -224,7 +222,7 @@ function calculateBakiUpah() {
             bakiEl.style.color = "#1f4e79";
         }
     }
-    getElement("orpPending").style.display = "none";
+    getElement("bakiPending").style.display = "none"; // ID Pending khas untuk Baki
     getElement("bakiData").style.display = "block";
 }
 
@@ -233,9 +231,7 @@ function resetBakiUpah() {
     let el = getElement("orpBakiAmount");
     if(el) { el.innerText = "RM 0.00"; el.style.color = ""; }
     getElement("bakiData").style.display = "none";
-    if (getElement("orpData").style.display === "none" || getElement("orpData").style.display === "") {
-        getElement("orpPending").style.display = "block";
-    }
+    getElement("bakiPending").style.display = "block"; // ID Pending khas untuk Baki
 }
 
 // --- 3.2 OT ---
