@@ -29,7 +29,6 @@
 <!-- ========================================== -->
 <button id="butangAuth" onclick="paparLogMasuk()" class="btn-floating log-keluar" style="background: #1f4e79; border-color: #1f4e79;">⏻ Log Masuk</button>
 <button onclick="resetSemua()" class="btn-floating reset-semua-baru">🔄 Reset Semua</button>
-<!-- Butang Jana Laporan Penuh telah dipindahkan ke dalam Sidebar -->
 
 <!-- ========================================== -->
 <!-- STRUKTUR UI BAHARU (SIDEBAR + MAIN CONTENT) -->
@@ -40,31 +39,21 @@
   <aside class="sidebar-2026">
     
     <div class="sidebar-brand" style="padding-bottom: 5px;">
-      <!-- Logo sebenar anda -->
       <img src="logo-aktakerja.png" alt="Logo Kalkulator Akta Kerja" style="width: 200px; height: auto; margin-bottom: 10px; border-radius: 12px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
-      
-      <!-- TAJUK DIALIH KE SINI SUPAYA KEKAL STATIK (TIDAK SCROLL) -->
       <p class="menu-label" style="font-size: 17.5px; font-weight: 900; color: #1f4e79; text-shadow: 2px 2px 5px rgba(0,0,0,0.2); letter-spacing: 1px; text-decoration: underline; margin-top: 15px; margin-bottom: 0;">PILIHAN KALKULATOR</p>
     </div>
 
     <!-- KAWASAN SCROLL BERMULA DI SINI -->
     <div class="sidebar-menu" style="padding-top: 15px;">
-      
       <button class="menu-btn active" onclick="tambahKalkulator('orp')">
-        <span class="icon">📊</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Kadar Upah Biasa (ORP)</span>
+        <span class="icon">📊</span> <span style="font-size: 14px; text-transform: uppercase;">Kadar Upah Biasa (ORP)</span>
       </button>
-
-        <button class="menu-btn" onclick="tambahKalkulator('baki')">
-          <span class="icon">💰</span> 
-          <span style="font-size: 14px; text-transform: uppercase;">Baki Upah / Gaji</span>
-        </button>
-      
+      <button class="menu-btn" onclick="tambahKalkulator('baki')">
+        <span class="icon">💰</span> <span style="font-size: 14px; text-transform: uppercase;">Baki Upah / Gaji</span>
+      </button>
       <button class="menu-btn" onclick="tambahKalkulator('otBiasa')">
-        <span class="icon">⏱️</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">OT Hari Biasa</span>
+        <span class="icon">⏱️</span> <span style="font-size: 14px; text-transform: uppercase;">OT Hari Biasa</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('rehatKurang')">
         <span class="icon">🌴</span> 
         <div style="line-height: 1.3; text-align: left;">
@@ -72,7 +61,6 @@
           <span style="font-size: 11px; font-weight: 500; opacity: 0.75; text-transform: none;">(½ Hari @ Kurang)</span>
         </div>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('rehatLebih')">
         <span class="icon">🌴</span> 
         <div style="line-height: 1.3; text-align: left;">
@@ -80,52 +68,47 @@
           <span style="font-size: 11px; font-weight: 500; opacity: 0.75; text-transform: none;">(Lebih ½ Hari)</span>
         </div>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('sec18A')">
-        <span class="icon">⚖️</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Seksyen 18A</span>
+        <span class="icon">⚖️</span> <span style="font-size: 14px; text-transform: uppercase;">Seksyen 18A</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('otRehat')">
-        <span class="icon">⏳</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">OT Hari Rehat</span>
+        <span class="icon">⏳</span> <span style="font-size: 14px; text-transform: uppercase;">OT Hari Rehat</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('kelepasan')">
-        <span class="icon">🎉</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Hari Kelepasan</span>
+        <span class="icon">🎉</span> <span style="font-size: 14px; text-transform: uppercase;">Hari Kelepasan</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('otKelepasan')">
-        <span class="icon">🚀</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">OT Hari Kelepasan</span>
+        <span class="icon">🚀</span> <span style="font-size: 14px; text-transform: uppercase;">OT Hari Kelepasan</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('cutiTahunan')">
-        <span class="icon">✈️</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Cuti Tahunan</span>
+        <span class="icon">✈️</span> <span style="font-size: 14px; text-transform: uppercase;">Cuti Tahunan</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('cutiSakit')">
-        <span class="icon">🏥</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Cuti Sakit</span>
+        <span class="icon">🏥</span> <span style="font-size: 14px; text-transform: uppercase;">Cuti Sakit</span>
       </button>
-      
       <button class="menu-btn" onclick="tambahKalkulator('notis')">
-        <span class="icon">📜</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Gaji Ganti Notis</span>
+        <span class="icon">📜</span> <span style="font-size: 14px; text-transform: uppercase;">Gaji Ganti Notis</span>
       </button>
-      
-      <button class="menu-btn" onclick="tambahKalkulator('faedah')">
-        <span class="icon">💼</span> 
-        <span style="font-size: 14px; text-transform: uppercase;">Faedah Penamatan</span>
+     <button class="menu-btn" onclick="tambahKalkulator('faedah')">
+        <span class="icon">💼</span> <span style="font-size: 14px; text-transform: uppercase;">Faedah Penamatan</span>
       </button>
+    </div> <!-- PENUTUP .sidebar-menu (Hanya bahagian atas ini yang boleh scroll) -->
+
+<!-- KAWASAN BUTANG 'DITANAM' (Kekal di bawah) -->
+    <div style="position: sticky; bottom: 0; background: #ffffff; padding: 15px 20px; border-top: 1px solid #eeeeee; z-index: 10; margin-top: auto;">
       
-      <!-- BUTANG JANA LAPORAN PENUH (DI BAWAH FAEDAH PENAMATAN) -->
-      <button class="menu-btn" onclick="janaLaporanPenuh()" style="margin-top: 35px; background: #28a745; color: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(40,167,69,0.3);">
-        <span class="icon" style="filter: brightness(2);">📄</span> 
+      <!-- Butang 1: Jana Laporan Penuh -->
+      <button class="menu-btn" onclick="janaLaporanPenuh()" style="width: 100%; box-sizing: border-box; background: linear-gradient(to left, #c6d8f9 0%, #e8f0fe 35%, #ffffff 50%, #e8f0fe 65%, #c6d8f9 100%); color: #1f4e79; border-radius: 8px; box-shadow: 0 4px 10px rgba(31, 78, 121, 0.15), inset 0 2px 3px rgba(255, 255, 255, 0.8); border: 1px solid #1f4e79; margin-bottom: 10px; transform: translateY(-2px); transition: transform 0.2s ease;">
+        <span class="icon" style="font-size: 16px;">📄</span> 
         <span style="font-size: 14px; text-transform: uppercase; font-weight: bold;">Jana Laporan Penuh</span>
       </button>
+
+      <!-- Butang 2: Jana Penyata Gaji -->
+      <button class="menu-btn" onclick="janaPenyataGaji()" style="width: 100%; box-sizing: border-box; background: linear-gradient(to right, #c6d8f9 0%, #e8f0fe 35%, #ffffff 50%, #e8f0fe 65%, #c6d8f9 100%); color: #1f4e79; border-radius: 8px; box-shadow: 0 4px 10px rgba(31, 78, 121, 0.15), inset 0 2px 3px rgba(255, 255, 255, 0.8); border: 1px solid #1f4e79; transform: translateY(-2px); transition: transform 0.2s ease;">
+        <span class="icon" style="font-size: 16px;">💵</span> 
+        <span style="font-size: 14px; text-transform: uppercase; font-weight: bold;">Jana Penyata Gaji</span>
+      </button>
+
     </div>
   </aside>
 
@@ -136,16 +119,10 @@
       <p style="margin: 0; color: #555;">Koleksi kalkulator berdasarkan Akta Kerja 1955 | Hak Cipta: Mohamad Hafiz bin Abu Bakar (PTK Kluang)</p>
     </header>
 
-    <!-- =====================================================
-         CALCULATOR GRID START
-    ===================================================== -->
     <div class="calculator-grid" id="active-calculators-grid">
 
-      <!-- =====================================================
-           KAD 1: ORP (Satu-satunya yang TIDAK disembunyikan)
-      ===================================================== -->
 <!-- 1. KALKULATOR KADAR UPAH BIASA (ORP) -->
-<div id="card-orp" class="calculator-card">
+<section class="calculator-card hidden-template" id="card-orp" data-template-id="orp">
         <div class="card-header">
           <h2>Kalkulator<br>Kadar Upah Biasa (ORP)</h2>
         </div>
@@ -162,7 +139,7 @@
           <input type="text" id="orpTotalSalary" class="number-input salary-total" readonly value="RM 0.00" style="background-color: #f4f6f9; font-weight: bold;">
         </div>
         <div class="button-group" style="margin-top: 15px;">
-          <button class="btn btn-primary" onclick="calculateORP()">Kira ORP</button>
+          <button class="btn btn-primary" onclick="calculateORP(event)">Kira ORP</button>
           <button class="btn btn-reset" onclick="resetORP()">Reset</button>
         </div>
         <div class="result-box">
@@ -179,10 +156,10 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
 <!-- 2. KALKULATOR BAKI UPAH / GAJI -->
-<div id="card-baki" class="calculator-card">
+<section class="calculator-card hidden-template" id="card-baki" data-template-id="baki">
         <div class="card-header">
           <h2>Kalkulator<br>Baki Upah / Gaji</h2>
         </div>
@@ -195,7 +172,7 @@
           <input type="text" id="orpTelahTerima" class="number-input" placeholder="Contoh: 1000.00">
         </div>
         <div class="button-group" style="margin-top: 15px;">
-          <button class="btn btn-primary" onclick="calculateBakiUpah()">Kira Baki</button>
+          <button class="btn btn-primary" onclick="calculateBakiUpah(event)">Kira Baki</button>
           <button class="btn btn-reset" onclick="resetBakiUpah()">Reset</button>
         </div>
         <div class="result-box">
@@ -208,14 +185,11 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- =====================================================
-           KAD 2: OT HARI BIASA
-      ===================================================== -->
+      <!-- KAD 2: OT HARI BIASA -->
       <section class="calculator-card hidden-template" id="card-otBiasa" data-template-id="otBiasa">
         <h2>Kalkulator<br>OT Hari Biasa</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="otBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -241,12 +215,10 @@
             <option value="7">7 Jam</option>
           </select>
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculateOTBiasa()">Kira</button>
+          <button class="btn btn-primary" onclick="calculateOTBiasa(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetOTBiasa()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="otPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -256,7 +228,7 @@
               <strong id="otResultTotal">RM 0.00</strong>
             </div>
             <div class="result-row">
-              <span>Kadar Upah Biasa</span>
+              <span data-pdf-label="Kadar Upah Biasa (ORP)">Kadar Upah Biasa</span>
               <strong id="otORP">RM 0.00</strong>
             </div>
             <div class="result-row">
@@ -272,12 +244,9 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 3: KERJA HARI REHAT (1/2 HARI @ KURANG)
-      ===================================================== -->
+      <!-- KAD 3: KERJA HARI REHAT (1/2 HARI @ KURANG) -->
       <section class="calculator-card hidden-template" id="card-rehatKurang" data-template-id="rehatKurang">
         <h2>Kalkulator Kerja Hari Rehat<br>(½ Hari @ Kurang)</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="rhBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -294,12 +263,10 @@
           <label>Bilangan Hari</label>
           <input type="number" id="rhDays" class="number-input" placeholder="Contoh: 1" min="0" step="0.5">
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculateHariRehat()">Kira</button>
+          <button class="btn btn-primary" onclick="calculateHariRehat(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetHariRehat()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="rhPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -309,7 +276,7 @@
               <strong id="rhResultTotal">RM 0.00</strong>
             </div>
             <div class="result-row">
-              <span>Kadar Upah Biasa</span>
+              <span data-pdf-label="Kadar Upah Biasa (ORP)">Kadar Upah Biasa</span>
               <strong id="rhORP">RM 0.00</strong>
             </div>
             <div class="result-row">
@@ -325,12 +292,9 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 4: KERJA HARI REHAT (LEBIH 1/2 HARI)
-      ===================================================== -->
+      <!-- KAD 4: KERJA HARI REHAT (LEBIH 1/2 HARI) -->
       <section class="calculator-card hidden-template" id="card-rehatLebih" data-template-id="rehatLebih">
         <h2>Kalkulator Kerja Hari Rehat<br>(Lebih ½ Hari)</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="rhMoreBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -347,12 +311,10 @@
           <label>Bilangan Hari</label>
           <input type="number" id="rhMoreDays" class="number-input" placeholder="Contoh: 1" min="0" step="1">
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculateHariRehatLebih()">Kira</button>
+          <button class="btn btn-primary" onclick="calculateHariRehatLebih(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetHariRehatLebih()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="rhMorePending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -362,7 +324,7 @@
               <strong id="rhMoreResultTotal">RM 0.00</strong>
             </div>
             <div class="result-row">
-              <span>Kadar Upah Biasa</span>
+              <span data-pdf-label="Kadar Upah Biasa (ORP)">Kadar Upah Biasa</span>
               <strong id="rhMoreORP">RM 0.00</strong>
             </div>
             <div class="result-row">
@@ -378,12 +340,9 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 5: SEKSYEN 18A
-      ===================================================== -->
+      <!-- KAD 5: SEKSYEN 18A -->
       <section class="calculator-card hidden-template" id="card-sec18A" data-template-id="sec18A">
         <h2>Kalkulator<br>Seksyen 18A</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="section18ABasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -404,12 +363,10 @@
           <label>Tarikh Tempoh Upah</label>
           <input type="date" id="section18AEndDate" class="date-input">
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculate18ANew()">Kira</button>
+          <button class="btn btn-primary" onclick="calculate18ANew(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetSeksyen18A()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="sec18APending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -418,9 +375,7 @@
               <span>Jumlah Upah</span>
               <strong id="resultTotalSalary">RM 0.00</strong>
             </div>
-            
             <hr style="border-top: 1px dashed #ccc; margin: 12px 0;">
-
             <div class="section18a-breakdown">
               <div class="section18a-header" style="border-radius: 8px;">
                 <span></span>
@@ -443,9 +398,7 @@
                 <span id="month2Amount">RM 0.00</span>
               </div>
             </div>
-
             <hr style="border-top: 1px dashed #ccc; margin: 12px 0;">
-
             <div class="result-row" style="background: #e8f0fe; padding: 12px; border-radius: 8px;">
               <span style="color: #1f4e79; font-weight: bold; font-size: 14px;">Jumlah Bayaran Upah</span>
               <strong id="amount18A" style="font-size: 20px; color: #1f4e79;">RM 0.00</strong>
@@ -454,12 +407,9 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 6: OT HARI REHAT
-      ===================================================== -->
+      <!-- KAD 6: OT HARI REHAT -->
       <section class="calculator-card hidden-template" id="card-otRehat" data-template-id="otRehat">
         <h2>Kalkulator<br>OT Hari Rehat</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="otRHBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -485,12 +435,10 @@
             <option value="7">7 Jam</option>
           </select>
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculateOTRH()">Kira</button>
+          <button class="btn btn-primary" onclick="calculateOTRH(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetOTRH()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="otRHPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -500,7 +448,7 @@
               <strong id="otRHResultTotal">RM 0.00</strong>
             </div>
             <div class="result-row">
-              <span>Kadar Upah Biasa</span>
+              <span data-pdf-label="Kadar Upah Biasa (ORP)">Kadar Upah Biasa</span>
               <strong id="otRHORP">RM 0.00</strong>
             </div>
             <div class="result-row">
@@ -516,12 +464,9 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 7: KERJA PADA HARI KELEPASAN
-      ===================================================== -->
+      <!-- KAD 7: KERJA PADA HARI KELEPASAN -->
       <section class="calculator-card hidden-template" id="card-kelepasan" data-template-id="kelepasan">
         <h2>Kalkulator<br>Kerja Pada Hari Kelepasan</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="phBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -538,12 +483,10 @@
           <label>Bilangan Hari</label>
           <input type="number" id="phDays" class="number-input" placeholder="Contoh: 1" min="1">
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculatePH()">Kira</button>
+          <button class="btn btn-primary" onclick="calculatePH(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetPH()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="phPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -553,7 +496,7 @@
               <strong id="phResultTotal">RM 0.00</strong>
             </div>
             <div class="result-row">
-              <span>Kadar Upah Biasa</span>
+              <span data-pdf-label="Kadar Upah Biasa (ORP)">Kadar Upah Biasa</span>
               <strong id="phORP">RM 0.00</strong>
             </div>
             <div class="result-row">
@@ -569,12 +512,9 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 8: OT HARI KELEPASAN
-      ===================================================== -->
+      <!-- KAD 8: OT HARI KELEPASAN -->
       <section class="calculator-card hidden-template" id="card-otKelepasan" data-template-id="otKelepasan">
         <h2>Kalkulator<br>OT Hari Kelepasan</h2>
-
         <div class="form-group">
           <label>Gaji Pokok (RM)</label>
           <input type="text" id="otPHBasicSalary" class="salary-input" placeholder="Contoh: 2500 atau 2500+300">
@@ -600,12 +540,10 @@
             <option value="7">7 Jam</option>
           </select>
         </div>
-
         <div class="button-group">
-          <button class="btn btn-primary" onclick="calculateOTPH()">Kira</button>
+          <button class="btn btn-primary" onclick="calculateOTPH(event)">Kira</button>
           <button class="btn btn-reset" onclick="resetOTPH()">Reset</button>
         </div>
-
         <div class="result-box">
           <h3>Keputusan</h3>
           <div id="otPHPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
@@ -615,7 +553,7 @@
               <strong id="otPHResultTotal">RM 0.00</strong>
             </div>
             <div class="result-row">
-              <span>Kadar Upah Biasa</span>
+              <span data-pdf-label="Kadar Upah Biasa (ORP)">Kadar Upah Biasa</span>
               <strong id="otPHORP">RM 0.00</strong>
             </div>
             <div class="result-row">
@@ -631,17 +569,12 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 9: CUTI TAHUNAN (SPAN 2)
-      ===================================================== -->
+      <!-- KAD 9: CUTI TAHUNAN -->
       <section class="calculator-card hidden-template" id="card-cutiTahunan" data-template-id="cutiTahunan" style="grid-column: span 2;">
         <h2>Kalkulator Bersepadu: Cuti Tahunan</h2>
-        
         <div style="display: flex; flex-wrap: wrap; gap: 30px;">
-          
           <div class="pdf-module" style="flex: 1; min-width: 280px;">
             <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 1: Semak Kelayakan</h3>
-            
             <div class="form-group">
               <label>Tarikh Mula Kerja</label>
               <input type="date" id="kelayakanCutiMula" class="date-input">
@@ -650,12 +583,10 @@
               <label>Tarikh Kiraan / Akhir</label>
               <input type="date" id="kelayakanCutiAkhir" class="date-input">
             </div>
-          
             <div class="button-group">
-              <button class="btn btn-primary" onclick="calculateKelayakanCuti()">Kira Kelayakan</button>
+              <button class="btn btn-primary" onclick="calculateKelayakanCuti(event)">Kira Kelayakan</button>
               <button class="btn btn-reset" onclick="resetKelayakanCuti()">Reset</button>
             </div>
-          
             <div class="result-box" style="margin-bottom: 0;">
               <div id="kelayakanCutiPending" style="text-align: center; color: #666; font-style: italic; padding: 5px 0;">Keputusan Kelayakan</div>
               <div id="kelayakanCutiData" style="display: none;">
@@ -685,7 +616,6 @@
 
           <div class="pdf-module" style="flex: 1; min-width: 280px;">
             <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 2: Kira Baki & Bayaran</h3>
-            
             <div class="form-group">
               <label>Jumlah Kelayakan Cuti (Hari)</label>
               <input type="number" id="cutiLayak" class="number-input" placeholder="Contoh: 14" oninput="autoKiraBakiCuti()">
@@ -698,12 +628,10 @@
               <label>Bilangan Hari Baki Cuti Tahunan</label>
               <input type="number" id="annualLeaveDays" class="number-input" placeholder="Baki dikira automatik" style="background: #e8f0fe; font-weight: bold;">
             </div>
-          
             <div class="button-group">
-              <button class="btn btn-primary" onclick="calculateCutiTahunan()">Kira Bayaran</button>
+              <button class="btn btn-primary" onclick="calculateCutiTahunan(event)">Kira Bayaran</button>
               <button class="btn btn-reset" onclick="resetCutiTahunan()">Reset</button>
             </div>
-          
             <div class="result-box" style="margin-bottom: 0;">
               <div id="annualLeavePending" style="text-align: center; color: #666; font-style: italic; padding: 5px 0;">Keputusan Bayaran</div>
               <div id="annualLeaveData" style="display: none;">
@@ -719,21 +647,15 @@
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 10: CUTI SAKIT & HOSPITALISASI (SPAN 2)
-      ===================================================== -->
+      <!-- KAD 10: CUTI SAKIT & HOSPITALISASI -->
       <section class="calculator-card hidden-template" id="card-cutiSakit" data-template-id="cutiSakit" style="grid-column: span 2;">
         <h2>Kalkulator Bersepadu: Cuti Sakit & Hospitalisasi</h2>
-
         <div style="display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 25px;">
-          
           <div class="pdf-module" style="flex: 1; min-width: 280px;">
             <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 1: Semak Kelayakan</h3>
-            
             <div style="display:flex; gap:10px;">
               <div class="form-group" style="flex:1;">
                 <label>Tarikh Mula Kerja</label>
@@ -744,15 +666,13 @@
                 <input type="date" id="kelayakanCutiSakitAkhir" class="date-input">
               </div>
             </div>
-            <!-- REMARK MESTI DUDUK DI SINI (LUAR FLEX DIV) -->
             <div style="font-size: 11px; color: #666; font-style: italic; margin-top: -8px; margin-bottom: 15px;">
                 *Tarikh Akhir: Tarikh semasa jika pekerja masih bekerja
             </div>
             <div class="button-group" style="margin-top: 5px;">
-              <button class="btn btn-primary" onclick="calculateKelayakanCutiSakit()">Kira Kelayakan</button>
+              <button class="btn btn-primary" onclick="calculateKelayakanCutiSakit(event)">Kira Kelayakan</button>
               <button class="btn btn-reset" onclick="resetKelayakanCutiSakit()">Reset</button>
             </div>
-
             <div class="result-box" style="margin-bottom: 0; padding: 12px 18px;">
               <div id="kelayakanSakitPending" style="text-align: center; color: #666; font-style: italic; padding: 5px 0;">Keputusan Kelayakan</div>
               <div id="kelayakanSakitData" style="display: none;">
@@ -762,7 +682,7 @@
                 </div>
                 <hr style="border-top: 1px dashed #ccc; margin: 8px 0;">
                 <div class="result-row">
-                  <span style="color: #1f4e79; font-weight: bold;">Kelayakan Biasa</span>
+                  <span data-pdf-label="Kelayakan Cuti Sakit" style="color: #1f4e79; font-weight: bold;">Kelayakan Biasa</span>
                   <strong id="kelayakanCutiSakitBiasa" style="font-size: 16px; color: #1f4e79;">0 Hari</strong>
                 </div>
                 <div class="result-row" style="margin-top: 5px;">
@@ -772,21 +692,17 @@
               </div>
             </div>
           </div>
-
           <div class="pdf-module" style="flex: 1; min-width: 280px;">
             <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 2: Kira Bayaran Cuti Sakit</h3>
-
             <div class="form-group">
               <label>Bilangan Hari Cuti Sakit (Untuk Dibayar)</label>
               <input type="number" id="sickLeaveDays" class="number-input" placeholder="Contoh: 14">
               <p style="font-size: 11px; color: #666; margin-top: 5px;">*Berdasarkan baki cuti sakit yang ada.</p>
             </div>
-          
             <div class="button-group">
-              <button class="btn btn-primary" onclick="calculateCutiSakit()">Kira Bayaran</button>
+              <button class="btn btn-primary" onclick="calculateCutiSakit(event)">Kira Bayaran</button>
               <button class="btn btn-reset" onclick="resetCutiSakit()">Reset</button>
             </div>
-          
             <div class="result-box" style="margin-bottom: 0;">
               <div id="sickLeavePending" style="text-align: center; color: #666; font-style: italic; padding: 5px 0;">Keputusan Bayaran</div>
               <div id="sickLeaveData" style="display: none;">
@@ -802,12 +718,9 @@
               </div>
             </div>
           </div>
-
         </div> 
-
         <div class="pdf-module" style="background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
           <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Bahagian 3: Rekod & Baki Cuti</h3>
-          
           <h4 style="font-size: 14px; color: #333; margin-bottom: 8px;">Cuti Sakit</h4>
           <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
             <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
@@ -823,7 +736,6 @@
                <input type="number" id="bakiSakitBiasa" class="number-input" readonly style="background:#e8f0fe; font-weight:bold; color: #1f4e79;">
             </div>
           </div>
-
           <h4 style="font-size: 14px; color: #333; margin-bottom: 8px;">Hospitalisasi</h4>
           <div style="display: flex; flex-wrap: wrap; gap: 15px;">
             <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
@@ -839,21 +751,16 @@
                <input type="number" id="bakiHosp" class="number-input" readonly style="background:#ffebe5; font-weight:bold; color: #d9534f;">
             </div>
           </div>
-          
           <div style="text-align: right; margin-top: 15px;">
              <button class="btn btn-reset" style="padding: 8px 15px; font-size: 13px; width: auto;" onclick="resetBakiCutiSakit()">Reset Baki</button>
           </div>
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 11: GAJI GANTI NOTIS (UNIFIED)
-      ===================================================== -->
+      <!-- KAD 11: GAJI GANTI NOTIS -->
       <section class="calculator-card hidden-template" id="card-notis" data-template-id="notis" style="grid-column: span 2;">
         <h2>Kalkulator<br>Gaji Ganti Notis</h2>
-
         <div style="display: flex; flex-wrap: wrap; gap: 30px;">
-          
           <div style="flex: 1; min-width: 280px;">
             <div class="form-group">
               <label>Gaji Pokok (RM)</label>
@@ -867,7 +774,6 @@
               <label>Jumlah Upah (RM)</label>
               <input type="text" id="ggnUniTotal" class="salary-total" value="RM 0.00" readonly>
             </div>
-
             <div class="form-group">
               <label>Jenis Notis</label>
               <select id="ggnUniType" class="select-input" onchange="toggleGGNMode()" style="background-color: #e8f0fe; font-weight: bold; color: #1f4e79;">
@@ -877,7 +783,6 @@
                 <option value="hari">Hari</option>
               </select>
             </div>
-
             <div class="form-group" id="ggnStatusGroup" style="display: none;">
                 <label>Status Notis</label>
                 <select id="ggnStatusNotis" class="select-input" onchange="toggleNotisStatus()">
@@ -885,14 +790,12 @@
                     <option value="tiada">Tanpa Notis (Penamatan Serta-merta)</option>
                 </select>
             </div>
-
             <div id="ggnGroupBulan" style="display: none; background: #fdfdfd; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; margin-bottom: 15px;">
               <div class="form-group" style="margin-bottom: 0;">
                 <label>Bilangan Bulan</label>
                 <input type="number" id="ggnUniMonthVal" class="number-input" placeholder="Contoh: 2" min="1">
               </div>
             </div>
-
             <div id="ggnGroupMinggu" style="display: none; background: #fdfdfd; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; margin-bottom: 15px;">
               <div class="form-group">
                 <label>Bilangan Minggu</label>
@@ -907,7 +810,6 @@
                 <input type="date" id="ggnUniWeekEnd" class="date-input">
               </div>
             </div>
-
             <div id="ggnGroupHari" style="display: none; background: #fdfdfd; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; margin-bottom: 15px;">
               <div class="form-group">
                 <label>Bilangan Hari</label>
@@ -922,13 +824,11 @@
                 <input type="date" id="ggnUniDayEnd" class="date-input">
               </div>
             </div>
-
             <div class="button-group">
-              <button class="btn btn-primary" onclick="calculateGGNUnified()">Kira</button>
+              <button class="btn btn-primary" onclick="calculateGGNUnified(event)">Kira</button>
               <button class="btn btn-reset" onclick="resetGGNUnified()">Reset</button>
             </div>
           </div>
-          
           <div style="flex: 1; min-width: 280px;">
             <div class="result-box" style="margin-top: 0;">
               <h3>Keputusan</h3>
@@ -986,23 +886,17 @@
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
-      <!-- =====================================================
-           KAD 12: FAEDAH PENAMATAN (SPAN 2)
-      ===================================================== -->
+      <!-- KAD 12: FAEDAH PENAMATAN -->
       <section class="calculator-card hidden-template" id="card-faedah" data-template-id="faedah" style="grid-column: span 2;">
         <h2>Kalkulator Faedah Penamatan<br>
           <span style="font-size: 14px; color: #666; font-weight: normal;">(Pemberhentian Kerja / Retrenchment)</span>
         </h2>
-        
         <div style="display: flex; flex-wrap: wrap; gap: 30px;">
-          
           <div style="flex: 1; min-width: 280px;">
             <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Maklumat Gaji & Perkhidmatan</h3>
-            
             <div class="form-group">
               <label>Tarikh Mula Kerja</label>
               <input type="date" id="tbbStartDate" class="date-input">
@@ -1011,7 +905,6 @@
               <label>Tarikh Akhir / Penamatan</label>
               <input type="date" id="tbbEndDate" class="date-input" onchange="generate12MonthsTable()">
             </div>
-
             <div class="form-group">
               <label>Jenis Upah (12 Bulan Terakhir)</label>
               <select id="tbbSalaryMode" class="number-input" onchange="toggleTBBSalaryMode()" style="background-color: #e8f0fe; font-weight: bold;">
@@ -1020,7 +913,6 @@
                 <option value="formula">Gaji Berbeza (Guna Formula Pantas)</option>
               </select>
             </div>
-            
             <div id="tbbFixedSalaryGroup">
               <div class="form-group">
                 <label>Jumlah Upah Sebulan (RM)<br><small style="color: #666;">(Gaji Pokok + Elaun)</small></label>
@@ -1031,7 +923,6 @@
                 <input type="text" id="tbb12MonthsTotalReadonly" class="number-input" placeholder="RM 0.00" readonly style="background: #f4f4f4; font-weight: bold;">
               </div>
             </div>
-
             <div id="tbbVariableSalaryGroup" style="display: none;">
               <p style="font-size: 12px; color: #1f4e79; margin-bottom: 10px; font-style: italic;">
                 *Sila pilih <b>Tarikh Akhir / Penamatan</b> di atas untuk menjana jadual.<br>
@@ -1041,7 +932,6 @@
                   <!-- Jadual 12 bulan -->
               </div>
             </div>
-
             <div id="tbbFormulaSalaryGroup" style="display: none;">
               <div class="form-group">
                 <label>Formula Jumlah Keseluruhan (12 Bulan)</label>
@@ -1052,34 +942,30 @@
                 </p>
               </div>
             </div>
-            
             <div class="button-group">
-              <button class="btn btn-primary" onclick="calculateTBB()">Kira</button>
+              <button class="btn btn-primary" onclick="calculateTBB(event)">Kira</button>
               <button class="btn btn-reset" onclick="resetTBB()">Reset</button>
             </div>
           </div>
           
           <div style="flex: 1; min-width: 280px;">
             <h3 style="font-size: 15px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 15px;">Keputusan Pengiraan</h3>
-            
             <div class="result-box" style="margin-bottom: 0;">
               <div id="tbbPending" style="text-align: center; color: #666; font-style: italic; padding: 10px 0;">Sila masukkan maklumat dan klik Kira.</div>
               <div id="tbbData" style="display: none;">
                 <div class="result-row">
-                  <span>Tempoh (Bulan Terhampir)</span>
+                  <span data-pdf-label="Tempoh perkhidmatan (Bulan Terhampir)">Tempoh (Bulan Terhampir)</span>
                   <strong id="tbbTempoh">-</strong>
                 </div>
                 <div class="result-row">
-                  <span>Kategori Kelayakan Setahun</span>
+                  <span data-pdf-label="Kelayakan Setahun">Kategori Kelayakan Setahun</span>
                   <strong id="tbbKadar">-</strong>
                 </div>
                 <div class="result-row">
-                  <span>Jumlah Kelayakan (Prorata)</span>
+                  <span data-pdf-label="Jumlah Kelayakan Hari (Prorata)">Jumlah Kelayakan (Prorata)</span>
                   <strong id="tbbHari" style="color: #1f4e79;">-</strong>
                 </div>
-                
                 <hr style="border-top: 1px dashed #ccc; margin: 12px 0;">
-                
                 <div class="result-row">
                   <span>Keseluruhan Upah (12 Bulan)</span>
                   <strong id="tbbTotal12M">RM 0.00</strong>
@@ -1088,9 +974,7 @@
                   <span>Kadar Upah Biasa (ORP)</span>
                   <strong id="tbbORP">RM 0.00</strong>
                 </div>
-                
                 <hr style="border-top: 1px dashed #ccc; margin: 12px 0;">
-
                 <div class="result-row" style="background: #e8f0fe; padding: 12px; border-radius: 8px;">
                   <span style="color: #1f4e79; font-weight: bold; font-size: 14px;">Jumlah Faedah Penamatan</span>
                   <strong id="tbbAmount" style="font-size: 20px; color: #1f4e79;">RM 0.00</strong>
@@ -1101,48 +985,48 @@
         </div>
       </section>
 
-      <!-- =====================================================
-           RUMUSAN KESELURUHAN
-      ===================================================== -->
-      <section class="calculator-card rumusan-card" style="grid-column: 1 / -1; margin-top: 10px;">
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 20px;">
+      <!-- RUMUSAN KESELURUHAN -->
+      <section class="calculator-card rumusan-card" style="display: none; grid-column: 1 / -1; margin-top: 10px;">
+<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f4e79; padding-bottom: 10px; margin-bottom: 20px;">
           <h2 style="margin: 0; text-align: left; font-size: 22px;">Rumusan</h2>
-          <button class="btn btn-primary" style="flex: none; width: auto; padding: 10px 20px; font-size: 14px;" onclick="tambahBarisRumusan()">+ Tambah Maklumat Bayaran</button>
+          <button class="btn btn-primary" style="flex: none; width: 260px; padding: 10px 0; font-size: 14px; text-align: center;" onclick="tambahBarisRumusan()">+ Tambah Maklumat Bayaran</button>
         </div>
-
         <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; min-width: 800px; margin-bottom: 20px;" id="jadualRumusan">
-            <thead>
-              <tr style="background-color: #f4f6f9; border-bottom: 2px solid #ccc;">
-                <th style="padding: 12px; width: 35%; color: #1f4e79; text-align: left;">Jenis Bayaran</th>
-                <th style="padding: 12px; width: 20%; color: #1f4e79; text-align: right;">Patut Bayar (RM)</th>
-                <th style="padding: 12px; width: 20%; color: #1f4e79; text-align: right;">Telah Bayar (RM)</th>
-                <th style="padding: 12px; width: 20%; color: #1f4e79; text-align: right;">Baki (+/-) (RM)</th>
-                <th style="padding: 12px; width: 5%; text-align: center;">Tindakan</th>
-              </tr>
-            </thead>
+<table id="jadualRumusan" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+    <thead>
+        <tr>
+            <th style="padding: 12px; text-align: left; width: 25%;">Jenis Bayaran</th>
+            <th style="padding: 12px; text-align: center; width: 20%;">Keterangan</th>
+            <th style="padding: 12px; text-align: center; width: 12.5%;">Patut Bayar (RM)</th>
+            <th style="padding: 12px; text-align: center; width: 12.5%;">Telah Bayar (RM)</th>
+            <th style="padding: 12px; text-align: center; width: 12.5%;">Baki (+/-) (RM)</th>
+            <th style="padding: 12px; text-align: center; width: 7%;">Tindakan</th>
+        </tr>
+    </thead>
+    <tbody id="badanJadualRumusan">
+        <!-- Baris dinamis -->
+    </tbody>
+</table>
             <tbody id="badanJadualRumusan">
               <!-- Baris data dijana JavaScript -->
             </tbody>
           </table>
         </div>
-
         <div style="display: flex; justify-content: flex-end; align-items: center; background: #e8f0fe; padding: 18px 25px; border-radius: 8px; border: 1px solid #c6d8f9; margin-bottom: 15px;">
           <div style="text-align: right;">
             <span style="font-size: 15px; font-weight: bold; color: #333; display: block; margin-bottom: 5px;">Jumlah Keseluruhan Terlebih/Terkurang Bayar:</span>
             <strong id="jumlahKeseluruhanRumusan" style="font-size: 26px; color: #1f4e79;">RM 0.00</strong>
           </div>
         </div>
-
-        <div style="text-align: right;">
-           <button class="btn btn-reset" style="padding: 10px 30px; font-size: 14px; width: auto;" onclick="resetRumusan()">Reset</button>
+<div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+           <div style="display: flex; width: 260px; gap: 10px;">
+               <button class="btn btn-primary" style="flex: 1; padding: 10px 0; font-size: 14px; width: 100%; text-align: center;" onclick="janaLaporanPenuh()">Jana</button>
+               <button class="btn btn-reset" style="flex: 1; padding: 10px 0; font-size: 14px; width: 100%; text-align: center;" onclick="resetRumusan()">Reset</button>
+           </div>
         </div>
       </section>
 
-      <!-- =====================================================
-           PERINGATAN PENTING
-      ===================================================== -->
+      <!-- PERINGATAN PENTING -->
       <section class="warning-box" style="grid-column: 1 / -1; width: 100%; box-sizing: border-box; margin: 40px 0 0 0; background-color: #ffffff; border-left: 6px solid #1f4e79; border-radius: 8px; padding: 25px 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
           <span style="font-size: 22px; margin-right: 12px;">📌</span>
