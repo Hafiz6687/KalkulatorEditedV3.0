@@ -427,10 +427,17 @@ function autoGGNEndDate(type) {
 function calculateGGNUnified(e) {
     setContext(e); let mode = getElement("ggnUniType").value; if (!mode) { alert("Sila pilih Jenis Notis terlebih dahulu."); return; }
     let totalSalary = updateSalaryTotal("ggnUniBasic", "ggnUniAllowance", "ggnUniTotal"); let statusNotisEl = getElement("ggnStatusNotis"); let isTanpaNotis = statusNotisEl && statusNotisEl.value === "tiada";
+    
+    // Dapatkan nilai Baki Gaji (jika ada)
+    let bakiGaji = getInputNumber("ggnBakiGaji") || 0;
+
     if (mode === "bulan") {
         let months = Number(getElement("ggnUniMonthVal").value);
         if (months <= 0) { alert("Sila masukkan bilangan bulan notis."); return; }
-        let amount = totalSalary * months;
+        
+        // Tolak baki gaji di sini
+        let amount = (totalSalary * months) - bakiGaji;
+        
         setText("resUniMonthCount", months + " Bulan"); setText("resUniMonthAmount", formatRM(amount));
         getElement("ggnResPending").style.display = "none"; getElement("ggnRes18A").style.display = "none"; getElement("ggnResBulan").style.display = "block";
         autoMasukRumusan('resUniMonthAmount', activeCardContext);
@@ -441,6 +448,10 @@ function calculateGGNUnified(e) {
         let multiplier = mode === 'minggu' ? 7 : 1; let totalDays = val * multiplier;
         let start = getLocalStartOfDay(startDate); let end = new Date(start); end.setDate(end.getDate() + totalDays - 1);
         let breakdown = getMonthlyBreakdown(totalSalary, start, end); let totalAmount = 0; breakdown.forEach(item => { totalAmount += item.amount; });
+        
+        // Tolak baki gaji di sini
+        totalAmount = totalAmount - bakiGaji;
+
         setValue(endId, formatDateInput(end)); setText("resUni18ATotal", formatRM(totalSalary)); setText("resUni18AEnd", `${end.getDate()}-${end.getMonth() + 1}-${end.getFullYear()}`);
         let endResultEl = getElement("resUni18AEnd"); if(endResultEl && endResultEl.parentElement) { let lbl = endResultEl.parentElement.querySelector("span"); if(lbl) lbl.innerText = isTanpaNotis ? "Tamat Tempoh Indemniti" : "Tarikh Akhir Notis"; }
         if (breakdown.length > 0) { let f = breakdown[0]; let fD = new Date(f.year, f.month, 1); setText("resUniM1Title", fD.toLocaleString("ms-MY", {month:"long", year:"numeric"})); setText("resUniM1Days", f.days + " Hari"); setText("resUniM1Daily", formatRM(f.dailyRate)); setText("resUniM1Amount", formatRM(f.amount)); }
@@ -452,7 +463,8 @@ function calculateGGNUnified(e) {
 }
 
 function resetGGNUnified() {
-    ["ggnUniBasic", "ggnUniAllowance", "ggnUniType", "ggnUniMonthVal", "ggnUniWeekVal", "ggnUniWeekStart", "ggnUniWeekEnd", "ggnUniDayVal", "ggnUniDayStart", "ggnUniDayEnd", "ggnStatusNotis"].forEach(id => { if (getElement(id)) setValue(id, ""); });
+    // Tambah "ggnBakiGaji" ke dalam senarai reset
+    ["ggnUniBasic", "ggnUniAllowance", "ggnBakiGaji", "ggnUniType", "ggnUniMonthVal", "ggnUniWeekVal", "ggnUniWeekStart", "ggnUniWeekEnd", "ggnUniDayVal", "ggnUniDayStart", "ggnUniDayEnd", "ggnStatusNotis"].forEach(id => { if (getElement(id)) setValue(id, ""); });
     if(getElement("ggnStatusNotis")) setValue("ggnStatusNotis", "ada"); setValue("ggnUniTotal", "RM 0.00"); toggleGGNMode(); 
 }
 
@@ -918,34 +930,129 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
     
     let tarikhHariIni = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }); 
     
-    // --- MULA KOD MAKLUMAT MAJIKAN & PEKERJA (PDF) ---
-    let maklumatSyarikatPekerjaHTML = "";
-    if (namaMajikan !== "" || noDaftarMajikan !== "" || tempohUpah !== "" || namaPekerja !== "" || icPekerja !== "") {
-        maklumatSyarikatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
-            <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT MAJIKAN & PEKERJA</div>
-            <table class="param-table" style="margin-bottom: 0;">`;
+// --- MULA KOD MAKLUMAT MAJIKAN & PEKERJA (PDF) ---
+    let tajukHeaderHTML = "";
+    let contentSeterusnya = htmlLaporan; // Lalai: Kekalkan laporan kotak-kotak asal
+    
+    // Semak jika ada input Majikan (Bermaksud butang Jana Penyata Gaji ditekan)
+    if (namaMajikan !== "" || noDaftarMajikan !== "" || tempohUpah !== "") {
+        tajukHeaderHTML = `
+            <div style="text-align: center; margin-bottom: 2px;">
+                <div style="font-size: 27px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; color: #000; letter-spacing: 1px;">PENYATA GAJI</div>
+                <h1 class="main-title">${namaMajikan || '-'}</h1>
+                <h1 class="main-title" style="border-bottom: none; padding-bottom: 0; margin-top: 5px;">(No. Pendaftaran: ${noDaftarMajikan || '-'})</h1>
+            </div>
+            <p class="subtitle">Tarikh Janaan: ${tarikhHariIni} &nbsp;|&nbsp; Tempoh Upah: ${tempohUpah || '-'}</p>
+        `;
         
-        if (namaMajikan !== "" || noDaftarMajikan !== "" || tempohUpah !== "") {
-            maklumatSyarikatPekerjaHTML += `<tr><td class="param-label" style="width: 25%; font-weight: bold;">Nama Majikan/Syarikat</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaMajikan || '-'}</td></tr>
-            <tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Pendaftaran</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${noDaftarMajikan || '-'}</td></tr>
-            <tr><td class="param-label" style="width: 25%; font-weight: bold;">Tempoh Upah</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${tempohUpah || '-'}</td></tr>`;
-        }
+        // ====================================================================
+        // LUKIS JADUAL PENYATA GAJI (BUTIRAN UPAH 3-GRID & POTONGAN 2-GRID)
+        // ====================================================================
+        let v_basic = "", v_elaun = "";
+        let r_otb = "", h_otb = "";
+        let r_rh05 = "", h_rh05 = "";
+        let r_rh1 = "", h_rh1 = "";
+        let r_otrh = "", h_otrh = "";
+        let r_ph = "", h_ph = "";
+        let r_otph = "", h_otph = "";
+        let r_cs = "", h_cs = "";
+        let r_ct = "", h_ct = "";
 
-        if ((namaMajikan !== "" || noDaftarMajikan !== "" || tempohUpah !== "") && (namaPekerja !== "" || icPekerja !== "")) {
-             maklumatSyarikatPekerjaHTML += `<tr><td colspan="2"><hr style="border-top: 1px dashed #ccc; margin: 8px 0;"></td></tr>`;
-        }
+        // Gelung ekstrak data dari kad aktif dengan selamat
+        semuaKadAktif.forEach(kad => {
+            let v = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.value.trim() : ""; };
+            let t = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.innerText.trim() : ""; };
 
-        if (namaPekerja !== "" || icPekerja !== "") {
-             maklumatSyarikatPekerjaHTML += `<tr><td class="param-label" style="width: 25%; font-weight: bold;">Nama Pekerja</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja || '-'}</td></tr>
-            <tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Kad Pengenalan</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td></tr>`;
-        }
+            if (!v_basic) { ["orpBasicSalary", "otBasicSalary", "rhBasicSalary", "rhMoreBasicSalary", "section18ABasicSalary", "otRHBasicSalary", "phBasicSalary", "otPHBasicSalary", "ggnUniBasic"].forEach(id => { let val = v(id); if (val) v_basic = val; }); }
+            if (!v_elaun) { ["orpAllowance", "otAllowance", "rhAllowance", "rhMoreAllowance", "section18AAllowance", "otRHAllowance", "phAllowance", "otPHAllowance", "ggnUniAllowance"].forEach(id => { let val = v(id); if (val) v_elaun = val; }); }
 
-        maklumatSyarikatPekerjaHTML += `</table></div>`;
+            if(t("otAmount") && t("otAmount") !== "RM 0.00") { r_otb = t("otAmount"); h_otb = v("otHours"); }
+            if(t("rhAmount") && t("rhAmount") !== "RM 0.00") { r_rh05 = t("rhAmount"); h_rh05 = v("rhDays"); }
+            if(t("rhMoreAmount") && t("rhMoreAmount") !== "RM 0.00") { r_rh1 = t("rhMoreAmount"); h_rh1 = v("rhMoreDays"); }
+            if(t("otRHAmount") && t("otRHAmount") !== "RM 0.00") { r_otrh = t("otRHAmount"); h_otrh = v("otRHHours"); }
+            if(t("phAmount") && t("phAmount") !== "RM 0.00") { r_ph = t("phAmount"); h_ph = v("phDays"); }
+            if(t("otPHAmount") && t("otPHAmount") !== "RM 0.00") { r_otph = t("otPHAmount"); h_otph = v("otPHHours"); }
+            if(t("sickLeaveAmount") && t("sickLeaveAmount") !== "RM 0.00") { r_cs = t("sickLeaveAmount"); h_cs = v("sickLeaveDays"); }
+            if(t("annualLeaveAmount") && t("annualLeaveAmount") !== "RM 0.00") { r_ct = t("annualLeaveAmount"); h_ct = v("annualLeaveDays"); }
+        });
+
+        // Format nombor (supaya formula cth: 1500+200 menjadi RM 1700.00)
+        let parseRMStr = (val) => {
+            if (!val) return "";
+            try { let clean = val.toString().replace(/[^\d\.\+\-\*\/\(\)]/g, ''); let calc = new Function('return ' + clean)(); if (calc > 0) return "RM " + calc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(e) {}
+            return val;
+        };
+
+        // Reka HTML Baris (Row)
+        let trU = (label, detail, amt) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; width: 45%; text-align: left;">${label}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: center; width: 25%; color: #555; font-size: 10px;">${detail}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: right; width: 30%; font-weight: bold;">${amt}</td></tr>`;
+        let trP = (label) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; width: 60%; text-align: left;">${label}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: right; width: 40%; font-weight: bold;"></td></tr>`;
+        let trKosong = `<tr><td colspan="2" style="padding: 8px 12px; border-bottom: 1px solid #eee; height: 32px;"></td></tr>`;
+
+        // Bina Jadual Kiri (3 Nisbah)
+        let upahHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            ${trU("Gaji Pokok", "", parseRMStr(v_basic))}
+            ${trU("Elaun", "", parseRMStr(v_elaun))}
+            ${trU("OT Normal (1.5)", h_otb ? h_otb + " jam" : "", r_otb)}
+            ${trU("Kerja Hari Rehat (0.5)", h_rh05 ? h_rh05 + " hari" : "", r_rh05)}
+            ${trU("Kerja Hari Rehat (1.0)", h_rh1 ? h_rh1 + " hari" : "", r_rh1)}
+            ${trU("OT Hari Rehat (2.0)", h_otrh ? h_otrh + " jam" : "", r_otrh)}
+            ${trU("Kerja Hari Kelepasan (2.0)", h_ph ? h_ph + " hari" : "", r_ph)}
+            ${trU("OT Hari Kelepasan (3.0)", h_otph ? h_otph + " jam" : "", r_otph)}
+            ${trU("Cuti Sakit", h_cs ? h_cs + " hari" : "", r_cs)}
+            ${trU("Cuti Tahunan", h_ct ? h_ct + " hari" : "", r_ct)}
+        </table>`;
+
+        // Bina Jadual Kanan (2 Nisbah)
+        let potongHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            ${trP("Pendahuluan")}
+            ${trP("KWSP")}
+            ${trP("PERKESO")}
+            ${trP("SIP/EIS")}
+            ${trKosong}${trKosong}${trKosong}${trKosong}${trKosong}${trKosong}
+        </table>`;
+
+        // Gabung menggunakan CSS Grid 3fr 2fr (bersamaan 60% : 40% nisbah keluasan)
+        let penyataGajiHTML = `
+        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 15px; margin-bottom: 15px; grid-column: 1 / -1; align-items: start;">
+            <div class="report-box" style="padding: 0; overflow: hidden; border: 1px solid #1f4e79;">
+                <div style="background: #1f4e79; color: white; font-weight: bold; padding: 10px 12px; font-size: 12px; text-align: left; text-transform: uppercase;">BUTIRAN UPAH</div>
+                ${upahHTML}
+            </div>
+            <div class="report-box" style="padding: 0; overflow: hidden; border: 1px solid #d9534f;">
+                <div style="background: #d9534f; color: white; font-weight: bold; padding: 10px 12px; font-size: 12px; text-align: left; text-transform: uppercase;">BUTIRAN POTONGAN</div>
+                ${potongHTML}
+            </div>
+        </div>
+        `;
+
+        contentSeterusnya = penyataGajiHTML; 
+
+    } else {
+        // Jika butang Laporan Penuh biasa (Tanpa Majikan) ditekan, KEKALKAN FORMAT ASAL
+        tajukHeaderHTML = `
+            <h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1>
+            <p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p>
+        `;
+    }
+
+    let maklumatSyarikatPekerjaHTML = "";
+    
+    // Jadual MAKLUMAT PEKERJA (Nama & IC sahaja - format asal terpelihara)
+    if (namaPekerja !== "" || icPekerja !== "") {
+        maklumatSyarikatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
+            <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA</div>
+            <table class="param-table" style="margin-bottom: 0;">
+                <tr><td class="param-label" style="width: 25%; font-weight: bold;">Nama Pekerja</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja || '-'}</td></tr>
+                <tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Kad Pengenalan</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td></tr>
+            </table>
+        </div>`;
     }
     // --- TAMAT KOD MAKLUMAT MAJIKAN ---
 
     let cssBaru = `.floating-action-bar { position: fixed; top: 25px; right: 25px; display: flex; z-index: 9999; align-items: center; } .kebab-btn { background: #0d6efd; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; line-height: 1; padding-bottom: 5px; } .kebab-btn:hover { background: #0b5ed7; transform: scale(1.05); } .kebab-dropdown { display: none; position: absolute; right: 0; top: 115%; background-color: white; min-width: 170px; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid #ddd; text-align: left; } .kebab-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; font-weight: bold; transition: 0.2s; } .kebab-dropdown a:hover { background-color: #f4f6f9; } .kebab-dropdown a:first-child { border-bottom: 1px solid #eee; } @media print { .floating-action-bar, .print-btn-container { display: none !important; } }`;
-    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); window.close(); return false;">🖨️ Cetak Laporan</a></div></div></div><h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1><p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p><div class="grid-container">${maklumatSyarikatPekerjaHTML}${htmlLaporan}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div><script>window.onafterprint = function() { setTimeout(function() { window.close(); }, 500); };<\\/script></body></html>`;
+    
+    // Perhatikan variabel ${contentSeterusnya} dimasukkan ke sini menggantikan ${htmlLaporan}
+    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); window.close(); return false;">🖨️ Cetak Laporan</a></div></div></div>${tajukHeaderHTML}<div class="grid-container">${maklumatSyarikatPekerjaHTML}${contentSeterusnya}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div><script>window.onafterprint = function() { setTimeout(function() { window.close(); }, 500); };<\/script></body></html>`;
     
     let tetingkapCetak = window.open('', '_blank'); 
     if (!tetingkapCetak) { alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan."); return; }
