@@ -10,16 +10,13 @@ let activeCardContext = null;
 const originalGetElement = document.getElementById.bind(document);
 
 // UPGRADE: Global Context Manager (Capture Phase)
-// Ini adalah "mata-mata" yang memastikan setiap kali user menaip, klik, 
-// atau tukar dropdown (onchange), konteks SENTIASA disetkan kepada kad klon  
-// yang sedang disentuh SEBELUM sebarang fungsi dijalankan. Isu ghaib selesai!
 ['click', 'input', 'change', 'focusin'].forEach(eventType => {
     document.addEventListener(eventType, function(e) {
         if (e && e.target && typeof e.target.closest === 'function') {
             let card = e.target.closest('.calculator-card');
             if (card) { activeCardContext = card; }
         }
-    }, true); // true = capture phase
+    }, true);
 });
 
 function setContext(e) {
@@ -30,12 +27,10 @@ function setContext(e) {
 }
 
 window.getElement = function(id) {
-    // Cari dalam konteks aktif dahulu (Kad Klon)
     if (activeCardContext) {
         let el = activeCardContext.querySelector(`[data-original-id="${id}"], [id="${id}"]`);
         if (el) return el;
     }
-    // Fallback kepada pencarian global
     return originalGetElement(id);
 };
 
@@ -428,14 +423,11 @@ function calculateGGNUnified(e) {
     setContext(e); let mode = getElement("ggnUniType").value; if (!mode) { alert("Sila pilih Jenis Notis terlebih dahulu."); return; }
     let totalSalary = updateSalaryTotal("ggnUniBasic", "ggnUniAllowance", "ggnUniTotal"); let statusNotisEl = getElement("ggnStatusNotis"); let isTanpaNotis = statusNotisEl && statusNotisEl.value === "tiada";
     
-    // Dapatkan nilai Baki Gaji (jika ada)
     let bakiGaji = getInputNumber("ggnBakiGaji") || 0;
 
     if (mode === "bulan") {
         let months = Number(getElement("ggnUniMonthVal").value);
         if (months <= 0) { alert("Sila masukkan bilangan bulan notis."); return; }
-        
-        // Tolak baki gaji di sini
         let amount = (totalSalary * months) - bakiGaji;
         
         setText("resUniMonthCount", months + " Bulan"); setText("resUniMonthAmount", formatRM(amount));
@@ -449,7 +441,6 @@ function calculateGGNUnified(e) {
         let start = getLocalStartOfDay(startDate); let end = new Date(start); end.setDate(end.getDate() + totalDays - 1);
         let breakdown = getMonthlyBreakdown(totalSalary, start, end); let totalAmount = 0; breakdown.forEach(item => { totalAmount += item.amount; });
         
-        // Tolak baki gaji di sini
         totalAmount = totalAmount - bakiGaji;
 
         setValue(endId, formatDateInput(end)); setText("resUni18ATotal", formatRM(totalSalary)); setText("resUni18AEnd", `${end.getDate()}-${end.getMonth() + 1}-${end.getFullYear()}`);
@@ -463,7 +454,6 @@ function calculateGGNUnified(e) {
 }
 
 function resetGGNUnified() {
-    // Tambah "ggnBakiGaji" ke dalam senarai reset
     ["ggnUniBasic", "ggnUniAllowance", "ggnBakiGaji", "ggnUniType", "ggnUniMonthVal", "ggnUniWeekVal", "ggnUniWeekStart", "ggnUniWeekEnd", "ggnUniDayVal", "ggnUniDayStart", "ggnUniDayEnd", "ggnStatusNotis"].forEach(id => { if (getElement(id)) setValue(id, ""); });
     if(getElement("ggnStatusNotis")) setValue("ggnStatusNotis", "ada"); setValue("ggnUniTotal", "RM 0.00"); toggleGGNMode(); 
 }
@@ -568,10 +558,8 @@ function tambahBarisRumusan() {
 function unformatTelahBayar(input) { let val = unformatRMRumusan(input.value); input.value = val === 0 ? "" : val; }
 function formatTelahBayar(input) { let val = unformatRMRumusan(input.value); input.value = formatRMRumusan(val); kiraBakiBaris(input); }
 
-// --- TAMBAH DUA BARIS KOD INI ---
 function unformatPatutBayar(input) { let val = unformatRMRumusan(input.value); input.value = val === 0 ? "" : val; }
 function formatPatutBayar(input) { let val = unformatRMRumusan(input.value); input.value = formatRMRumusan(val); kiraBakiBaris(input); }
-// --------------------------------
 
 function kemaskiniPatutBayar(selectElement) {
     const baris = selectElement.closest('tr');
@@ -581,7 +569,7 @@ function kemaskiniPatutBayar(selectElement) {
     const inputTelahBayar = baris.querySelector('.telah-bayar');
     
     let nilaiDiambil = 0;
-    let senaraiKeterangan = []; // Array untuk simpan keterangan (contoh: 4 jam, 2 jam)
+    let senaraiKeterangan = []; 
 
     inputTelahBayar.removeAttribute('readonly');
     inputTelahBayar.style.background = "#fff";
@@ -603,23 +591,21 @@ function kemaskiniPatutBayar(selectElement) {
             inputTelahBayar.value = formatRMRumusan(jumlahTelah);
             inputTelahBayar.setAttribute('readonly', true);
             inputTelahBayar.style.background = "#f4f4f4";
-            // Dinamik: Tentukan sama ada Terkurang atau Terlebih bayar
+            
             if (jumlahPatut > jumlahTelah) {
                 senaraiKeterangan.push("Terkurang Bayar");
             } else if (jumlahTelah > jumlahPatut) {
                 senaraiKeterangan.push("Terlebih Bayar");
             } else {
-                senaraiKeterangan.push("Terkurang Bayar"); // Default
+                senaraiKeterangan.push("Terkurang Bayar"); 
             }
             
         } else {
-            // Untuk kalkulator lain
             for(let kad of semuaKadAktif) {
                 let elemenKeputusan = kad.querySelector(`[id="${idSasaran}"], [data-original-id="${idSasaran}"]`);
                 if (elemenKeputusan && elemenKeputusan.innerText && unformatRMRumusan(elemenKeputusan.innerText) !== 0) {
                     nilaiDiambil += unformatRMRumusan(elemenKeputusan.innerText);
                     
-                    // --- LOGIK EKSTRAK KETERANGAN ---
                     let detail = "";
                     let getVal = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.value : ""; };
                     let getTxt = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.innerText : ""; };
@@ -658,7 +644,6 @@ function kemaskiniPatutBayar(selectElement) {
         inputTelahBayar.value = ""; 
     }
     
-    // Paparkan keterangan di jadual rumusan (gabungkan jika ada lebih dari 1)
     if (inputKeterangan) {
         inputKeterangan.value = senaraiKeterangan.length > 0 ? senaraiKeterangan.join(" + ") : "-";
     }
@@ -702,90 +687,228 @@ function autoMasukRumusan(idSasaran, contextCard) {
 // 5. LAPORAN PENUH & PENYATA GAJI (PDF)
 // =====================================================
 function formatTitleCase(str) { return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); }
+
 function formatIC(str) {
+    if (/[a-zA-Z]/.test(str)) return str.toUpperCase();
     let val = str.replace(/\D/g, ''); if (val.length <= 6) return val; if (val.length <= 8) return val.slice(0,6) + '-' + val.slice(6); 
     return val.slice(0,6) + '-' + val.slice(6,8) + '-' + val.slice(8,12);
 }
 
-// Butang 1: Jana Laporan Penuh (Tanpa Majikan)
-function janaLaporanPenuh() {
-    paparModalLaporan('penuh');
+// Butang 1 & 2
+function janaLaporanPenuh() { paparModalLaporan('penuh'); }
+function janaPenyataGaji() { paparModalLaporan('penyata'); }
+
+// Fungsi Pembantu Dinamik (Tambah Baris Pop-Up)
+function tambahBarisElaunModal() {
+    let div = document.createElement('div');
+    div.style.cssText = "display: flex; gap: 10px; margin-bottom: 10px;";
+    div.innerHTML = `
+        <div style="flex: 3;"><input type="text" class="elaun-jenis" placeholder="Jenis Elaun" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;"></div>
+        <div style="flex: 2; display: flex; gap: 5px;">
+            <input type="text" class="elaun-nilai number-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;">
+            <button type="button" onclick="this.parentElement.parentElement.remove()" style="background:#dc3545; color:white; border:none; padding:0 10px; border-radius:5px; font-weight:bold; cursor:pointer;">X</button>
+        </div>
+    `;
+    document.getElementById('containerElaunModal').appendChild(div);
 }
 
-// Butang 2: Jana Penyata Gaji (Dengan Majikan)
-function janaPenyataGaji() {
-    paparModalLaporan('penyata');
+function tambahBarisPotonganModal() {
+    let div = document.createElement('div');
+    div.style.cssText = "display: flex; gap: 10px; margin-bottom: 10px; align-items: center;";
+    div.innerHTML = `
+        <div style="flex: 4;"><input type="text" class="potong-jenis" placeholder="Jenis Potongan" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;"></div>
+        <div style="flex: 1; display: flex; align-items: center; gap: 5px;">
+            <input type="text" class="potong-pct" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: center;">
+            <span style="font-weight: bold; font-size: 14px; color: #333;">%</span>
+        </div>
+        <div style="flex: 3; display: flex; gap: 5px;">
+            <input type="text" class="potong-nilai number-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;">
+            <button type="button" onclick="this.parentElement.parentElement.remove()" style="background:#dc3545; color:white; border:none; padding:0 10px; border-radius:5px; font-weight:bold; cursor:pointer;">X</button>
+        </div>
+    `;
+    document.getElementById('containerPotonganModal').appendChild(div);
 }
 
 // Enjin Utama Pop-Up
 function paparModalLaporan(jenis) {
     let existingModal = document.getElementById('modalLaporanPenuh'); if(existingModal) existingModal.remove();
-    
-let htmlMajikan = "";
-    // HANYA PAPARKAN JIKA JENIS ADALAH 'penyata'
+
     if (jenis === 'penyata') {
-        htmlMajikan = `
-        <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Majikan / Syarikat / Organisasi</h3>
-        <div style="margin-bottom: 15px; margin-top: 15px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama Majikan/Syarikat/Organisasi:</label>
-            <input type="text" id="inputNamaMajikan" placeholder="Contoh: SYARIKAT ABC SDN BHD" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = this.value.toUpperCase()">
-        </div>
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Pendaftaran:</label>
-            <input type="text" id="inputNoDaftarMajikan" placeholder="Contoh: 202301234567" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = this.value.toUpperCase()">
-        </div>
-        <div style="margin-bottom: 25px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Tempoh Upah:</label>
-            <input type="text" id="inputTempohUpah" placeholder="Contoh: Mei 2026 / 1 Mei - 31 Mei 2026" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
+        let modalHtml = `
+        <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+            <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 850px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    
+                    <!-- LAJUR KIRI: MAJIKAN & ELAUN & PENDAHULUAN -->
+                    <div>
+                        <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Majikan / Syarikat</h3>
+                        <div style="margin-bottom: 15px; margin-top: 15px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama Majikan/Syarikat/Organisasi:</label>
+                            <input type="text" id="inputNamaMajikan" placeholder="Contoh: SYARIKAT ABC SDN BHD" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Pendaftaran:</label>
+                            <input type="text" id="inputNoDaftarMajikan" placeholder="Contoh: 202301234567" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Tempoh Upah:</label>
+                            <input type="text" id="inputTempohUpah" placeholder="Contoh: Mei 2026 / 1 Mei - 31 Mei 2026" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
+                        </div>
+
+                        <h3 style="margin-top: 25px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Elaun</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                            <p style="font-size: 12px; font-weight: bold; color: #555; margin:0;">Senarai Elaun</p>
+                            <button type="button" onclick="tambahBarisElaunModal()" style="background:#198754; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">+ Tambah</button>
+                        </div>
+                        <div id="containerElaunModal">
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <div style="flex: 3;"><input type="text" class="elaun-jenis" placeholder="Jenis Elaun" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;"></div>
+                                <div style="flex: 2;"><input type="text" class="elaun-nilai number-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;"></div>
+                            </div>
+                        </div>
+
+                        <!-- MAKLUMAT PENDAHULUAN DI BAWAH ELAUN -->
+                        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                            <p style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 8px; margin-top:0;">Maklumat Pendahuluan</p>
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <div style="flex: 3;"><input type="text" value="Pendahuluan" readonly style="width: 100%; padding: 8px; border: 1px solid #eee; border-radius: 5px; font-size: 13px; background: #f9f9f9; color: #777;"></div>
+                                <div style="flex: 2;"><input type="text" id="inputPendahuluanNilai" class="number-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LAJUR KANAN: PEKERJA & POTONGAN -->
+                    <div>
+                        <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Pekerja</h3>
+                        <div style="margin-bottom: 15px; margin-top: 15px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama Pekerja:</label>
+                            <input type="text" id="inputNamaLaporan" placeholder="Contoh: Ahmad Bin Abu" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Kad Pengenalan / No. Passport:</label>
+                            <input type="text" id="inputICLaporan" placeholder="Contoh: 900101-01-1234 atau A1234567" maxlength="14" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatIC(this.value)">
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Pekerja:</label>
+                            <input type="text" id="inputNoPekerjaLaporan" placeholder="Contoh: EMP001" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = this.value.toUpperCase()">
+                        </div>
+
+                        <h3 style="margin-top: 25px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Potongan</h3>
+                        
+                        <p style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 8px; padding-top: 15px; border-top: 1px dashed #ccc;">Potongan Berkanun</p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                            <label style="width: 60px; font-size: 13px; font-weight: bold;">KWSP</label>
+                            <input type="text" id="inputKWSPPeratus" value="11" style="width: 40px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: center;">
+                            <span style="font-weight: bold; font-size: 14px; color: #333;">%</span>
+                            <input type="text" id="inputKWSPNilai" placeholder="Nilai (RM)" class="number-input" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                            <label style="width: 60px; font-size: 13px; font-weight: bold;">PERKESO</label>
+                            <input type="text" id="inputPERKESOPeratus" value="0.5" style="width: 40px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: center;">
+                            <span style="font-weight: bold; font-size: 14px; color: #333;">%</span>
+                            <input type="text" id="inputPERKESONilai" placeholder="Nilai (RM)" class="number-input" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+                            <label style="width: 60px; font-size: 13px; font-weight: bold;">SIP / EIS</label>
+                            <input type="text" id="inputSIPPeratus" value="0.5" style="width: 40px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: center;">
+                            <span style="font-weight: bold; font-size: 14px; color: #333;">%</span>
+                            <input type="text" id="inputSIPNilai" placeholder="Nilai (RM)" class="number-input" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;">
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                            <p style="font-size: 12px; font-weight: bold; color: #555; margin:0;">Lain-lain Potongan</p>
+                            <button type="button" onclick="tambahBarisPotonganModal()" style="background:#198754; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">+ Tambah</button>
+                        </div>
+                        <div id="containerPotonganModal" style="margin-bottom: 25px;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                                <div style="flex: 4;"><input type="text" class="potong-jenis" placeholder="Jenis Potongan" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;"></div>
+                                <div style="flex: 1; display: flex; align-items: center; gap: 5px;">
+                                    <input type="text" class="potong-pct" placeholder="0" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: center;">
+                                    <span style="font-weight: bold; font-size: 14px; color: #333;">%</span>
+                                </div>
+                                <div style="flex: 3; display: flex; gap: 5px;">
+                                    <input type="text" class="potong-nilai number-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <button onclick="document.getElementById('modalLaporanPenuh').remove()" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Batal</button>
+                        <button onclick="teruskanJanaLaporan('${jenis}')" style="background: #1f4e79; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Jana Cetakan</button>
+                    </div>
+
+                </div>
+            </div>
         </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+    } else {
+        // PAPARAN 100% KEKAL ASAL (UNTUK JANA LAPORAN PENUH)
+        let modalHtml = `
+        <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+            <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
+                
+                <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Pekerja</h3>
+                <div style="margin-bottom: 15px; margin-top: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama Pekerja:</label>
+                    <input type="text" id="inputNamaLaporan" placeholder="Contoh: Ahmad Bin Abu" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Kad Pengenalan / No. Passport:</label>
+                    <input type="text" id="inputICLaporan" placeholder="Contoh: 900101-01-1234 atau A1234567" maxlength="14" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatIC(this.value)">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                    <button onclick="document.getElementById('modalLaporanPenuh').remove()" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Batal</button>
+                    <button onclick="teruskanJanaLaporan('${jenis}')" style="background: #1f4e79; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Jana Cetakan</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
-
-    let modalHtml = `
-    <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
-        <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
-            
-            ${htmlMajikan}
-
-            <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Pekerja</h3>
-            <div style="margin-bottom: 15px; margin-top: 15px;">
-                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama Pekerja:</label>
-                <input type="text" id="inputNamaLaporan" placeholder="Contoh: Ahmad Bin Abu" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
-            </div>
-            <div style="margin-bottom: 25px;">
-                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Kad Pengenalan:</label>
-                <input type="text" id="inputICLaporan" placeholder="Contoh: 900101-01-1234" maxlength="14" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatIC(this.value)">
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button onclick="document.getElementById('modalLaporanPenuh').remove()" style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Batal</button>
-                <button onclick="teruskanJanaLaporan('${jenis}')" style="background: #1f4e79; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;">Jana Cetakan</button>
-            </div>
-        </div>
-    </div>`;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
 // Tindakan Selepas Butang 'Jana Cetakan' (dalam pop-up) Ditekan
 function teruskanJanaLaporan(jenis) {
-    let namaMajikan = "";
-    let noDaftarMajikan = "";
-    let tempohUpah = ""; // Pembolehubah baharu
-    
-    // Tarik nilai majikan HANYA jika ia wujud (jenis = penyata)
+    let namaMajikan = ""; let noDaftarMajikan = ""; let tempohUpah = "";
+    let kwspP="", kwspN="", perkesoP="", perkesoN="", sipP="", sipN="", pendahuluanN="";
+    let senaraiElaun = []; let senaraiPotongan = [];
+
     if (jenis === 'penyata') {
-        namaMajikan = document.getElementById('inputNamaMajikan') ? document.getElementById('inputNamaMajikan').value.trim() : "";
-        noDaftarMajikan = document.getElementById('inputNoDaftarMajikan') ? document.getElementById('inputNoDaftarMajikan').value.trim() : "";
-        tempohUpah = document.getElementById('inputTempohUpah') ? document.getElementById('inputTempohUpah').value.trim() : ""; // Tangkap nilai Tempoh Upah
+        let getV = (id) => document.getElementById(id) ? document.getElementById(id).value.trim() : "";
+        namaMajikan = getV('inputNamaMajikan');
+        noDaftarMajikan = getV('inputNoDaftarMajikan');
+        tempohUpah = getV('inputTempohUpah');
+        kwspP = getV('inputKWSPPeratus'); kwspN = getV('inputKWSPNilai');
+        perkesoP = getV('inputPERKESOPeratus'); perkesoN = getV('inputPERKESONilai');
+        sipP = getV('inputSIPPeratus'); sipN = getV('inputSIPNilai');
+        pendahuluanN = getV('inputPendahuluanNilai');
+
+        document.querySelectorAll('#containerElaunModal > div').forEach(row => {
+            let j = row.querySelector('.elaun-jenis').value.trim();
+            let n = row.querySelector('.elaun-nilai').value.trim();
+            if (j || n) senaraiElaun.push({ jenis: j, nilai: n });
+        });
+
+        document.querySelectorAll('#containerPotonganModal > div').forEach(row => {
+            let j = row.querySelector('.potong-jenis').value.trim();
+            let p = row.querySelector('.potong-pct').value.trim();
+            let n = row.querySelector('.potong-nilai').value.trim();
+            if (j || p || n) senaraiPotongan.push({ jenis: j, pct: p, nilai: n });
+        });
     }
 
     let namaPekerja = document.getElementById('inputNamaLaporan') ? document.getElementById('inputNamaLaporan').value.trim() : ""; 
     let icPekerja = document.getElementById('inputICLaporan') ? document.getElementById('inputICLaporan').value.trim() : "";
-    
+    let noPekerja = document.getElementById('inputNoPekerjaLaporan') ? document.getElementById('inputNoPekerjaLaporan').value.trim() : "";
     document.getElementById('modalLaporanPenuh').remove(); 
-    prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja); // Hantar ke enjin cetak
+    
+    prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenis, { senaraiElaun, senaraiPotongan, kwspP, kwspN, perkesoP, perkesoN, sipP, sipN, pendahuluanN });
 }
 
-function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja) { // Terima parameter baharu
+function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenisCetak, xtra) { 
     const senaraiKalkulator = [
         { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, { id: "bakiData", tajuk: "Baki Upah / Gaji" }, 
         { id: "otData", tajuk: "OT Hari Biasa" }, { id: "rhData", tajuk: "Kerja Hari Rehat (½ Hari @ Kurang)" }, 
@@ -946,12 +1069,19 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
     
     let tarikhHariIni = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }); 
     
-// --- MULA KOD MAKLUMAT MAJIKAN & PEKERJA (PDF) ---
     let tajukHeaderHTML = "";
-    let contentSeterusnya = htmlLaporan; // Lalai: Kekalkan laporan kotak-kotak asal
+    let contentSeterusnya = htmlLaporan; 
     
-    // Semak jika ada input Majikan (Bermaksud butang Jana Penyata Gaji ditekan)
-    if (namaMajikan !== "" || noDaftarMajikan !== "" || tempohUpah !== "") {
+    let parseRMStr = (val) => {
+        if (!val) return "";
+        try { let clean = val.toString().replace(/[^\d\.\+\-\*\/\(\)]/g, ''); let calc = new Function('return ' + clean)(); if (calc > 0) return "RM " + calc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(e) {}
+        return val;
+    };
+    
+    let labelWithPct = (label, pct) => pct ? `${label} (${pct}%)` : label;
+
+    if (jenisCetak === 'penyata') {
+        
         tajukHeaderHTML = `
             <div style="text-align: center; margin-bottom: 2px;">
                 <div style="font-size: 27px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; color: #000; letter-spacing: 1px;">PENYATA GAJI</div>
@@ -961,20 +1091,11 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
             <p class="subtitle">Tarikh Janaan: ${tarikhHariIni} &nbsp;|&nbsp; Tempoh Upah: ${tempohUpah || '-'}</p>
         `;
         
-        // ====================================================================
-        // LUKIS JADUAL PENYATA GAJI (BUTIRAN UPAH 3-GRID & POTONGAN 2-GRID)
-        // ====================================================================
         let v_basic = "", v_elaun = "";
-        let r_otb = "", h_otb = "";
-        let r_rh05 = "", h_rh05 = "";
-        let r_rh1 = "", h_rh1 = "";
-        let r_otrh = "", h_otrh = "";
-        let r_ph = "", h_ph = "";
-        let r_otph = "", h_otph = "";
-        let r_cs = "", h_cs = "";
-        let r_ct = "", h_ct = "";
+        let r_otb = "", h_otb = ""; let r_rh05 = "", h_rh05 = ""; let r_rh1 = "", h_rh1 = "";
+        let r_otrh = "", h_otrh = ""; let r_ph = "", h_ph = ""; let r_otph = "", h_otph = "";
+        let r_cs = "", h_cs = ""; let r_ct = "", h_ct = "";
 
-        // Gelung ekstrak data dari kad aktif dengan selamat
         semuaKadAktif.forEach(kad => {
             let v = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.value.trim() : ""; };
             let t = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.innerText.trim() : ""; };
@@ -992,22 +1113,24 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
             if(t("annualLeaveAmount") && t("annualLeaveAmount") !== "RM 0.00") { r_ct = t("annualLeaveAmount"); h_ct = v("annualLeaveDays"); }
         });
 
-        // Format nombor (supaya formula cth: 1500+200 menjadi RM 1700.00)
-        let parseRMStr = (val) => {
-            if (!val) return "";
-            try { let clean = val.toString().replace(/[^\d\.\+\-\*\/\(\)]/g, ''); let calc = new Function('return ' + clean)(); if (calc > 0) return "RM " + calc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch(e) {}
-            return val;
-        };
-
-        // Reka HTML Baris (Row)
         let trU = (label, detail, amt) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; width: 45%; text-align: left;">${label}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: center; width: 25%; color: #555; font-size: 10px;">${detail}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: right; width: 30%; font-weight: bold;">${amt}</td></tr>`;
-        let trP = (label) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; width: 60%; text-align: left;">${label}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: right; width: 40%; font-weight: bold;"></td></tr>`;
+        let trP = (label, amt) => `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; width: 60%; text-align: left;">${label}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; text-align: right; width: 40%; font-weight: bold; color: #d9534f;">${amt ? parseRMStr(amt) : ''}</td></tr>`;
         let trKosong = `<tr><td colspan="2" style="padding: 8px 12px; border-bottom: 1px solid #eee; height: 32px;"></td></tr>`;
 
-        // Bina Jadual Kiri (3 Nisbah)
-        let upahHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+        let htmlUpahDalaman = `
             ${trU("Gaji Pokok", "", parseRMStr(v_basic))}
-            ${trU("Elaun", "", parseRMStr(v_elaun))}
+            ${trU("Elaun Tetap", "", parseRMStr(v_elaun))}
+        `;
+        
+        if (xtra && xtra.senaraiElaun) {
+            xtra.senaraiElaun.forEach(elaun => {
+                if (elaun.jenis || elaun.nilai) {
+                    htmlUpahDalaman += trU(elaun.jenis || "Elaun Tambahan", "", parseRMStr(elaun.nilai));
+                }
+            });
+        }
+        
+        htmlUpahDalaman += `
             ${trU("OT Normal (1.5)", h_otb ? h_otb + " jam" : "", r_otb)}
             ${trU("Kerja Hari Rehat (0.5)", h_rh05 ? h_rh05 + " hari" : "", r_rh05)}
             ${trU("Kerja Hari Rehat (1.0)", h_rh1 ? h_rh1 + " hari" : "", r_rh1)}
@@ -1016,18 +1139,41 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
             ${trU("OT Hari Kelepasan (3.0)", h_otph ? h_otph + " jam" : "", r_otph)}
             ${trU("Cuti Sakit", h_cs ? h_cs + " hari" : "", r_cs)}
             ${trU("Cuti Tahunan", h_ct ? h_ct + " hari" : "", r_ct)}
-        </table>`;
+        `;
 
-        // Bina Jadual Kanan (2 Nisbah)
-        let potongHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-            ${trP("Pendahuluan")}
-            ${trP("KWSP")}
-            ${trP("PERKESO")}
-            ${trP("SIP/EIS")}
-            ${trKosong}${trKosong}${trKosong}${trKosong}${trKosong}${trKosong}
-        </table>`;
+        let upahHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">${htmlUpahDalaman}</table>`;
 
-        // Gabung menggunakan CSS Grid 3fr 2fr (bersamaan 60% : 40% nisbah keluasan)
+        let htmlPotonganDalaman = "";
+        if (xtra) {
+            // TERIMA BACAAN PENDAHULUAN
+            htmlPotonganDalaman = `
+                ${trP("Pendahuluan", xtra.pendahuluanN)}
+                ${trP(labelWithPct("KWSP", xtra.kwspP), xtra.kwspN)}
+                ${trP(labelWithPct("PERKESO", xtra.perkesoP), xtra.perkesoN)}
+                ${trP(labelWithPct("SIP/EIS", xtra.sipP), xtra.sipN)}
+            `;
+            
+            if (xtra.senaraiPotongan) {
+                xtra.senaraiPotongan.forEach(potong => {
+                    if (potong.jenis || potong.pct || potong.nilai) {
+                        htmlPotonganDalaman += trP(labelWithPct(potong.jenis || "Lain-lain", potong.pct), potong.nilai);
+                    }
+                });
+            }
+            
+        } else {
+             htmlPotonganDalaman = `
+                ${trP("Pendahuluan", "")}
+                ${trP("KWSP", "")}
+                ${trP("PERKESO", "")}
+                ${trP("SIP/EIS", "")}
+            `;
+        }
+
+        htmlPotonganDalaman += `${trKosong}${trKosong}${trKosong}${trKosong}${trKosong}${trKosong}`;
+        
+        let potongHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">${htmlPotonganDalaman}</table>`;
+
         let penyataGajiHTML = `
         <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 15px; margin-bottom: 15px; grid-column: 1 / -1; align-items: start;">
             <div class="report-box" style="padding: 0; overflow: hidden; border: 1px solid #1f4e79;">
@@ -1044,30 +1190,29 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
         contentSeterusnya = penyataGajiHTML; 
 
     } else {
-        // Jika butang Laporan Penuh biasa (Tanpa Majikan) ditekan, KEKALKAN FORMAT ASAL
         tajukHeaderHTML = `
             <h1 class="main-title">PENGIRAAN DI BAWAH AKTA KERJA 1955</h1>
             <p class="subtitle">Tarikh Janaan: ${tarikhHariIni}</p>
         `;
+        contentSeterusnya = htmlLaporan; 
     }
 
     let maklumatSyarikatPekerjaHTML = "";
     
-    // Jadual MAKLUMAT PEKERJA (Nama & IC sahaja - format asal terpelihara)
-    if (namaPekerja !== "" || icPekerja !== "") {
+    // PENYELESAIAN MASALAH PDF (LAPORAN PENUH TAK KELUAR NO PEKERJA)
+    if (namaPekerja !== "" || icPekerja !== "" || noPekerja !== "") {
         maklumatSyarikatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
             <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA</div>
             <table class="param-table" style="margin-bottom: 0;">
                 <tr><td class="param-label" style="width: 25%; font-weight: bold;">Nama Pekerja</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja || '-'}</td></tr>
-                <tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Kad Pengenalan</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td></tr>
+                <tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Kad Pengenalan / No. Passport</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja || '-'}</td></tr>
+                ${noPekerja ? `<tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Pekerja</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${noPekerja}</td></tr>` : ''}
             </table>
         </div>`;
     }
-    // --- TAMAT KOD MAKLUMAT MAJIKAN ---
 
     let cssBaru = `.floating-action-bar { position: fixed; top: 25px; right: 25px; display: flex; z-index: 9999; align-items: center; } .kebab-btn { background: #0d6efd; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; line-height: 1; padding-bottom: 5px; } .kebab-btn:hover { background: #0b5ed7; transform: scale(1.05); } .kebab-dropdown { display: none; position: absolute; right: 0; top: 115%; background-color: white; min-width: 170px; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid #ddd; text-align: left; } .kebab-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; font-weight: bold; transition: 0.2s; } .kebab-dropdown a:hover { background-color: #f4f6f9; } .kebab-dropdown a:first-child { border-bottom: 1px solid #eee; } @media print { .floating-action-bar, .print-btn-container { display: none !important; } }`;
     
-    // Perhatikan variabel ${contentSeterusnya} dimasukkan ke sini menggantikan ${htmlLaporan}
     let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); window.close(); return false;">🖨️ Cetak Laporan</a></div></div></div>${tajukHeaderHTML}<div class="grid-container">${maklumatSyarikatPekerjaHTML}${contentSeterusnya}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div><script>window.onafterprint = function() { setTimeout(function() { window.close(); }, 500); };<\/script></body></html>`;
     
     let tetingkapCetak = window.open('', '_blank'); 
@@ -1091,20 +1236,13 @@ function logKeluar() { let btn = document.getElementById("butangAuth"); if (btn)
 function resetSemua() {
     let sah = confirm("Adakah anda pasti mahu memadam KESEMUA data pengiraan? Tindakan ini tidak boleh diundur.");
     if (sah) {
-        // 1. Buang semua kad klon
         let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         semuaKadAktif.forEach(kad => kad.remove());
-        
-        // 2. Kosongkan jadual rumusan
         resetRumusan();
-        
-        // 3. SEMBUNYIKAN SEMULA kad rumusan (Fungsi Baharu)
         let kadRumusan = document.querySelector('.rumusan-card');
         if (kadRumusan) {
             kadRumusan.style.display = "none";
         }
-        
-        // 4. Scroll kembali ke atas
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
@@ -1134,17 +1272,11 @@ window.tambahKalkulator = function(templateId) {
     closeBtn.className = "close-card-btn";
     closeBtn.innerHTML = "X";
     closeBtn.onclick = function() { 
-        clone.remove(); // 1. Padam kad yang dipangkah
-        
-        // 2. Semak jika masih ada kad kalkulator lain yang aktif di skrin
+        clone.remove(); 
         let kadTinggal = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
-        
-        // 3. Jika sudah tiada langsung kad kalkulator, sembunyikan Rumusan
         if (kadTinggal.length === 0) {
             let kadRumusan = document.querySelector('.rumusan-card');
-            if (kadRumusan) {
-                kadRumusan.style.display = "none";
-            }
+            if (kadRumusan) { kadRumusan.style.display = "none"; }
         }
     };
     clone.appendChild(closeBtn);
@@ -1153,7 +1285,6 @@ window.tambahKalkulator = function(templateId) {
     allElementsWithId.forEach(el => {
         el.setAttribute('data-original-id', el.id);
         el.id = el.id + uniqueSuffix;
-        // Kosongkan semua input untuk kad baharu pada peringkat awal
         if(el.tagName === 'INPUT' && el.type !== 'button') el.value = "";
         if(el.tagName === 'STRONG' || el.tagName === 'SPAN') {
             if(el.innerText.includes('RM')) el.innerText = 'RM 0.00';
@@ -1166,13 +1297,9 @@ window.tambahKalkulator = function(templateId) {
         el.setAttribute('name', el.getAttribute('name') + uniqueSuffix);
     });
 
-    // ==============================================================
-    // PENAMBAHBAIKAN UX: WARISI GAJI & ELAUN DARI KALKULATOR TERDAHULU
-    // ==============================================================
     let currentBasic = "";
     let currentAllowance = "";
     
-    // Fungsi kecil (helper) untuk ekstrak gaji dari mana-mana kad
     function extractSalaryFromCard(kad) {
         for (let mapKey of Object.keys(salaryMap)) {
             let sourceBasic = kad.querySelector(`[data-original-id="${mapKey}"]`);
@@ -1190,29 +1317,19 @@ window.tambahKalkulator = function(templateId) {
         return null;
     }
 
-    // 1. SASARAN UTAMA: Cari dari kad yang paling akhir disentuh/ditaip oleh user (activeCardContext)
     if (activeCardContext && !activeCardContext.classList.contains('hidden-template') && !activeCardContext.classList.contains('rumusan-card')) {
         let extracted = extractSalaryFromCard(activeCardContext);
-        if (extracted) {
-            currentBasic = extracted.basic;
-            currentAllowance = extracted.allow;
-        }
+        if (extracted) { currentBasic = extracted.basic; currentAllowance = extracted.allow; }
     }
 
-    // 2. SANDARAN: Jika tak jumpa di kad terakhir, cari dari semua kad aktif (dari Bawah ke Atas / Terkini ke Lama)
     if (currentBasic === "") {
         let kadAktifLain = Array.from(document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)'));
         for (let i = kadAktifLain.length - 1; i >= 0; i--) {
             let extracted = extractSalaryFromCard(kadAktifLain[i]);
-            if (extracted) {
-                currentBasic = extracted.basic;
-                currentAllowance = extracted.allow;
-                break; // Berhenti mencari sebaik sahaja jumpa
-            }
+            if (extracted) { currentBasic = extracted.basic; currentAllowance = extracted.allow; break; }
         }
     }
 
-    // 3. Jika gaji berjaya ditemui, suntik terus ke dalam kalkulator klon baharu
     if (currentBasic !== "") {
         for (let targetKey of Object.keys(salaryMap)) {
             let targetBasic = clone.querySelector(`[data-original-id="${targetKey}"]`);
@@ -1223,9 +1340,7 @@ window.tambahKalkulator = function(templateId) {
 
             if (targetBasic) {
                 targetBasic.value = currentBasic;
-                if (targetAllow && currentAllowance !== "") {
-                    targetAllow.value = currentAllowance;
-                }
+                if (targetAllow && currentAllowance !== "") { targetAllow.value = currentAllowance; }
                 if (targetTotal) {
                     let calcBasic = evaluateSmartMath(currentBasic);
                     let calcAllow = currentAllowance !== "" ? evaluateSmartMath(currentAllowance) : 0;
@@ -1234,7 +1349,6 @@ window.tambahKalkulator = function(templateId) {
             }
         }
     }
-    // ==============================================================
 
     let allButtons = clone.querySelectorAll('button');
     allButtons.forEach(btn => {
@@ -1251,13 +1365,6 @@ window.tambahKalkulator = function(templateId) {
     });
 
     if (rumusanCard) grid.insertBefore(clone, rumusanCard); else grid.appendChild(clone);
-    
-    // Munculkan kad rumusan apabila kalkulator dipilih
-    if (rumusanCard) {
-        rumusanCard.style.display = "block";
-    }
-
-    // ------------------------------------------------------------------------
-
+    if (rumusanCard) { rumusanCard.style.display = "block"; }
     clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
