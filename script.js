@@ -1793,17 +1793,61 @@ window.tambahKalkulator = function(templateId) {
         let closeBtn = document.createElement('button');
         closeBtn.className = "close-card-btn";
         closeBtn.innerHTML = "X";
-        closeBtn.onclick = function() { 
-            clone.remove(); 
-            
-            let kadTinggal = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
-            if (kadTinggal.length === 0) {
-                if (rumusanCard) { rumusanCard.style.display = "none"; }
-            } else {
-                // PENYELESAIAN: Paksa sistem pasang dan KLON semula kotak elaun ke kalkulator lain yang tinggal!
-                setTimeout(() => window.semakDanTukarElaun(), 50);
-            }
+// Di dalam fungsi penutupan kad kalkulator (contoh pada butang close / remove kad)
+closeBtn.onclick = function() { 
+    // 1. Kenal pasti jenis kalkulator sebelum kad dibuang
+    let templateId = clone.getAttribute('data-template-id');
+
+    // 2. Buang kad dari paparan
+    clone.remove(); 
+    
+    // =========================================================================
+    // TAMBAHAN BAHARU (LIVE RESET PADA JADUAL RUMUSAN APABILA KAD DI-CANCEL/TUTUP):
+    // =========================================================================
+    let badanRumusan = document.getElementById('badanJadualRumusan');
+    if (badanRumusan && templateId) {
+        let mappingSasaran = {
+            'orp': 'orpBakiAmount',
+            'baki': 'orpBakiAmount',
+            'otBiasa': 'otAmount',
+            'rehatKurang': 'rhAmount',
+            'rehatLebih': 'rhMoreAmount',
+            'sec18A': 'amount18A',
+            'otRehat': 'otRHAmount',
+            'kelepasan': 'phAmount',
+            'otKelepasan': 'otPHAmount',
+            'cutiTahunan': 'annualLeaveAmount',
+            'cutiSakit': 'sickLeaveAmount',
+            'notis': ['resUniMonthAmount', 'resUni18AAmount'],
+            'faedah': 'tbbAmount',
+            'lewat': 'lewatAmount'
         };
+
+        let sasaranId = mappingSasaran[templateId];
+        if (sasaranId) {
+            let barisRumusan = badanRumusan.querySelectorAll('tr');
+            barisRumusan.forEach(tr => {
+                let select = tr.querySelector('select');
+                if (select) {
+                    let nilaiSelect = select.value;
+                    if (Array.isArray(sasaranId) ? sasaranId.includes(nilaiSelect) : nilaiSelect === sasaranId) {
+                        tr.remove(); // Padam baris rumusan secara Live
+                    }
+                }
+            });
+            if (typeof kiraJumlahKeseluruhanRumusan === 'function') {
+                kiraJumlahKeseluruhanRumusan(); // Kemaskini jumlah keseluruhan secara Live
+            }
+        }
+    }
+
+    let kadTinggal = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+    if (kadTinggal.length === 0) {
+        if (rumusanCard) { rumusanCard.style.display = "none"; }
+    } else {
+        setTimeout(() => window.semakDanTukarElaun(), 50);
+    }
+};
         clone.appendChild(closeBtn);
     }
 
@@ -2163,13 +2207,14 @@ window.resetSemua = function() {
 window.resetKalkulatorIndividu = function(e) {
     if (!e) return;
     
-    // PENTING: Penyelesaian isu enjin klon. 
-    // Kenal pasti sama ada parameter 'e' adalah objek Event atau Elemen HTML.
     let targetElemen = e.target ? e.target : e;
-    
     const kadKalkulator = targetElemen.closest('.calculator-card');
     if (!kadKalkulator) return;
 
+    // 1. Dapatkan template ID atau jenis kalkulator ini (cth: orp, baki, otBiasa, dll)
+    let templateId = kadKalkulator.getAttribute('data-template-id');
+
+    // 2. Kosongkan semua input teks, nombor, dan tarikh dalam kad ini
     const senaraiInput = kadKalkulator.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]');
     senaraiInput.forEach(input => {
         if (input.readOnly) {
@@ -2183,12 +2228,14 @@ window.resetKalkulatorIndividu = function(e) {
         }
     });
 
+    // 3. Tetapkan semula semua pilihan dropdown (select)
     const senaraiSelect = kadKalkulator.querySelectorAll('select');
     senaraiSelect.forEach(select => {
         select.selectedIndex = 0;
         select.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
+    // 4. Kosongkan kotak elaun dinamik jika ada
     const kontenaElaun = kadKalkulator.querySelector('.dynamic-allowance-wrapper');
     if (kontenaElaun) {
         const senaraiBarisElaun = kontenaElaun.querySelectorAll('.elaun-row-kalkulator');
@@ -2210,6 +2257,7 @@ window.resetKalkulatorIndividu = function(e) {
         });
     }
 
+    // 5. Sembunyikan bahagian keputusan dan paparkan status pending semula
     const prefixList = ['orp', 'baki', 'ot', 'lewat', 'otRH', 'otPH', 'rh', 'rhMore', 'ph', 'sec18A', 'annualLeave', 'sickLeave', 'kelayakanCuti', 'kelayakanSakit', 'resUni', 'tbb'];
     prefixList.forEach(prefix => {
         let pending = kadKalkulator.querySelector(`[id="${prefix}Pending"], [data-original-id="${prefix}Pending"]`);
@@ -2220,6 +2268,7 @@ window.resetKalkulatorIndividu = function(e) {
         }
     });
 
+    // 6. Tetapkan semula teks keputusan kepada asal
     const outputStrong = kadKalkulator.querySelectorAll('.result-row strong, [id$="Result"], [id$="Amount"], [id$="ORP"], [id$="Hourly"], [id$="Daily"], [id$="Minutely"], [id$="Hari"], [id$="Tempoh"], [id$="Kadar"]');
     outputStrong.forEach(el => {
         if (el.innerText.includes("RM") || el.id.includes('Amount') || el.id.includes('Result') || el.id.includes('ORP') || el.id.includes('Hourly') || el.id.includes('Daily') || el.id.includes('Minutely')) {
@@ -2229,4 +2278,49 @@ window.resetKalkulatorIndividu = function(e) {
             el.innerText = "-";
         }
     });
+
+    // =========================================================================
+    // TAMBAHAN BAHARU (LIVE RESET PADA JADUAL RUMUSAN):
+    // Padam baris jadual rumusan yang menggunakan data dari kalkulator ini secara automatik.
+    // =========================================================================
+    let badanRumusan = document.getElementById('badanJadualRumusan');
+    if (badanRumusan && templateId) {
+        let mappingSasaran = {
+            'orp': 'orpBakiAmount',
+            'baki': 'orpBakiAmount',
+            'otBiasa': 'otAmount',
+            'rehatKurang': 'rhAmount',
+            'rehatLebih': 'rhMoreAmount',
+            'sec18A': 'amount18A',
+            'otRehat': 'otRHAmount',
+            'kelepasan': 'phAmount',
+            'otKelepasan': 'otPHAmount',
+            'cutiTahunan': 'annualLeaveAmount',
+            'cutiSakit': 'sickLeaveAmount',
+            'notis': ['resUniMonthAmount', 'resUni18AAmount'],
+            'faedah': 'tbbAmount',
+            'lewat': 'lewatAmount'
+        };
+
+        let sasaranId = mappingSasaran[templateId];
+        if (sasaranId) {
+            let barisRumusan = badanRumusan.querySelectorAll('tr');
+            barisRumusan.forEach(tr => {
+                let select = tr.querySelector('select');
+                if (select) {
+                    let nilaiSelect = select.value;
+                    if (Array.isArray(sasaranId) ? sasaranId.includes(nilaiSelect) : nilaiSelect === sasaranId) {
+                        tr.remove(); // Buang baris rumusan secara Live
+                    }
+                }
+            });
+            if (typeof kiraJumlahKeseluruhanRumusan === 'function') {
+                kiraJumlahKeseluruhanRumusan(); // Kemaskini jumlah keseluruhan Live
+            }
+        }
+    }
 };
+function fungsiBaruRumusan(e) {
+    if (e) e.preventDefault();
+    // Ruang untuk fungsi baharu anda kelak
+}
