@@ -816,10 +816,10 @@ function tambahBarisElaunModal() {
     let div = document.createElement('div');
     div.style.cssText = "display: flex; gap: 10px; margin-bottom: 10px;";
     div.innerHTML = `
-        <div style="flex: 3;"><input type="text" class="elaun-jenis" placeholder="Jenis Elaun" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;" oninput="this.value = formatTitleCase(this.value)"></div>
+        <div style="flex: 3;"><input type="text" class="elaun-jenis" placeholder="Jenis Elaun" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box;" oninput="this.value = formatTitleCase(this.value)"></div>
         <div style="flex: 2; display: flex; gap: 5px;">
-            <input type="text" class="elaun-nilai number-input salary-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;" oninput="autoKiraPotonganBerkanun()">
-            <button type="button" onclick="this.parentElement.parentElement.remove(); autoKiraPotonganBerkanun();" style="background:#dc3545; color:white; border:none; padding:0 10px; border-radius:5px; font-weight:bold; cursor:pointer;">X</button>
+            <input type="text" class="elaun-nilai number-input salary-input" placeholder="Nilai (RM)" style="width: 100%; flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right; box-sizing: border-box;" oninput="autoKiraPotonganBerkanun()">
+            <button type="button" onclick="this.parentElement.parentElement.remove(); autoKiraPotonganBerkanun();" style="width: 30px; flex-shrink: 0; background:#dc3545; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">X</button>
         </div>
     `;
     document.getElementById('containerElaunModal').appendChild(div);
@@ -909,6 +909,36 @@ function paparModalLaporan(jenis) {
 
     if (jenis === 'penyata') {
         
+        // ==== KUTIP DATA KELAYAKAN PERKHIDMATAN (PRE-FILL) ====
+        let v_ct_layak = "", v_cs_layak = "", v_ch_layak = ""; 
+        let v_ct_guna = "", v_cs_guna = "", v_ch_guna = ""; 
+        document.querySelectorAll('.calculator-card:not(.hidden-template)').forEach(kad => {
+            let v = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.value.trim() : ""; }; 
+            if(!v_ct_layak) v_ct_layak = v("cutiLayak"); 
+            if(!v_cs_layak) v_cs_layak = v("sakitLayak"); 
+            if(!v_ch_layak) v_ch_layak = v("hospLayak"); 
+            if(!v_ct_guna) v_ct_guna = v("cutiGuna"); 
+            if(!v_cs_guna) v_cs_guna = v("sakitGuna"); 
+            if(!v_ch_guna) v_ch_guna = v("hospGuna"); 
+        });
+
+        // ==== ENGINE KIRA BAKI AUTOMATIK ====
+        if (!window.autoKiraBakiSvc) {
+            window.autoKiraBakiSvc = function() {
+                ['PH', 'AL', 'MC', 'War'].forEach(k => {
+                    let l = document.getElementById('mod' + k + 'Layak');
+                    let g = document.getElementById('mod' + k + 'Guna');
+                    let b = document.getElementById('mod' + k + 'Baki');
+                    if(l && g && b) {
+                        let lVal = parseFloat(l.value) || 0;
+                        let gVal = parseFloat(g.value) || 0;
+                        if(l.value === "" && g.value === "") b.value = "";
+                        else b.value = Math.max(0, lVal - gVal);
+                    }
+                });
+            };
+        }
+
         let totalKelewatan = 0;
         let minitKelewatan = 0;
         document.querySelectorAll('.calculator-card:not(.hidden-template)').forEach(kad => {
@@ -925,10 +955,10 @@ function paparModalLaporan(jenis) {
 
         let elaunModalHtml = `
             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <div style="flex: 3;"><input type="text" class="elaun-jenis" placeholder="Jenis Elaun" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px;" oninput="this.value = formatTitleCase(this.value)"></div>
+                <div style="flex: 3;"><input type="text" class="elaun-jenis" placeholder="Jenis Elaun" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box;" oninput="this.value = formatTitleCase(this.value)"></div>
                 <div style="flex: 2; display: flex; gap: 5px;">
-                    <input type="text" class="elaun-nilai number-input salary-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;" oninput="autoKiraPotonganBerkanun()">
-                    <button type="button" style="visibility:hidden; padding:0 10px;">X</button>
+                    <input type="text" class="elaun-nilai number-input salary-input" placeholder="Nilai (RM)" style="width: 100%; flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right; box-sizing: border-box;" oninput="autoKiraPotonganBerkanun()">
+                    <button type="button" style="visibility:hidden; width: 30px; flex-shrink: 0; padding:0; border:none;"></button>
                 </div>
             </div>`;
 
@@ -982,7 +1012,6 @@ function paparModalLaporan(jenis) {
                             <input type="text" id="inputTempohUpah" placeholder="Contoh: Mei 2026 / 1 Mei - 31 Mei 2026" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
                         </div>
 
-                        <!-- KOTAK TARGET UNTUK POP-UP TOUR ELAUN -->
                         <div id="tourTargetElaunPopup" style="border-radius: 6px; position: relative;">
                             <h3 style="margin-top: 25px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Elaun</h3>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; padding-top: 15px; border-top: 1px dashed #ccc;">
@@ -994,13 +1023,48 @@ function paparModalLaporan(jenis) {
                             </div>
                         </div>
 
-                        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc;">
-                            <p style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 8px; margin-top:0;">Maklumat Pendahuluan</p>
-                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                <div style="flex: 3;"><input type="text" value="Pendahuluan" readonly style="width: 100%; padding: 8px; border: 1px solid #eee; border-radius: 5px; font-size: 13px; background: #f9f9f9; color: #777;"></div>
-                                <div style="flex: 2;"><input type="text" id="inputPendahuluanNilai" class="number-input salary-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right;"></div>
-                            </div>
+                        <h3 style="margin-top: 25px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Pendahuluan</h3>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 3;"><input type="text" value="Pendahuluan" readonly style="width: 100%; padding: 8px; border: 1px solid #eee; border-radius: 5px; font-size: 13px; background: #f9f9f9; color: #777; box-sizing: border-box;"></div>
+                            <div style="flex: 2;"><input type="text" id="inputPendahuluanNilai" class="number-input salary-input" placeholder="Nilai (RM)" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; text-align: right; box-sizing: border-box;"></div>
                         </div>
+
+                        <!-- MAKLUMAT PERKHIDMATAN (BARU) -->
+                        <h3 style="margin-top: 25px; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Perkhidmatan</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; margin-bottom: 15px;">
+                            <thead>
+                                <tr style="background: #f4f6f9; border-bottom: 1px solid #ccc;">
+                                    <th style="padding: 8px; text-align: left;">Perkara</th>
+                                    <th style="padding: 8px;">PH</th>
+                                    <th style="padding: 8px;">AL</th>
+                                    <th style="padding: 8px;">MC</th>
+                                    <th style="padding: 8px;">War</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; background: #fafafa; text-align: left;">Kelayakan Tahunan</td>
+                                    <td style="padding: 8px;"><input type="number" id="modPHLayak" value="11" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                    <td style="padding: 8px;"><input type="number" id="modALLayak" value="${v_ct_layak}" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                    <td style="padding: 8px;"><input type="number" id="modMCLayak" value="${v_cs_layak}" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                    <td style="padding: 8px;"><input type="number" id="modWarLayak" value="${v_ch_layak}" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; background: #fafafa; text-align: left;">Telah Digunakan</td>
+                                    <td style="padding: 8px;"><input type="number" id="modPHGuna" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                    <td style="padding: 8px;"><input type="number" id="modALGuna" value="${v_ct_guna}" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                    <td style="padding: 8px;"><input type="number" id="modMCGuna" value="${v_cs_guna}" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                    <td style="padding: 8px;"><input type="number" id="modWarGuna" value="${v_ch_guna}" style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" oninput="autoKiraBakiSvc()"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; font-weight: bold; background: #fafafa; text-align: left; color: #1f4e79;">Baki</td>
+                                    <td style="padding: 8px;"><input type="text" id="modPHBaki" readonly style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #1f4e79; background: #e8f0fe; box-sizing: border-box;"></td>
+                                    <td style="padding: 8px;"><input type="text" id="modALBaki" readonly style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #1f4e79; background: #e8f0fe; box-sizing: border-box;"></td>
+                                    <td style="padding: 8px;"><input type="text" id="modMCBaki" readonly style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #1f4e79; background: #e8f0fe; box-sizing: border-box;"></td>
+                                    <td style="padding: 8px;"><input type="text" id="modWarBaki" readonly style="width: 100%; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; color: #1f4e79; background: #e8f0fe; box-sizing: border-box;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <div>
@@ -1060,17 +1124,19 @@ function paparModalLaporan(jenis) {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
         autoKiraPotonganBerkanun();
+        setTimeout(() => { if (window.autoKiraBakiSvc) window.autoKiraBakiSvc(); }, 100);
+
         if (!tourElaunPopupDitunjuk) {
             tourElaunPopupDitunjuk = true;
             setTimeout(() => tunjukTourElaunPopup(), 400);
         }
         
-} else {
+    } else {
         let modalHtml = `
         <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
             <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
                 
-                <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Pekerja & Syarikat</h3>
+                <h3 style="margin-top: 0; color: #1f4e79; border-bottom: 1px dashed #ccc; padding-bottom: 10px; font-size: 16px;">Maklumat Pekerja</h3>
                 <div style="margin-bottom: 15px; margin-top: 15px;">
                     <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Nama Pekerja:</label>
                     <input type="text" id="inputNamaLaporan" placeholder="Contoh: Ahmad Bin Abu" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatTitleCase(this.value)">
@@ -1078,12 +1144,6 @@ function paparModalLaporan(jenis) {
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">No. Kad Pengenalan / No. Passport:</label>
                     <input type="text" id="inputICLaporan" placeholder="Contoh: 900101-01-1234 atau A1234567" maxlength="14" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = formatIC(this.value)">
-                </div>
-                
-                <!-- TAMBAHAN BARU: FIELD MAJIKAN UNTUK LAPORAN PENUH -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #333;">Syarikat/Organisasi/Majikan:</label>
-                    <input type="text" id="inputNamaMajikan" placeholder="Contoh: SYARIKAT ABC SDN BHD" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;" oninput="this.value = this.value.toUpperCase()">
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
@@ -1100,10 +1160,9 @@ function teruskanJanaLaporan(jenis) {
     let noDaftarMajikan = ""; let tempohUpah = "";
     let kwspP="", kwspN="", perkesoP="", perkesoN="", sipP="", sipN="", pendahuluanN="";
     let senaraiElaun = []; let senaraiPotongan = [];
+    let svcData = {};
 
     let getV = (id) => document.getElementById(id) ? document.getElementById(id).value.trim() : "";
-
-    // Tangkap terus maklumat Syarikat supaya boleh masuk ke jadual Maklumat Gaji
     let namaMajikan = getV('inputNamaMajikan');
 
     if (jenis === 'penyata') {
@@ -1113,6 +1172,13 @@ function teruskanJanaLaporan(jenis) {
         perkesoP = getV('inputPERKESOPeratus'); perkesoN = getV('inputPERKESONilai');
         sipP = getV('inputSIPPeratus'); sipN = getV('inputSIPNilai');
         pendahuluanN = getV('inputPendahuluanNilai');
+
+        svcData = {
+            phL: getV('modPHLayak'), phG: getV('modPHGuna'), phB: getV('modPHBaki'),
+            alL: getV('modALLayak'), alG: getV('modALGuna'), alB: getV('modALBaki'),
+            mcL: getV('modMCLayak'), mcG: getV('modMCGuna'), mcB: getV('modMCBaki'),
+            warL: getV('modWarLayak'), warG: getV('modWarGuna'), warB: getV('modWarBaki')
+        };
 
         document.querySelectorAll('#containerElaunModal > div').forEach(row => {
             let j = row.querySelector('.elaun-jenis').value.trim();
@@ -1132,15 +1198,15 @@ function teruskanJanaLaporan(jenis) {
     let icPekerja = getV('inputICLaporan');
     let noPekerja = getV('inputNoPekerjaLaporan');
 
-    // ++ ENJIN REKOD AUTOMATIK KE JADUAL MAKLUMAT GAJI ++
     tambahRekodKeMaklumatGaji(jenis, namaPekerja, namaMajikan, tempohUpah);
 
     document.getElementById('modalLaporanPenuh').remove(); 
     
-    prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenis, { senaraiElaun, senaraiPotongan, kwspP, kwspN, perkesoP, perkesoN, sipP, sipN, pendahuluanN });
+    prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenis, { 
+        senaraiElaun, senaraiPotongan, kwspP, kwspN, perkesoP, perkesoN, sipP, sipN, pendahuluanN, svcData 
+    });
 }
 
-// ++ FUNGSI BAHARU: DAFTAR REKOD AUTOMATIK ++
 function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh) {
     let tbody = document.querySelector('#card-maklumatGaji tbody');
     if (!tbody) return;
@@ -1152,7 +1218,6 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh) {
     let tr = document.createElement('tr');
     tr.style.borderBottom = "1px solid #eee";
     
-    // Reka bentuk baris yang akan dijana
     tr.innerHTML = `
         <td style="padding: 15px; font-size: 13px; font-weight: bold; color: ${warnaTeks};">
             <span style="background: ${warnaBg}; padding: 4px 8px; border-radius: 4px;">${jenisTeks}</span>
@@ -1166,13 +1231,9 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh) {
         </td>
     `;
     
-    // Logik pembersihan: Kalau baris contoh / *dummy* masih ada (KBR/10103...), kita buang supaya kemas
     let firstRow = tbody.querySelector('tr');
-    if (firstRow && firstRow.innerHTML.includes('KBR/10103')) {
-        firstRow.remove();
-    }
+    if (firstRow && firstRow.innerHTML.includes('KBR/10103')) firstRow.remove();
 
-    // Masukkan rekod baharu di bahagian atas (susunan terbaru di atas)
     tbody.prepend(tr);
 }
 
@@ -1317,7 +1378,7 @@ function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPe
         });
     });
 
-let rumusanTbody = document.getElementById('badanJadualRumusan');
+    let rumusanTbody = document.getElementById('badanJadualRumusan');
     if (rumusanTbody && rumusanTbody.children.length > 0) {
         adaData = true; 
         let rumusanHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; border: 1px solid #ccc;"><thead><tr style="background: #1f4e79; color: white;"><th style="padding: 8px; text-align: left; border: 1px solid #ccc; width:28%;">Jenis Bayaran</th><th style="padding: 8px; text-align: center; border: 1px solid #ccc; width:17%;">Keterangan</th><th style="padding: 8px; text-align: right; border: 1px solid #ccc; width:16%;">Patut Bayar</th><th style="padding: 8px; text-align: right; border: 1px solid #ccc; width:16%;">Telah Bayar</th><th style="padding: 8px; text-align: right; border: 1px solid #ccc; width:16%;">Baki (+/-)</th></tr></thead><tbody>`;
@@ -1334,11 +1395,9 @@ let rumusanTbody = document.getElementById('badanJadualRumusan');
         htmlLaporan += `<div class="report-box" style="grid-column: 1 / -1; border-left: 5px solid #1f4e79; margin-top: 10px;"><div class="report-header" style="background:#e8eaed; color:#1a1a1a;">RUMUSAN AKHIR BAYARAN</div>${rumusanHTML}</div>`;
     }
 
-if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan atau isi Jadual Rumusan terlebih dahulu."); return; }
+    if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan atau isi Jadual Rumusan terlebih dahulu."); return; }
     
     let tarikhHariIni = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' }); 
-    
-    // KANTOI: INI 2 BARIS KOD YANG SAYA TERPADAM SEBELUM NI!
     let tajukHeaderHTML = "";
     let contentSeterusnya = "";
     
@@ -1393,28 +1452,18 @@ if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan a
         
         let htmlUpahDalaman = "";
         let vBasicNum = getValNum(v_basic);
-        if(vBasicNum > 0) {
-            htmlUpahDalaman += trU("Gaji Pokok", "", parseRMStr(v_basic));
-            totalUpah += vBasicNum;
-        }
+        if(vBasicNum > 0) { htmlUpahDalaman += trU("Gaji Pokok", "", parseRMStr(v_basic)); totalUpah += vBasicNum; }
 
         let jumlahElaunPopUp = 0;
         if (xtra && xtra.senaraiElaun && xtra.senaraiElaun.length > 0) {
             xtra.senaraiElaun.forEach(elaun => {
                 let n = getValNum(elaun.nilai);
-                if (elaun.jenis || n > 0) {
-                    htmlUpahDalaman += trU(elaun.jenis || "Elaun Tambahan", "", parseRMStr(elaun.nilai));
-                    totalUpah += n;
-                    jumlahElaunPopUp++;
-                }
+                if (elaun.jenis || n > 0) { htmlUpahDalaman += trU(elaun.jenis || "Elaun Tambahan", "", parseRMStr(elaun.nilai)); totalUpah += n; jumlahElaunPopUp++; }
             });
         }
         
         let vElaunNum = getValNum(v_elaun);
-        if (jumlahElaunPopUp === 0 && vElaunNum > 0) {
-            htmlUpahDalaman += trU("Elaun", "", parseRMStr(v_elaun));
-            totalUpah += vElaunNum;
-        }
+        if (jumlahElaunPopUp === 0 && vElaunNum > 0) { htmlUpahDalaman += trU("Elaun", "", parseRMStr(v_elaun)); totalUpah += vElaunNum; }
 
         let itemsUpah = [
             { label: "OT Normal (1.5)", detail: h_otb ? h_otb + " jam" : "", amt: r_otb },
@@ -1429,14 +1478,21 @@ if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan a
 
         itemsUpah.forEach(i => {
             let n = getValNum(i.amt);
-            if (n > 0) {
-                htmlUpahDalaman += trU(i.label, i.detail, parseRMStr(i.amt));
-                totalUpah += n;
-            }
+            if (n > 0) { htmlUpahDalaman += trU(i.label, i.detail, parseRMStr(i.amt)); totalUpah += n; }
         });
 
-        htmlUpahDalaman += `<tr><td colspan="2" style="padding: 8px 12px; border-top: 2px solid #ccc; font-weight: bold; text-align: right; background:#f4f6f9;">JUMLAH UPAH</td><td style="padding: 8px 12px; border-top: 2px solid #ccc; font-weight: bold; text-align: right; background:#f4f6f9;">${parseRMStr(totalUpah)}</td></tr>`;
-        let upahHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">${htmlUpahDalaman}</table>`;
+        // HTML UPAH DENGAN SUSUNAN KE BAWAH AUTO (FLEX)
+        let upahHTML = `
+            <div style="flex-grow: 1; padding: 10px 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">${htmlUpahDalaman}</table>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: auto; border-top: 1px solid #aaa;">
+                <tr>
+                    <td colspan="2" style="padding: 8px 12px; font-weight: bold; text-align: right; background:#e8eaed; color:#1a1a1a;">JUMLAH UPAH</td>
+                    <td style="padding: 8px 12px; font-weight: bold; text-align: right; background:#e8eaed; color:#1a1a1a; width: 30%;">${parseRMStr(totalUpah)}</td>
+                </tr>
+            </table>
+        `;
 
         let htmlPotonganDalaman = "";
         if (xtra) {
@@ -1449,45 +1505,43 @@ if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan a
 
             itemsPotongan.forEach(i => {
                 let n = getValNum(i.amt);
-                if (n > 0) {
-                    htmlPotonganDalaman += trP(i.label, parseRMStr(i.amt));
-                    totalPotongan += n;
-                }
+                if (n > 0) { htmlPotonganDalaman += trP(i.label, parseRMStr(i.amt)); totalPotongan += n; }
             });
 
             if (xtra.senaraiPotongan) {
                 xtra.senaraiPotongan.forEach(potong => {
                     let n = getValNum(potong.nilai);
-                    if (potong.jenis || n > 0) {
-                        htmlPotonganDalaman += trP(labelWithPct(potong.jenis || "Lain-lain", potong.pct), parseRMStr(n));
-                        totalPotongan += n;
-                    }
+                    if (potong.jenis || n > 0) { htmlPotonganDalaman += trP(labelWithPct(potong.jenis || "Lain-lain", potong.pct), parseRMStr(n)); totalPotongan += n; }
                 });
             }
         }
         
-        htmlPotonganDalaman += `<tr><td style="padding: 8px 12px; border-top: 2px solid #ccc; font-weight: bold; text-align: right; background:#fff0f0;">JUMLAH POTONGAN</td><td style="padding: 8px 12px; border-top: 2px solid #ccc; font-weight: bold; text-align: right; color:#d9534f; background:#fff0f0;">${parseRMStr(totalPotongan)}</td></tr>`;
-        let potongHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 11px;">${htmlPotonganDalaman}</table>`;
+        // HTML POTONGAN DENGAN SUSUNAN KE BAWAH AUTO (FLEX)
+        let potongHTML = `
+            <div style="flex-grow: 1; padding: 10px 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">${htmlPotonganDalaman}</table>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: auto; border-top: 1px solid #aaa;">
+                <tr>
+                    <td style="padding: 8px 12px; font-weight: bold; text-align: right; background:#e8eaed; color:#1a1a1a; width: 60%;">JUMLAH POTONGAN</td>
+                    <td style="padding: 8px 12px; font-weight: bold; text-align: right; color:#d9534f; background:#e8eaed; width: 40%;">${parseRMStr(totalPotongan)}</td>
+                </tr>
+            </table>
+        `;
 
         let jumlahBersih = totalUpah - totalPotongan;
+        
+        // WARNA HEADER "JUMLAH BERSIH" DISELARASKAN DAN MARGIN KE 3pt
         let bersihHtml = `
-            <div style="grid-column: 1 / -1; background: #1f4e79; color: white; padding: 12px 20px; border-radius: 6px; text-align: right; margin-bottom: 15px; display:flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 14px; font-weight: normal; letter-spacing: 0.5px;">JUMLAH KESELURUHAN UPAH (BERSIH)</span>
-                <span style="font-size: 18px; font-weight: bold;">${parseRMStr(jumlahBersih)}</span>
+            <div class="report-box" style="grid-column: 1 / -1; border: 1px solid #aaa; border-left: 5px solid #1f4e79; margin-bottom: 3pt; display:flex; justify-content: space-between; align-items: center; background:#e8eaed; color:#1a1a1a; padding: 10px 20px; border-radius: 6px;">
+                <span style="font-size: 13px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase;">JUMLAH KESELURUHAN UPAH (BERSIH)</span>
+                <span style="font-size: 16px; font-weight: bold;">${parseRMStr(jumlahBersih)}</span>
             </div>
         `;
 
-        let v_ct_layak = "-", v_cs_layak = "-", v_ch_layak = "-";
-        semuaKadAktif.forEach(kad => {
-            let v = (id) => { let e = kad.querySelector(`[id="${id}"], [data-original-id="${id}"]`); return e ? e.value.trim() : ""; };
-            if(!v_ct_layak || v_ct_layak === "-") v_ct_layak = v("cutiLayak");
-            if(!v_cs_layak || v_cs_layak === "-") v_cs_layak = v("sakitLayak");
-            if(!v_ch_layak || v_ch_layak === "-") v_ch_layak = v("hospLayak");
-        });
-        
-        v_ct_layak = (v_ct_layak && v_ct_layak !== "-") ? v_ct_layak + " Hari" : "-";
-        v_cs_layak = (v_cs_layak && v_cs_layak !== "-") ? v_cs_layak + " Hari" : "-";
-        v_ch_layak = (v_ch_layak && v_ch_layak !== "-") ? v_ch_layak + " Hari" : "-";
+        // KUTIP DATA KELAYAKAN DARI XTRA (POP-UP MODAL)
+        let svc = xtra.svcData || {};
+        let fDay = (val) => (val && val !== "-" && val !== "") ? val : "-";
 
         let htmlMaklumatPerkhidmatan = `
             <div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
@@ -1495,20 +1549,34 @@ if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan a
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center;">
                     <thead>
                         <tr style="background: #f4f6f9; border-bottom: 1px solid #ccc;">
-                            <th style="padding: 8px;">Kelayakan</th>
-                            <th style="padding: 8px;">Hari Kelepasan</th>
-                            <th style="padding: 8px;">Cuti Tahunan</th>
-                            <th style="padding: 8px;">Cuti Sakit</th>
-                            <th style="padding: 8px;">Cuti Hospitalisasi</th>
+                            <th style="padding: 8px; text-align: left;">Perkara</th>
+                            <th style="padding: 8px;">PH</th>
+                            <th style="padding: 8px;">AL</th>
+                            <th style="padding: 8px;">MC</th>
+                            <th style="padding: 8px;">War</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <tr style="border-bottom: 1px dashed #eee;">
+                            <td style="padding: 8px; font-weight: bold; background: #fafafa; text-align: left;">Kelayakan Tahunan</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.phL)}</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.alL)}</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.mcL)}</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.warL)}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px dashed #eee;">
+                            <td style="padding: 8px; font-weight: bold; background: #fafafa; text-align: left;">Telah Digunakan</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.phG)}</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.alG)}</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.mcG)}</td>
+                            <td style="padding: 8px; font-weight: bold;">${fDay(svc.warG)}</td>
+                        </tr>
                         <tr>
-                            <td style="padding: 8px; font-weight: bold; background: #fafafa;">Tahunan</td>
-                            <td style="padding: 8px; font-weight: bold;">11 Hari</td>
-                            <td style="padding: 8px; font-weight: bold;">${v_ct_layak}</td>
-                            <td style="padding: 8px; font-weight: bold;">${v_cs_layak}</td>
-                            <td style="padding: 8px; font-weight: bold;">${v_ch_layak}</td>
+                            <td style="padding: 8px; font-weight: bold; background: #fafafa; text-align: left; color:#1f4e79;">Baki</td>
+                            <td style="padding: 8px; font-weight: bold; color:#1f4e79;">${fDay(svc.phB)}</td>
+                            <td style="padding: 8px; font-weight: bold; color:#1f4e79;">${fDay(svc.alB)}</td>
+                            <td style="padding: 8px; font-weight: bold; color:#1f4e79;">${fDay(svc.mcB)}</td>
+                            <td style="padding: 8px; font-weight: bold; color:#1f4e79;">${fDay(svc.warB)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1516,13 +1584,13 @@ if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan a
         `;
 
         let penyataGajiHTML = `
-        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 15px; margin-bottom: 15px; grid-column: 1 / -1; align-items: start;">
-            <div class="report-box" style="padding: 0; overflow: hidden; border: 1px solid #1f4e79;">
-                <div style="background: #1f4e79; color: white; font-weight: bold; padding: 10px 12px; font-size: 12px; text-align: left; text-transform: uppercase;">BUTIRAN UPAH</div>
+        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 15px; margin-bottom: 1.5pt; grid-column: 1 / -1; align-items: stretch;">
+            <div class="report-box" style="padding: 0; border: 1px solid #aaa; display: flex; flex-direction: column; height: 100%;">
+                <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px; margin: 0; border-radius: 0; border-bottom: 1px solid #aaa;">BUTIRAN UPAH</div>
                 ${upahHTML}
             </div>
-            <div class="report-box" style="padding: 0; overflow: hidden; border: 1px solid #d9534f;">
-                <div style="background: #d9534f; color: white; font-weight: bold; padding: 10px 12px; font-size: 12px; text-align: left; text-transform: uppercase;">BUTIRAN POTONGAN</div>
+            <div class="report-box" style="padding: 0; border: 1px solid #aaa; display: flex; flex-direction: column; height: 100%;">
+                <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px; margin: 0; border-radius: 0; border-bottom: 1px solid #aaa;">BUTIRAN POTONGAN</div>
                 ${potongHTML}
             </div>
         </div>
@@ -1540,13 +1608,12 @@ if (!adaData) { alert("Peringatan: Sila buat sekurang-kurangnya satu pengiraan a
         contentSeterusnya = htmlLaporan; 
     }
 
-let maklumatSyarikatPekerjaHTML = "";
+    let maklumatSyarikatPekerjaHTML = "";
     
-    if (namaPekerja !== "" || icPekerja !== "" || noPekerja !== "" || namaMajikan !== "") {
-        maklumatSyarikatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 15px; border-left: 5px solid #1f4e79;">
-            <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA & SYARIKAT</div>
+    if (namaPekerja !== "" || icPekerja !== "" || noPekerja !== "") {
+        maklumatSyarikatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 3pt; border-left: 5px solid #1f4e79;">
+            <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA</div>
             <table class="param-table" style="margin-bottom: 0;">
-                ${namaMajikan ? `<tr><td class="param-label" style="width: 25%; font-weight: bold;">Syarikat/Organisasi/Majikan</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaMajikan}</td></tr>` : ''}
                 ${namaPekerja ? `<tr><td class="param-label" style="width: 25%; font-weight: bold;">Nama Pekerja</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${namaPekerja}</td></tr>` : ''}
                 ${icPekerja ? `<tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Kad Pengenalan / No. Passport</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${icPekerja}</td></tr>` : ''}
                 ${noPekerja ? `<tr><td class="param-label" style="width: 25%; font-weight: bold;">No. Pekerja</td><td class="param-value" style="text-align: left; font-weight: normal; color: #111;">: ${noPekerja}</td></tr>` : ''}
@@ -1577,24 +1644,114 @@ function semakLogin() {
 }
 document.addEventListener("DOMContentLoaded", function() { let kotakPassword = document.getElementById("loginPassword"); if (kotakPassword) { kotakPassword.addEventListener("keypress", function(event) { if (event.key === "Enter") semakLogin(); }); } });
 function logKeluar() { let btn = document.getElementById("butangAuth"); if (btn) { btn.innerHTML = "⏻ Log Masuk"; btn.style.background = "#1f4e79"; btn.style.borderColor = "#1f4e79"; btn.setAttribute("onclick", "paparLogMasuk()"); } alert("Anda telah berjaya log keluar dari sistem."); }
-function resetSemua() {
+
+// =====================================================
+// ENJIN RESET (DIKEMASKINI)
+// =====================================================
+
+window.resetSemua = function() {
     let sah = confirm("Adakah anda pasti mahu memadam KESEMUA data pengiraan? Tindakan ini tidak boleh diundur.");
     if (sah) {
+        // 1. Buang semua kad kalkulator yang aktif
         let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         semuaKadAktif.forEach(kad => kad.remove());
+        
+        // 2. Kosongkan jadual rumusan
         resetRumusan();
         
-        // ++ CUCI MEMORI ELAUN GLOBAL UNTUK SESI BARU ++
+        // 3. Cuci memori senarai elaun global
         senaraiElaunGlobal = [];
-        allowanceCardTransformed = false;
         
+        // 4. Sembunyikan kad rumusan
         let kadRumusan = document.querySelector('.rumusan-card');
         if (kadRumusan) {
             kadRumusan.style.display = "none";
         }
+        
+        // 5. Paksa sistem bina semula kotak elaun kosong pada paparan asal jika perlu
+        setTimeout(() => {
+            if (typeof window.semakDanTukarElaun === 'function') {
+                window.semakDanTukarElaun();
+            }
+        }, 50);
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-}
+};
+
+window.resetKalkulatorIndividu = function(elementButangReset) {
+    if (!elementButangReset) return;
+    
+    // 1. Cari kad kalkulator induk tempat butang reset ditekan
+    const kadKalkulator = elementButangReset.closest('.calculator-card');
+    if (!kadKalkulator) return;
+
+    // 2. Kosongkan semua input teks, nombor, dan tarikh dalam kad ini
+    const senaraiInput = kadKalkulator.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]');
+    senaraiInput.forEach(input => {
+        if (input.readOnly) {
+            if (input.classList.contains('salary-total') || input.id.includes('Total')) {
+                input.value = "RM 0.00";
+            } else {
+                input.value = "";
+            }
+        } else {
+            input.value = '';
+        }
+    });
+
+    // 3. Tetapkan semula semua dropdown pilihan (select) ke pilihan pertama (- Sila Pilih -)
+    const senaraiSelect = kadKalkulator.querySelectorAll('select');
+    senaraiSelect.forEach(select => {
+        select.selectedIndex = 0;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    // 4. RESET KHAS ELAUN DINAMIK: Kosongkan baris pertama & buang baris tambahan
+    const kontenaElaun = kadKalkulator.querySelector('.dynamic-allowance-wrapper');
+    if (kontenaElaun) {
+        const senaraiBarisElaun = kontenaElaun.querySelectorAll('.elaun-row-kalkulator');
+        senaraiBarisElaun.forEach((baris, index) => {
+            if (index === 0) {
+                baris.querySelectorAll('input').forEach(inp => inp.value = '');
+            } else {
+                baris.remove();
+            }
+        });
+        if (typeof updateGlobalElaunSum === 'function') {
+            updateGlobalElaunSum(kontenaElaun);
+        }
+    } else {
+        // Jika wrapper dinamik belum wujud, kosongkan terus input elaun asal berdasarkan salaryMap
+        Object.keys(salaryMap).forEach(key => {
+            let allowID = salaryMap[key][0];
+            let allowEl = kadKalkulator.querySelector(`[id="${allowID}"], [data-original-id="${allowID}"]`);
+            if (allowEl) allowEl.value = '';
+        });
+    }
+
+    // 5. Sembunyikan bahagian data keputusan dan paparkan semula status "pending"
+    const prefixList = ['orp', 'baki', 'ot', 'lewat', 'otRH', 'otPH', 'rh', 'rhMore', 'ph', 'sec18A', 'annualLeave', 'sickLeave', 'kelayakanCuti', 'kelayakanSakit', 'resUni', 'tbb'];
+    prefixList.forEach(prefix => {
+        let pending = kadKalkulator.querySelector(`[id="${prefix}Pending"], [data-original-id="${prefix}Pending"]`);
+        let data = kadKalkulator.querySelector(`[id="${prefix}Data"], [data-original-id="${prefix}Data"]`);
+        if (pending && data) {
+            pending.style.display = "block";
+            data.style.display = "none";
+        }
+    });
+
+    // 6. Tetapkan semula semua elemen teks keputusan kepada "RM 0.00" atau "-"
+    const outputStrong = kadKalkulator.querySelectorAll('.result-row strong, [id$="Result"], [id$="Amount"], [id$="ORP"], [id$="Hourly"], [id$="Daily"], [id$="Minutely"], [id$="Hari"], [id$="Tempoh"], [id$="Kadar"]');
+    outputStrong.forEach(el => {
+        if (el.innerText.includes("RM") || el.id.includes('Amount') || el.id.includes('Result') || el.id.includes('ORP') || el.id.includes('Hourly') || el.id.includes('Daily') || el.id.includes('Minutely')) {
+            el.innerText = "RM 0.00";
+            el.style.color = "";
+        } else if (el.id.includes('Tempoh') || el.id.includes('Kadar') || el.id.includes('Hari')) {
+            el.innerText = "-";
+        }
+    });
+};
 
 // =====================================================
 // 7. ENGINE 2026: CLONE & MULTI-INSTANCE
@@ -1608,19 +1765,13 @@ window.tambahKalkulator = function(templateId) {
     let rumusanCard = document.querySelector('.rumusan-card');
     let warningBox = document.querySelector('.warning-box');
 
-    // ==== LOGIK KHAS UNTUK PAPARAN MAKLUMAT GAJI ====
     if (templateId === 'maklumatGaji') {
-        // Hapus semua kalkulator yang terbuka untuk beri laluan pada paparan Gaji
         let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         semuaKadAktif.forEach(kad => kad.remove());
-        
-        // Sembunyikan Jadual Rumusan & Kotak Peringatan
         if (rumusanCard) rumusanCard.style.display = "none";
         if (warningBox) warningBox.style.display = "none";
     } else {
-        // Jika buka kalkulator biasa, kembalikan semula kotak Peringatan
         if (warningBox) warningBox.style.display = "block";
-        // Tutup Maklumat Gaji jika sedang dibuka
         let existingMg = document.getElementById('active-maklumatGaji');
         if (existingMg) existingMg.remove();
     }
@@ -1633,7 +1784,6 @@ window.tambahKalkulator = function(templateId) {
     
     let uniqueSuffix = '_' + Math.random().toString(36).substr(2, 9);
     
-    // ==== TANDA 'X' HANYA DIBENARKAN UNTUK KALKULATOR BIASA ====
     if (templateId === 'maklumatGaji') {
         clone.id = 'active-maklumatGaji';
         clone.style.position = "relative";
@@ -1645,9 +1795,13 @@ window.tambahKalkulator = function(templateId) {
         closeBtn.innerHTML = "X";
         closeBtn.onclick = function() { 
             clone.remove(); 
+            
             let kadTinggal = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
             if (kadTinggal.length === 0) {
                 if (rumusanCard) { rumusanCard.style.display = "none"; }
+            } else {
+                // PENYELESAIAN: Paksa sistem pasang dan KLON semula kotak elaun ke kalkulator lain yang tinggal!
+                setTimeout(() => window.semakDanTukarElaun(), 50);
             }
         };
         clone.appendChild(closeBtn);
@@ -1673,7 +1827,6 @@ window.tambahKalkulator = function(templateId) {
         });
     }
 
-    // ==== INHERIT DATA GAJI (Hanya Untuk Kalkulator Sahaja) ====
     if (templateId !== 'maklumatGaji') {
         let currentBasic = "";
         let currentAllowance = "";
@@ -1745,7 +1898,6 @@ window.tambahKalkulator = function(templateId) {
 
     if (rumusanCard) grid.insertBefore(clone, rumusanCard); else grid.appendChild(clone);
     
-    // ==== KAWALAN JADUAL RUMUSAN ====
     if (templateId !== 'maklumatGaji' && rumusanCard) { 
         let kadAktifBiasa = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
         if (kadAktifBiasa.length > 0) rumusanCard.style.display = "block"; 
@@ -1758,7 +1910,6 @@ window.tambahKalkulator = function(templateId) {
 // 8. ENJIN ELAUN DINAMIK GLOBAL & ONBOARDING TOUR
 // =====================================================
 let senaraiElaunGlobal = [];
-let allowanceCardTransformed = false;
 let elaunTourDitunjuk = false; 
 
 function transformAllowanceField(allowInput) {
@@ -1879,25 +2030,37 @@ function tunjukTourElaun(targetContainer) {
     document.getElementById('btnTutupTour').addEventListener('click', tutupTour);
 }
 
-function semakDanTukarElaun(card) {
-    if (allowanceCardTransformed) {
-        if (!document.querySelector('.dynamic-allowance-wrapper')) {
-            allowanceCardTransformed = false; 
-        } else {
-            return; 
+// INI PENYELESAIAN TERBARU (TIADA LAGI PEMBOLEH UBAH allowanceCardTransformed)
+window.semakDanTukarElaun = function() {
+    // Semak di seluruh skrin, adakah kotak elaun dinamik sudah dipaparkan di mana-mana kalkulator?
+    let wrapperSediaAda = document.querySelector('.dynamic-allowance-wrapper');
+    
+    // Jika YA (dah ada), maka berhenti. Tak perlu buat apa-apa.
+    if (wrapperSediaAda) return;
+
+    // Jika TIADA (mungkin baru padam kalkulator), cari kalkulator PERTAMA yang aktif
+    let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+    for (let i = 0; i < semuaKadAktif.length; i++) {
+        let kad = semuaKadAktif[i];
+        let allowInput = null;
+        
+        // Cari input elaun di dalam kalkulator tersebut
+        for (let k of Object.keys(salaryMap)) {
+            let aid = salaryMap[k][0];
+            let found = kad.querySelector(`[id="${aid}"], [data-original-id="${aid}"]`);
+            if (found && window.getComputedStyle(found).display !== 'none') { 
+                allowInput = found; 
+                break; 
+            }
+        }
+
+        // Pasang kotak elaun dinamik pada kalkulator ini! (Dan secara automatik dia akan KLON nilai dari senaraiElaunGlobal)
+        if (allowInput) {
+            transformAllowanceField(allowInput);
+            break; // Cukup pasang pada SATU kalkulator sahaja
         }
     }
-    let allowInput = null;
-    for(let k of Object.keys(salaryMap)) {
-        let aid = salaryMap[k][0];
-        let found = card.querySelector(`[id="${aid}"], [data-original-id="${aid}"]`);
-        if(found) { allowInput = found; break; }
-    }
-    if (allowInput) {
-        allowanceCardTransformed = true;
-        transformAllowanceField(allowInput);
-    }
-}
+};
 
 window.tambahBarisElaunGlobalKalkulator = function(btn) {
     let list = btn.parentElement.nextElementSibling;
@@ -1952,25 +2115,118 @@ window.updateGlobalElaunSum = function(el) {
 };
 
 const observerKalkulator = new MutationObserver((mutations) => {
+    let perluSemak = false;
     mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
-            if (node.nodeType === 1 && node.classList && node.classList.contains('calculator-card')) {
-                setTimeout(() => semakDanTukarElaun(node), 50); 
-            }
-        });
-        mutation.removedNodes.forEach(node => {
-            if (node.nodeType === 1 && node.querySelector('.dynamic-allowance-wrapper')) {
-                allowanceCardTransformed = false; 
-            }
-        });
+        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+            perluSemak = true;
+        }
     });
+    if (perluSemak) {
+        setTimeout(() => window.semakDanTukarElaun(), 50);
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
     let gridNode = document.getElementById('active-calculators-grid');
     if (gridNode) observerKalkulator.observe(gridNode, { childList: true });
     
-    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(card => {
-        semakDanTukarElaun(card);
-    });
+    setTimeout(() => window.semakDanTukarElaun(), 100);
 });
+// =====================================================
+// ENJIN RESET (DIKEMASKINI)
+// =====================================================
+
+window.resetSemua = function() {
+    let sah = confirm("Adakah anda pasti mahu memadam KESEMUA data pengiraan? Tindakan ini tidak boleh diundur.");
+    if (sah) {
+        let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+        semuaKadAktif.forEach(kad => kad.remove());
+        
+        resetRumusan();
+        senaraiElaunGlobal = [];
+        
+        let kadRumusan = document.querySelector('.rumusan-card');
+        if (kadRumusan) {
+            kadRumusan.style.display = "none";
+        }
+        
+        setTimeout(() => {
+            if (typeof window.semakDanTukarElaun === 'function') {
+                window.semakDanTukarElaun();
+            }
+        }, 50);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+window.resetKalkulatorIndividu = function(e) {
+    if (!e) return;
+    
+    // PENTING: Penyelesaian isu enjin klon. 
+    // Kenal pasti sama ada parameter 'e' adalah objek Event atau Elemen HTML.
+    let targetElemen = e.target ? e.target : e;
+    
+    const kadKalkulator = targetElemen.closest('.calculator-card');
+    if (!kadKalkulator) return;
+
+    const senaraiInput = kadKalkulator.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]');
+    senaraiInput.forEach(input => {
+        if (input.readOnly) {
+            if (input.classList.contains('salary-total') || input.id.includes('Total')) {
+                input.value = "RM 0.00";
+            } else {
+                input.value = "";
+            }
+        } else {
+            input.value = '';
+        }
+    });
+
+    const senaraiSelect = kadKalkulator.querySelectorAll('select');
+    senaraiSelect.forEach(select => {
+        select.selectedIndex = 0;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    const kontenaElaun = kadKalkulator.querySelector('.dynamic-allowance-wrapper');
+    if (kontenaElaun) {
+        const senaraiBarisElaun = kontenaElaun.querySelectorAll('.elaun-row-kalkulator');
+        senaraiBarisElaun.forEach((baris, index) => {
+            if (index === 0) {
+                baris.querySelectorAll('input').forEach(inp => inp.value = '');
+            } else {
+                baris.remove();
+            }
+        });
+        if (typeof updateGlobalElaunSum === 'function') {
+            updateGlobalElaunSum(kontenaElaun);
+        }
+    } else {
+        Object.keys(salaryMap).forEach(key => {
+            let allowID = salaryMap[key][0];
+            let allowEl = kadKalkulator.querySelector(`[id="${allowID}"], [data-original-id="${allowID}"]`);
+            if (allowEl) allowEl.value = '';
+        });
+    }
+
+    const prefixList = ['orp', 'baki', 'ot', 'lewat', 'otRH', 'otPH', 'rh', 'rhMore', 'ph', 'sec18A', 'annualLeave', 'sickLeave', 'kelayakanCuti', 'kelayakanSakit', 'resUni', 'tbb'];
+    prefixList.forEach(prefix => {
+        let pending = kadKalkulator.querySelector(`[id="${prefix}Pending"], [data-original-id="${prefix}Pending"]`);
+        let data = kadKalkulator.querySelector(`[id="${prefix}Data"], [data-original-id="${prefix}Data"]`);
+        if (pending && data) {
+            pending.style.display = "block";
+            data.style.display = "none";
+        }
+    });
+
+    const outputStrong = kadKalkulator.querySelectorAll('.result-row strong, [id$="Result"], [id$="Amount"], [id$="ORP"], [id$="Hourly"], [id$="Daily"], [id$="Minutely"], [id$="Hari"], [id$="Tempoh"], [id$="Kadar"]');
+    outputStrong.forEach(el => {
+        if (el.innerText.includes("RM") || el.id.includes('Amount') || el.id.includes('Result') || el.id.includes('ORP') || el.id.includes('Hourly') || el.id.includes('Daily') || el.id.includes('Minutely')) {
+            el.innerText = "RM 0.00";
+            el.style.color = "";
+        } else if (el.id.includes('Tempoh') || el.id.includes('Kadar') || el.id.includes('Hari')) {
+            el.innerText = "-";
+        }
+    });
+};
