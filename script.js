@@ -2492,132 +2492,159 @@ function transformAllowanceField(allowInput) {
 function tunjukTourElaun(targetContainer) {
     let existingOverlay = document.getElementById('tourElaunOverlay');
     if (existingOverlay) existingOverlay.remove();
+    let existingBox = document.getElementById('tourElaunBox');
+    if (existingBox) existingBox.remove();
 
     if (!targetContainer) return;
 
+    // Dapatkan kedudukan koordinat sebenar petak Maklumat Elaun dalam skrin
+    let rect = targetContainer.getBoundingClientRect();
+
+    // 1. Overlay Latar Belakang
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999999; backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; pointer-events: none;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
 
-    // Kira kedudukan dinamik relatif terhadap lebar popover box
-    let targetRect = targetContainer.getBoundingClientRect();
-    let isMobile = window.innerWidth <= 600;
+    // 2. Kotak Popover Terapung mengikut koordinat petak
+    let boxWidth = Math.min(420, window.innerWidth - 30);
     
-    // Kira titik tengah elemen sasaran berbanding modal
-    let boxWidth = Math.min(480, window.innerWidth - 40);
-    let targetCenter = targetRect.left + (targetRect.width / 2);
-    let boxLeft = (window.innerWidth - boxWidth) / 2;
-    let computedArrowLeft = targetCenter - boxLeft - 12; // 12px separuh lebar anak panah
-    let arrowLeftPos = Math.max(25, Math.min(computedArrowLeft, boxWidth - 45));
+    // Kira kedudukan Y (Letak di bawah petak jika ada ruang, atau di tengah)
+    let boxTop = rect.bottom + 15;
+    let arrowOnTop = true;
+    if (boxTop + 350 > window.innerHeight) {
+        boxTop = Math.max(10, rect.top - 360);
+        arrowOnTop = false;
+    }
 
-    overlay.innerHTML = `
-        <div class="tour-popover-box" style="pointer-events: auto; position: relative; background: white; border-radius: 12px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.4); padding: 25px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatUpTour 0.3s ease-out; text-align: left; box-sizing: border-box;">
-            
-            <!-- Anak Panah Penunjuk Dinamik (Arrow Pointer) -->
-            <div style="position: absolute; bottom: 100%; left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent; transition: left 0.2s;"></div>
-            <div style="position: absolute; bottom: calc(100% - 7px); left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent; transition: left 0.2s;"></div>
+    // Kira kedudukan X (Supaya tidak terpotong tepi skrin)
+    let boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
+    
+    // Kira posisi anak panah relatif kepada kotak popover
+    let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
 
-            <h4 style="margin: 0 0 12px 0; color: #1f4e79; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
-                <span style="background: #1f4e79; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">💡</span>
-                Panduan Maklumat Elaun
-            </h4>
-            
-            <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: bold; color: #333;">
-                Elaun <span style="color:#d9534f; text-decoration: underline;">SELAIN / TIDAK TERMASUK:</span>
-            </p>
-            
-            <ul style="margin: 0 0 15px 0; padding-left: 20px; font-size: 12px; color: #444; line-height: 1.6;">
-                <li style="margin-bottom: 6px;"><strong>NILAI</strong> tempat tinggal, bekalan makanan, minyak, lampu, air, rawatan perubatan atau yang diluluskan JTK;</li>
-                <li style="margin-bottom: 6px;">Bayaran <strong>CARUMAN</strong>;</li>
-                <li style="margin-bottom: 6px;">Elaun Pengangkutan (Kenderaan/minyak (yang sama erti dengannya));</li>
-                <li style="margin-bottom: 6px;">Bayaran Khas untuk tujuan perbelanjaan pekerjaan;</li>
-                <li style="margin-bottom: 6px;">Bayaran persaraan/pemberhentian/pampasan;</li>
-                <li>Bonus tahunan.</li>
-            </ul>
-            
-            <p style="margin: 0 0 20px 0; font-size: 12px; font-weight: bold; color: #d9534f; background: #fff0f0; padding: 10px; border-radius: 6px; border-left: 4px solid #d9534f; line-height: 1.4;">
-                * DAN TIDAK TERMASUK bayaran yang dibayar di luar waktu kerja normal.
-            </p>
-            
-            <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(31,78,121,0.2);">OK, SAYA FAHAM</button>
-        </div>
+    let popoverBox = document.createElement('div');
+    popoverBox.id = 'tourElaunBox';
+    popoverBox.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 999999; background: white; border-radius: 12px; max-height: 80vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
+
+    let arrowStyleHtml = arrowOnTop 
+        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+           <div style="position: absolute; bottom: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
+        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
+           <div style="position: absolute; top: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
+
+    popoverBox.innerHTML = `
+        ${arrowStyleHtml}
+        <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+            <span style="background: #1f4e79; color: white; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">💡</span>
+            Panduan Maklumat Elaun
+        </h4>
+        
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #333;">
+            Elaun <span style="color:#d9534f; text-decoration: underline;">SELAIN / TIDAK TERMASUK:</span>
+        </p>
+        
+        <ul style="margin: 0 0 12px 0; padding-left: 18px; font-size: 11.5px; color: #444; line-height: 1.5;">
+            <li style="margin-bottom: 4px;"><strong>NILAI</strong> tempat tinggal, bekalan makanan, minyak, lampu, air, rawatan perubatan atau yang diluluskan JTK;</li>
+            <li style="margin-bottom: 4px;">Bayaran <strong>CARUMAN</strong>;</li>
+            <li style="margin-bottom: 4px;">Elaun Pengangkutan (Kenderaan/minyak (yang sama erti dengannya));</li>
+            <li style="margin-bottom: 4px;">Bayaran Khas untuk tujuan perbelanjaan pekerjaan;</li>
+            <li style="margin-bottom: 4px;">Bayaran persaraan/pemberhentian/pampasan;</li>
+            <li>Bonus tahunan.</li>
+        </ul>
+        
+        <p style="margin: 0 0 15px 0; font-size: 11px; font-weight: bold; color: #d9534f; background: #fff0f0; padding: 8px; border-radius: 5px; border-left: 3px solid #d9534f; line-height: 1.4;">
+            * DAN TIDAK TERMASUK bayaran yang dibayar di luar waktu kerja normal.
+        </p>
+        
+        <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
         <style>
             @keyframes floatUpTour { 
-                0% { opacity: 0; transform: translateY(20px) scale(0.95); } 
-                100% { opacity: 1; transform: translateY(0) scale(1); } 
+                0% { opacity: 0; transform: translateY(10px); } 
+                100% { opacity: 1; transform: translateY(0); } 
             }
             #btnTutupTour:hover { background: #153859 !important; }
         </style>
     `;
 
     document.body.appendChild(overlay);
+    document.body.appendChild(popoverBox);
 
-    const tutupTour = (e) => {
-        if (e.target === overlay || e.target.id === 'btnTutupTour') {
-            overlay.remove();
-        }
+    const tutupTour = () => {
+        overlay.remove();
+        popoverBox.remove();
     };
 
     overlay.addEventListener('click', tutupTour);
+    document.getElementById('btnTutupTour').addEventListener('click', tutupTour);
 }
 
 function tunjukTourElaunPopup() {
     let existingOverlay = document.getElementById('tourElaunPopupOverlay');
     if (existingOverlay) existingOverlay.remove();
+    let existingBox = document.getElementById('tourElaunPopupBox');
+    if (existingBox) existingBox.remove();
 
     let targetContainer = document.getElementById('containerElaunModal');
-    let isMobile = window.innerWidth <= 600;
-    let arrowLeftPos = 35;
+    if (!targetContainer) return;
 
-    if (targetContainer) {
-        let targetRect = targetContainer.getBoundingClientRect();
-        let boxWidth = Math.min(480, window.innerWidth - 40);
-        let targetCenter = targetRect.left + (targetRect.width / 2);
-        let boxLeft = (window.innerWidth - boxWidth) / 2;
-        let computedArrowLeft = targetCenter - boxLeft - 12;
-        arrowLeftPos = Math.max(25, Math.min(computedArrowLeft, boxWidth - 45));
+    let rect = targetContainer.getBoundingClientRect();
+    let boxWidth = Math.min(420, window.innerWidth - 30);
+    
+    let boxTop = rect.bottom + 15;
+    let arrowOnTop = true;
+    if (boxTop + 220 > window.innerHeight) {
+        boxTop = Math.max(10, rect.top - 230);
+        arrowOnTop = false;
     }
+
+    let boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
+    let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
 
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunPopupOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 999999; backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; pointer-events: none;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
 
-    overlay.innerHTML = `
-        <div class="tour-popover-box" style="pointer-events: auto; position: relative; background: white; border-radius: 12px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.4); padding: 25px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatUpTour 0.3s ease-out; text-align: left; box-sizing: border-box;">
-            
-            <!-- Anak Panah Penunjuk Dinamik (Arrow Pointer) -->
-            <div style="position: absolute; bottom: 100%; left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent; transition: left 0.2s;"></div>
-            <div style="position: absolute; bottom: calc(100% - 7px); left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent; transition: left 0.2s;"></div>
+    let popoverBox = document.createElement('div');
+    popoverBox.id = 'tourElaunPopupBox';
+    popoverBox.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 999999; background: white; border-radius: 12px; max-height: 80vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
 
-            <h4 style="margin: 0 0 12px 0; color: #1f4e79; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
-                <span style="background: #1f4e79; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">💡</span>
-                Panduan Senarai Elaun
-            </h4>
-            
-            <p style="margin: 0 0 20px 0; font-size: 12.5px; font-weight: bold; color: #1f4e79; background: #e8eaed; padding: 12px; border-radius: 6px; line-height: 1.5;">
-                CATATAN: Klik + Tambah. Masukkan semua ELAUN selain yang telah dinyatakan di dalam Bahagian Kalkulator (Sama ada dibayar di dalam waktu kerja normal atau di luar waktu kerja normal).
-            </p>
-            
-            <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(31,78,121,0.2);">OK, SAYA FAHAM</button>
-        </div>
+    let arrowStyleHtml = arrowOnTop 
+        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+           <div style="position: absolute; bottom: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
+        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
+           <div style="position: absolute; top: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
+
+    popoverBox.innerHTML = `
+        ${arrowStyleHtml}
+        <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+            <span style="background: #1f4e79; color: white; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">💡</span>
+            Panduan Senarai Elaun
+        </h4>
+        
+        <p style="margin: 0 0 15px 0; font-size: 12px; font-weight: bold; color: #1f4e79; background: #e8eaed; padding: 10px; border-radius: 6px; line-height: 1.5;">
+            CATATAN: Klik + Tambah. Masukkan semua ELAUN selain yang telah dinyatakan di dalam Bahagian Kalkulator (Sama ada dibayar di dalam waktu kerja normal atau di luar waktu kerja normal).
+        </p>
+        
+        <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
         <style>
             @keyframes floatUpTour { 
-                0% { opacity: 0; transform: translateY(20px) scale(0.95); } 
-                100% { opacity: 1; transform: translateY(0) scale(1); } 
+                0% { opacity: 0; transform: translateY(10px); } 
+                100% { opacity: 1; transform: translateY(0); } 
             }
             #btnTutupTourPopup:hover { background: #153859 !important; }
         </style>
     `;
 
     document.body.appendChild(overlay);
+    document.body.appendChild(popoverBox);
 
-    const tutupTourPopup = (e) => {
-        if (e.target === overlay || e.target.id === 'btnTutupTourPopup') {
-            overlay.remove();
-        }
+    const tutupTourPopup = () => {
+        overlay.remove();
+        popoverBox.remove();
     };
 
     overlay.addEventListener('click', tutupTourPopup);
+    document.getElementById('btnTutupTourPopup').addEventListener('click', tutupTourPopup);
 }
 
 window.semakDanTukarElaun = function() {
