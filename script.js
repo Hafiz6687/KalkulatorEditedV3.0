@@ -3166,3 +3166,15 @@ window.hapusDraf = function(e) {
         document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
     }
 };
+// =====================================================
+// PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
+// =====================================================
+document.addEventListener("DOMContentLoaded", function() {
+    let tbody = document.querySelector('#card-maklumatGaji tbody');
+    if (tbody) {
+        let firstRow = tbody.querySelector('tr');
+        if (firstRow && firstRow.innerHTML.includes('KBR/10103')) {
+            firstRow.remove();
+        }
+    }
+});
