@@ -3022,10 +3022,7 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
         return fungsiCallback(); 
     }
 
-    // KAWALAN KETAT: Pop-up HANYA dipaparkan bagi 3 situasi berikut sahaja:
-    // Situasi 1: Akta Kerja (ada aktiviti) -> Klik Seksyen 18A
-    // Situasi 2: Seksyen 18A (ada aktiviti) -> Klik Akta Kerja
-    // Situasi 3: Ada aktiviti -> Klik SENARAI REKOD
+    // KAWALAN KETAT: Bagi 3 situasi berikut sahaja:
     let adakah3SituasiSah = (modSemasa === 'AKTA' && modDestinasi === '18A') || 
                              (modSemasa === '18A' && modDestinasi === 'AKTA') || 
                              (modDestinasi === 'REKOD');
@@ -3034,43 +3031,12 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
         return fungsiCallback();
     }
 
-    let paparanMod = modSemasa === '18A' ? 'KALKULATOR SEKSYEN 18A' : 'KALKULATOR AKTA KERJA';
-    
-    let existingModal = document.getElementById('modalAmaranPertukaran');
-    if (existingModal) existingModal.remove();
-
-    // Pop-up amaran eksklusif pertukaran mod (Hanya Batal & Hapus)
-    let boxHtml = `
-    <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
-        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; box-sizing: border-box;">
-            <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
-            <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Aktiviti Pengiraan Dikesan</h3>
-            <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
-                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b>.<br><br>Sila pilih tindakan anda sebelum beralih:
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button id="btnBatalTukar" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">🛑 Batal (Kekal Di Paparan Sekarang)</button>
-                <button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">🗑️ Hapus (Padam Aktiviti)</button>
-            </div>
-        </div>
-    </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', boxHtml);
-
-    // BATAL: Tutup pop-up amaran dan KEKAL di paparan kalkulator semasa
-    document.getElementById('btnBatalTukar').onclick = function() {
-        document.getElementById('modalAmaranPertukaran').remove();
-    };
-
-    // HAPUS: Padam aktiviti semasa dan teruskan membuka menu/kalkulator pilihan
-    document.getElementById('btnHapusDraf').onclick = function() {
-        document.getElementById('modalAmaranPertukaran').remove();
-        document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
-        if(typeof resetRumusan === 'function') resetRumusan();
-        senaraiElaunGlobal = [];
-        let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
-        fungsiCallback();
-    };
+    // Terus laksanakan proses padam aktiviti semasa dan buka menu pilihan (Tanpa Pop-up Amaran)
+    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
+    if(typeof resetRumusan === 'function') resetRumusan();
+    senaraiElaunGlobal = [];
+    let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
+    fungsiCallback();
 }
 
 // Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod"
