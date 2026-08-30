@@ -3022,7 +3022,7 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     };
 }
 
-// === GANTIKAN DUA FUNGSI TERSEBUT DENGAN KOD INI ===
+// Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod" (Diperbaiki)
 window.simpanKeDrafDOM = function(modSemasa) {
     let drafContainer = document.getElementById('drafStorageContainer');
     if(!drafContainer) {
@@ -3039,18 +3039,18 @@ window.simpanKeDrafDOM = function(modSemasa) {
     let kadContainer = document.createElement('div');
     kadContainer.className = 'draf-kad-container';
     
-    // Simpan rujukan asal tanpa klon supaya event listener & nilai input tidak terputus
+    // Pindahkan kad kalkulator aktif secara langsung ke dalam kontena draf
     document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(kad => {
         kad.style.display = 'block';
         kad.classList.remove('sementara-sembunyi');
-        kadContainer.appendChild(kad);
+        kadContainer.appendChild(kad); 
     });
     wrapper.appendChild(kadContainer);
 
     let rumusanContainer = document.createElement('tbody');
     rumusanContainer.className = 'draf-rumusan-container';
     document.querySelectorAll('#badanJadualRumusan tr').forEach(tr => {
-        rumusanContainer.appendChild(tr);
+        rumusanContainer.appendChild(tr); 
     });
     wrapper.appendChild(rumusanContainer);
 
@@ -3075,17 +3075,25 @@ window.simpanKeDrafDOM = function(modSemasa) {
         </td>
     `;
 
-    let activeMg = document.getElementById('active-maklumatGaji');
-    if(activeMg) {
-        let activeTbody = activeMg.querySelector('tbody');
-        if(activeTbody) {
-            let trActive = document.createElement('tr');
-            trActive.style.borderBottom = "1px solid #eee";
-            trActive.setAttribute('data-draf', drafId);
-            trActive.innerHTML = trHtml;
-            activeTbody.appendChild(trActive);
-        }
+    // PASTI KAN KAD MAKLUMAT GAJI DIJANAKAN TERLEBIH DAHULU JIKA BELUM ADA
+    if (typeof window.asal_tambahKalkulator === 'function') {
+        window.asal_tambahKalkulator('maklumatGaji');
     }
+
+    // TENTUKAN TBODY DAN TAMPAL BARIS REKOD DRAF DENGAN TEPAT
+    setTimeout(() => {
+        let activeMg = document.getElementById('active-maklumatGaji');
+        if (activeMg) {
+            let activeTbody = activeMg.querySelector('tbody');
+            if (activeTbody) {
+                let trActive = document.createElement('tr');
+                trActive.style.borderBottom = "1px solid #eee";
+                trActive.setAttribute('data-draf', drafId);
+                trActive.innerHTML = trHtml;
+                activeTbody.appendChild(trActive);
+            }
+        }
+    }, 50);
 };
 
 window.bukaDraf = function(e) {
