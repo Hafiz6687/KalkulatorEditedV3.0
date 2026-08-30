@@ -839,19 +839,94 @@ function semakKalkulatorTakLengkap() {
     return null;
 }
 
+// =====================================================
+// 5. LAPORAN PENUH & PENYATA GAJI (PDF)
+// =====================================================
+
 function janaLaporanPenuh() { 
-    let takLengkap = semakKalkulatorTakLengkap();
-    if (takLengkap) {
-        alert("Kalkulator (" + takLengkap + ") tidak lengkap. Sila lengkapkan atau padam kalkulator tersebut.");
+    // 1. SEMAKAN ADA DATA ATAU TIDAK
+    let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
+    let adaDataKira = false;
+
+    semuaKadAktif.forEach(kad => {
+        let dataDivs = kad.querySelectorAll('[id$="Data"], [data-original-id$="Data"], [id^="ggnRes"]:not(#ggnResPending)');
+        dataDivs.forEach(div => {
+            if (window.getComputedStyle(div).display !== 'none') {
+                adaDataKira = true;
+            }
+        });
+    });
+
+    let rumusanTbody = document.getElementById('badanJadualRumusan');
+    if (rumusanTbody && rumusanTbody.children.length > 0) {
+        adaDataKira = true;
+    }
+
+    if (!adaDataKira) {
+        let existingAmaran = document.getElementById('modalTiadaData');
+        if (existingAmaran) existingAmaran.remove();
+
+        let amaranTiadaDataHtml = `
+        <div id="modalTiadaData" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+            <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; animation: floatUp 0.3s ease-out;">
+                <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
+                <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Tiada Rekod Pengiraan</h3>
+                <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                    Sila pilih mana-mana kalkulator dan buat sekurang-kurangnya <b>satu pengiraan (Klik Kira)</b> sebelum menjana laporan.
+                </p>
+                <button onclick="document.getElementById('modalTiadaData').remove()" style="background: #1f4e79; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(31,78,121,0.2);">OK, SAYA FAHAM</button>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', amaranTiadaDataHtml);
         return;
     }
+
+    // 2. SEMAKAN KALKULATOR TAK LENGKAP
+    let takLengkap = semakKalkulatorTakLengkap();
+    if (takLengkap) {
+        let existingTakLengkap = document.getElementById('modalTakLengkap');
+        if (existingTakLengkap) existingTakLengkap.remove();
+
+        let amaranTakLengkapHtml = `
+        <div id="modalTakLengkap" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+            <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #dc3545; animation: floatUp 0.3s ease-out;">
+                <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
+                <h3 style="margin-top: 0; color: #dc3545; font-size: 20px; font-weight: 800;">Tidak Lengkap</h3>
+                <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                    Kalkulator <b>(${takLengkap})</b> tidak lengkap.<br>Sila lengkapkan pengiraan atau padam kalkulator tersebut terlebih dahulu.
+                </p>
+                <button onclick="document.getElementById('modalTakLengkap').remove()" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">OK, SAYA FAHAM</button>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', amaranTakLengkapHtml);
+        return;
+    }
+    
+    // 3. JIKA LULUS SEMUA SYARAT, BUKA MODAL MAKLUMAT PEKERJA
     paparModalLaporan('penuh'); 
 }
 
 function janaPenyataGaji() { 
     let takLengkap = semakKalkulatorTakLengkap();
     if (takLengkap) {
-        alert("Kalkulator (" + takLengkap + ") tidak lengkap. Sila lengkapkan atau padam kalkulator tersebut.");
+        let existingTakLengkap = document.getElementById('modalTakLengkap');
+        if (existingTakLengkap) existingTakLengkap.remove();
+
+        let amaranTakLengkapHtml = `
+        <div id="modalTakLengkap" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+            <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #dc3545;">
+                <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
+                <h3 style="margin-top: 0; color: #dc3545; font-size: 20px; font-weight: 800;">Tidak Lengkap</h3>
+                <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                    Kalkulator <b>(${takLengkap})</b> tidak lengkap.<br>Sila lengkapkan pengiraan atau padam kalkulator tersebut terlebih dahulu.
+                </p>
+                <button onclick="document.getElementById('modalTakLengkap').remove()" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">OK, SAYA FAHAM</button>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', amaranTakLengkapHtml);
         return;
     }
 
@@ -870,39 +945,56 @@ function janaPenyataGaji() {
     });
 
     if (!orpCardLengkap) {
-        alert("Peringatan: Sila lengkapkan Kalkulator Kadar Upah Biasa (ORP) terlebih dahulu untuk menjana Penyata Gaji.");
+        let existingModalORP = document.getElementById('modalAmaranORP');
+        if (existingModalORP) existingModalORP.remove();
+
+        let amaranORPHtml = `
+        <div id="modalAmaranORP" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+            <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12;">
+                <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
+                <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Peringatan</h3>
+                <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                    Sila lengkapkan Kalkulator <b>Kadar Upah Biasa (ORP)</b> terlebih dahulu untuk menjana Penyata Gaji.
+                </p>
+                <button id="btnOKModalORP" style="background: #1f4e79; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(31,78,121,0.2);">OK, SAYA FAHAM</button>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', amaranORPHtml);
+
         if (!orpCardWujud) {
+            window.tangguhTourElaunSeketika = true; 
             if (typeof window.tambahKalkulator === 'function') {
                 window.tambahKalkulator('orp');
-                let cards = document.querySelectorAll('.calculator-card:not(.hidden-template)');
+                let cards = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
                 orpCardWujud = cards[cards.length - 1];
             }
-        } else {
-            orpCardWujud.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        } 
         
-        if (orpCardWujud) {
-            let kiraBtn = orpCardWujud.querySelector('button[data-action-func*="calculateORP"]');
-            if (!kiraBtn) kiraBtn = orpCardWujud.querySelector('button[onclick*="calculateORP"]');
-            
-            if (kiraBtn) {
-                const autoPopup = function() {
-                    setTimeout(() => {
-                        let dataEl = orpCardWujud.querySelector('[id="orpData"], [data-original-id="orpData"]');
-                        if (dataEl && window.getComputedStyle(dataEl).display !== "none") {
-                            paparModalLaporan('penyata');
-                            kiraBtn.removeEventListener('click', autoPopup); 
+        document.getElementById('btnOKModalORP').onclick = function() {
+            document.getElementById('modalAmaranORP').remove();
+            if (orpCardWujud) {
+                orpCardWujud.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                if (window.tangguhTourElaunSeketika) {
+                    window.tangguhTourElaunSeketika = false;
+                    if (!elaunTourDitunjuk) {
+                        elaunTourDitunjuk = true;
+                        let containerElaun = orpCardWujud.querySelector('.dynamic-allowance-wrapper');
+                        if (containerElaun) {
+                            setTimeout(() => tunjukTourElaun(containerElaun), 50);
                         }
-                    }, 500);
-                };
-                kiraBtn.addEventListener('click', autoPopup);
+                    }
+                }
             }
-        }
+        };
+
+        // BAHAGIAN YANG DIBUANG: Auto-popup event listener pada kiraBtn telah dikeluarkan di sini
         return;
     }
+    
     paparModalLaporan('penyata'); 
 }
-
 function tambahBarisElaunModal() {
     let div = document.createElement('div');
     div.style.cssText = "display: flex; gap: 10px; margin-bottom: 10px;";
@@ -931,68 +1023,6 @@ function tambahBarisPotonganModal() {
         </div>
     `;
     document.getElementById('containerPotonganModal').appendChild(div);
-}
-
-function tunjukTourElaunPopup() {
-    let targetContainer = document.getElementById('tourTargetElaunPopup');
-    let whiteBox = document.getElementById('modalPenyataWhiteBox');
-    if (!targetContainer || !whiteBox) return;
-    
-    targetContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
-    let overlay = document.createElement('div');
-    overlay.id = 'tourElaunPopupOverlay';
-    overlay.style.cssText = `position: absolute; top: 0; left: 0; width: 100%; height: ${whiteBox.scrollHeight}px; background: rgba(0,0,0,0.75); z-index: 100; border-radius: 10px; transition: opacity 0.3s;`;
-    whiteBox.appendChild(overlay);
-
-    let originalPos = targetContainer.style.position;
-    let originalZ = targetContainer.style.zIndex;
-    let originalBg = targetContainer.style.background;
-    let originalPadding = targetContainer.style.padding;
-    
-    targetContainer.style.position = 'relative';
-    targetContainer.style.zIndex = '101'; 
-    targetContainer.style.background = '#fff';
-    targetContainer.style.padding = '15px';
-    targetContainer.style.borderRadius = '8px';
-    targetContainer.style.boxShadow = '0 0 0 4px #fff, 0 0 0 6px #d9534f, 0 15px 35px rgba(0,0,0,0.5)';
-
-    let popover = document.createElement('div');
-    popover.innerHTML = `
-        <div class="tour-popover-box" style="position: absolute; top: calc(100% + 15px); left: 0; background: white; border-radius: 8px; width: 100%; min-width: 320px; max-width: 380px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 20px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatUp 0.4s ease-out; z-index: 102; text-align: left;">
-            <div style="position: absolute; bottom: 100%; left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-            <div style="position: absolute; bottom: calc(100% - 6px); left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
-            
-            <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; display: flex; align-items: center; gap: 8px;">
-                <span style="background: #1f4e79; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;">💡</span>
-                Panduan Senarai Elaun
-            </h4>
-            
-            <p style="margin: 0 0 15px 0; font-size: 11.5px; font-weight: bold; color: #1f4e79; background: #e8eaed; padding: 10px; border-radius: 4px; line-height: 1.5;">
-                CATATAN: Klik + Tambah. Masukkan semua ELAUN selain yang telah dinyatakan di dalam Bahagian Kalkulator (Sama ada dibayar di dalam waktu kerja normal atau di luar waktu kerja normal).
-            </p>
-            
-            <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
-        </div>
-        <style>
-            @keyframes floatUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
-            #btnTutupTourPopup:hover { background: #153859 !important; }
-        </style>
-    `;
-    targetContainer.appendChild(popover);
-
-    const tutupTourPopup = () => {
-        overlay.remove();
-        popover.remove();
-        targetContainer.style.position = originalPos;
-        targetContainer.style.zIndex = originalZ;
-        targetContainer.style.background = originalBg;
-        targetContainer.style.padding = originalPadding;
-        targetContainer.style.boxShadow = 'none';
-    };
-
-    overlay.addEventListener('click', tutupTourPopup);
-    document.getElementById('btnTutupTourPopup').addEventListener('click', tutupTourPopup);
 }
 
 function tunjukTourMaklumatPerkhidmatan() {
@@ -1071,7 +1101,7 @@ function paparModalLaporan(jenis) {
             if (jenis === 'penyata') {
                 autoKiraPotonganBerkanun();
                 if (window.autoKiraBakiSvc) window.autoKiraBakiSvc();
-                setTimeout(() => tunjukTourElaunPopup(), 400);
+                setTimeout(() => tunjukTourElaunPopup(), 50);
             }
             return;
         } else {
@@ -2433,74 +2463,208 @@ function transformAllowanceField(allowInput) {
     
     if (senaraiElaunGlobal.length > 0) { updateGlobalElaunSum(container); }
 
-    if (!elaunTourDitunjuk) {
-        elaunTourDitunjuk = true;
-        setTimeout(() => tunjukTourElaun(container), 400);
+    // SEMAKAN PENTING: Tahan Popup Tour jika diarahkan
+if (!elaunTourDitunjuk && !window.tangguhTourElaunSeketika) {
+    elaunTourDitunjuk = true;
+    tunjukTourElaun(container);
     }
 }
 
 function tunjukTourElaun(targetContainer) {
-    targetContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
+    let existingOverlay = document.getElementById('tourElaunOverlay');
+    if (existingOverlay) existingOverlay.remove();
+    let existingBox = document.getElementById('tourElaunBox');
+    if (existingBox) existingBox.remove();
+
+    if (!targetContainer) return;
+
+    let rect = targetContainer.getBoundingClientRect();
+    let isMobile = window.innerWidth <= 768;
+
+    // 1. Overlay Latar Belakang Gelap
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 99998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
-    document.body.appendChild(overlay);
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px);';
 
-    let originalPos = targetContainer.style.position;
-    let originalZ = targetContainer.style.zIndex;
-    let originalBg = targetContainer.style.background;
-    
+    // 2. Highlight Petak Elaun
+    let origPos = targetContainer.style.position;
+    let origZIndex = targetContainer.style.zIndex;
+    let origBg = targetContainer.style.background;
+    let origShadow = targetContainer.style.boxShadow;
+
     targetContainer.style.position = 'relative';
-    targetContainer.style.zIndex = '99999';
-    targetContainer.style.background = '#fff';
-    targetContainer.style.boxShadow = '0 0 0 4px #fff, 0 0 0 6px #d9534f, 0 15px 35px rgba(0,0,0,0.5)';
+    targetContainer.style.zIndex = '999999';
+    targetContainer.style.background = '#ffffff';
+    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 6px #d9534f';
 
-    let popover = document.createElement('div');
-    popover.innerHTML = `
-        <div class="tour-popover-box" style="position: absolute; top: calc(100% + 15px); left: 15px; background: white; border-radius: 8px; width: 330px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 20px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatUp 0.4s ease-out; z-index: 100000; text-align: left;">
-            
-            <div style="position: absolute; bottom: 100%; left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-            <div style="position: absolute; bottom: calc(100% - 6px); left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
-            
-            <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; display: flex; align-items: center; gap: 8px;">
-                <span style="background: #1f4e79; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;">💡</span>
+    // 3. Pengiraan Kedudukan Kotak di Sebelah KANAN Petak Elaun
+    let boxWidth = isMobile ? Math.min(360, window.innerWidth - 30) : 380;
+    let boxLeft, boxTop, arrowStyleHtml;
+
+    if (isMobile || (rect.right + boxWidth + 20 > window.innerWidth)) {
+        // Fallback untuk paparan skrin kecil / mudah alih (letak di bawah petak jika sebelah kanan sempit)
+        boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
+        boxTop = rect.bottom + 12;
+        let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
+        arrowStyleHtml = `
+            <div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent; z-index: 1000001;"></div>
+            <div style="position: absolute; bottom: calc(100% - 3px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1000002;"></div>
+        `;
+    } else {
+        // Paparan Desktop: Tepat di SEBELAH KANAN petak Elaun
+        boxLeft = rect.right + 15;
+        boxTop = Math.max(15, rect.top);
+        let arrowTop = Math.max(20, Math.min(rect.top + 20 - boxTop, 150));
+        arrowStyleHtml = `
+            <div style="position: absolute; right: 100%; top: ${arrowTop}px; border-width: 10px; border-style: solid; border-color: transparent #d9534f transparent transparent; z-index: 1000001;"></div>
+            <div style="position: absolute; right: calc(100% - 3px); top: ${arrowTop}px; border-width: 10px; border-style: solid; border-color: transparent #fff transparent transparent; z-index: 1000002;"></div>
+        `;
+    }
+
+    let popoverWrapper = document.createElement('div');
+    popoverWrapper.id = 'tourElaunBox';
+    popoverWrapper.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 1000000; animation: floatRightTour 0.3s ease-out;`;
+
+    popoverWrapper.innerHTML = `
+        ${arrowStyleHtml}
+        <div style="background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 18px 20px; border-top: 4px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; max-height: 80vh; overflow-y: auto;">
+            <h4 style="margin: 0 0 8px 0; color: #1f4e79; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                <span style="background: #1f4e79; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">💡</span>
                 Panduan Maklumat Elaun
             </h4>
-            <p style="margin: 0 0 10px 0; font-size: 12px; font-weight: bold; color: #333;">Elaun <span style="color:#d9534f;">SELAIN / TIDAK TERMASUK:</span></p>
             
-            <ul style="margin: 0 0 12px 0; padding-left: 20px; font-size: 11.5px; color: #555; line-height: 1.45;">
-                <li>NILAI tempat tinggal, bekalan makanan, minyak, lampu, air, rawatan perubatan atau yang diluluskan JTK;</li>
-                <li>Bayaran CARUMAN;</li>
-                <li>Elaun Pengangkutan (Kenderaan/minyak (yang sama erti dengannya));</li>
-                <li>Bayaran Khas untuk tujuan perbelanjaan pekerjaan;</li>
-                <li>Bayaran persaraan/pemberhentian/pampasan;</li>
+            <p style="margin: 0 0 6px 0; font-size: 11.5px; font-weight: bold; color: #333;">
+                Elaun <span style="color:#d9534f; text-decoration: underline;">SELAIN / TIDAK TERMASUK:</span>
+            </p>
+            
+            <ul style="margin: 0 0 10px 0; padding-left: 18px; font-size: 11px; color: #444; line-height: 1.45;">
+                <li style="margin-bottom: 3px;"><strong>NILAI</strong> tempat tinggal, bekalan makanan, minyak, lampu, air, rawatan perubatan atau yang diluluskan JTK;</li>
+                <li style="margin-bottom: 3px;">Bayaran <strong>CARUMAN</strong>;</li>
+                <li style="margin-bottom: 3px;">Elaun Pengangkutan (Kenderaan/minyak (yang sama erti dengannya));</li>
+                <li style="margin-bottom: 3px;">Bayaran Khas untuk tujuan perbelanjaan pekerjaan;</li>
+                <li style="margin-bottom: 3px;">Bayaran persaraan/pemberhentian/pampasan;</li>
                 <li>Bonus tahunan.</li>
             </ul>
             
-            <p style="margin: 0 0 15px 0; font-size: 11px; font-weight: bold; color: #d9534f; background: #fff0f0; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #d9534f;">* DAN TIDAK TERMASUK bayaran yang dibayar di luar waktu kerja normal.</p>
+            <p style="margin: 0 0 12px 0; font-size: 10.5px; font-weight: bold; color: #d9534f; background: #fff0f0; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #d9534f; line-height: 1.35;">
+                * DAN TIDAK TERMASUK bayaran yang dibayar di luar waktu kerja normal.
+            </p>
             
-            <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
+            <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 9px; border-radius: 5px; font-weight: bold; font-size: 12.5px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
         </div>
         <style>
-            @keyframes floatUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+            @keyframes floatRightTour { 
+                0% { opacity: 0; transform: translateX(-10px); } 
+                100% { opacity: 1; transform: translateX(0); } 
+            }
             #btnTutupTour:hover { background: #153859 !important; }
-            @media (max-width: 400px) { .tour-popover-box { width: calc(100vw - 60px) !important; left: -10px !important; } }
         </style>
     `;
-    targetContainer.appendChild(popover);
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popoverWrapper);
 
     const tutupTour = () => {
         overlay.remove();
-        popover.remove();
-        targetContainer.style.position = originalPos;
-        targetContainer.style.zIndex = originalZ;
-        targetContainer.style.background = originalBg;
-        targetContainer.style.boxShadow = 'none';
+        popoverWrapper.remove();
+        targetContainer.style.position = origPos;
+        targetContainer.style.zIndex = origZIndex;
+        targetContainer.style.background = origBg;
+        targetContainer.style.boxShadow = origShadow;
     };
 
     overlay.addEventListener('click', tutupTour);
     document.getElementById('btnTutupTour').addEventListener('click', tutupTour);
+}
+
+function tunjukTourElaunPopup() {
+    let existingOverlay = document.getElementById('tourElaunPopupOverlay');
+    if (existingOverlay) existingOverlay.remove();
+    let existingBox = document.getElementById('tourElaunPopupBox');
+    if (existingBox) existingBox.remove();
+
+    let targetContainer = document.getElementById('containerElaunModal');
+    if (!targetContainer) return;
+
+    let rect = targetContainer.getBoundingClientRect();
+    let isMobile = window.innerWidth <= 768;
+
+    let overlay = document.createElement('div');
+    overlay.id = 'tourElaunPopupOverlay';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px);';
+
+    let origPos = targetContainer.style.position;
+    let origZIndex = targetContainer.style.zIndex;
+    let origBg = targetContainer.style.background;
+    let origShadow = targetContainer.style.boxShadow;
+
+    targetContainer.style.position = 'relative';
+    targetContainer.style.zIndex = '999999';
+    targetContainer.style.background = '#ffffff';
+    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 6px #d9534f';
+
+    let boxWidth = isMobile ? Math.min(360, window.innerWidth - 30) : 380;
+    let boxLeft, boxTop, arrowStyleHtml;
+
+    if (isMobile || (rect.right + boxWidth + 20 > window.innerWidth)) {
+        boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
+        boxTop = rect.bottom + 12;
+        let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
+        arrowStyleHtml = `
+            <div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent; z-index: 1000001;"></div>
+            <div style="position: absolute; bottom: calc(100% - 3px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1000002;"></div>
+        `;
+    } else {
+        boxLeft = rect.right + 15;
+        boxTop = Math.max(15, rect.top);
+        let arrowTop = Math.max(20, Math.min(rect.top + 20 - boxTop, 150));
+        arrowStyleHtml = `
+            <div style="position: absolute; right: 100%; top: ${arrowTop}px; border-width: 10px; border-style: solid; border-color: transparent #d9534f transparent transparent; z-index: 1000001;"></div>
+            <div style="position: absolute; right: calc(100% - 3px); top: ${arrowTop}px; border-width: 10px; border-style: solid; border-color: transparent #fff transparent transparent; z-index: 1000002;"></div>
+        `;
+    }
+
+    let popoverWrapper = document.createElement('div');
+    popoverWrapper.id = 'tourElaunPopupBox';
+    popoverWrapper.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 1000000; animation: floatRightTour 0.3s ease-out;`;
+
+    popoverWrapper.innerHTML = `
+        ${arrowStyleHtml}
+        <div style="background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 18px 20px; border-top: 4px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; max-height: 80vh; overflow-y: auto;">
+            <h4 style="margin: 0 0 8px 0; color: #1f4e79; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                <span style="background: #1f4e79; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">💡</span>
+                Panduan Senarai Elaun
+            </h4>
+            
+            <p style="margin: 0 0 12px 0; font-size: 11.5px; font-weight: bold; color: #1f4e79; background: #e8eaed; padding: 10px; border-radius: 6px; line-height: 1.45;">
+                CATATAN: Klik + Tambah. Masukkan semua ELAUN selain yang telah dinyatakan di dalam Bahagian Kalkulator (Sama ada dibayar di dalam waktu kerja normal atau di luar waktu kerja normal).
+            </p>
+            
+            <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 9px; border-radius: 5px; font-weight: bold; font-size: 12.5px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
+        </div>
+        <style>
+            @keyframes floatRightTour { 
+                0% { opacity: 0; transform: translateX(-10px); } 
+                100% { opacity: 1; transform: translateX(0); } 
+            }
+            #btnTutupTourPopup:hover { background: #153859 !important; }
+        </style>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popoverWrapper);
+
+    const tutupTourPopup = () => {
+        overlay.remove();
+        popoverWrapper.remove();
+        targetContainer.style.position = origPos;
+        targetContainer.style.zIndex = origZIndex;
+        targetContainer.style.background = origBg;
+        targetContainer.style.boxShadow = origShadow;
+    };
+
+    overlay.addEventListener('click', tutupTourPopup);
+    document.getElementById('btnTutupTourPopup').addEventListener('click', tutupTourPopup);
 }
 
 window.semakDanTukarElaun = function() {
@@ -2602,47 +2766,114 @@ document.addEventListener('DOMContentLoaded', () => {
 function fungsiBaruRumusan(e) {
     if (e) e.preventDefault();
 }
+
 // =========================================================
-// 9. ENJIN KHAS SEKSYEN 18A (MOD BULAN SEMASA)
+// 9. ENJIN KHAS SEKSYEN 18A & FLYOUT MENU
 // =========================================================
 
-// Fungsi untuk buka/tutup Flyout Menu
+// Simpan salinan fungsi asal tambahKalkulator
+if (!window.asal_tambahKalkulator) {
+    window.asal_tambahKalkulator = window.tambahKalkulator;
+}
+
+// Pemintas Navigasi Utama (Sidebar & Flyout)
+window.tambahKalkulator = function(templateId) {
+    if (templateId === 'maklumatGaji') {
+        urusPertukaranMenu('REKOD', function() {
+            window.asal_tambahKalkulator(templateId);
+        });
+    } else {
+        let modSemasa = dapatkanModSemasa();
+        if (modSemasa !== 'NONE') {
+            urusPertukaranMenu(modSemasa, function() {
+                window.asal_tambahKalkulator(templateId);
+            });
+        } else {
+            window.asal_tambahKalkulator(templateId);
+        }
+    }
+};
+
+// Fungsi Pelarasan Kedudukan Menu Flyout
+function autoBetulkanPosisiFlyout(flyoutId) {
+    let flyout = document.getElementById(flyoutId);
+    if (!flyout) return;
+    
+    flyout.style.top = '0px';
+    flyout.style.bottom = 'auto';
+    
+    let rect = flyout.getBoundingClientRect();
+    let windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    
+    if (rect.bottom > windowHeight) {
+        let lebihan = rect.bottom - windowHeight;
+        flyout.style.top = '-' + (lebihan + 20) + 'px';
+    }
+}
+
+// Kawalan Butang Seksyen 18A
 function toggleFlyout18A(e) {
     e.preventDefault();
     e.stopPropagation();
-    let flyout = document.getElementById('flyoutMenu18ACustom');
-    if (flyout) flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+    urusPertukaranMenu('18A', function() {
+        let flyoutAkta = document.getElementById('flyoutMenuAktaKerja');
+        if (flyoutAkta) flyoutAkta.style.display = 'none';
+        
+        let flyout = document.getElementById('flyoutMenu18ACustom');
+        if (flyout) {
+            flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+            if (flyout.style.display === 'block') {
+                setTimeout(() => autoBetulkanPosisiFlyout('flyoutMenu18ACustom'), 10);
+            }
+        }
+    });
 }
 
-// Tutup flyout jika klik di tempat lain
+// Kawalan Butang Akta Kerja
+function toggleFlyoutAktaKerja(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    urusPertukaranMenu('AKTA', function() {
+        let flyout18A = document.getElementById('flyoutMenu18ACustom');
+        if (flyout18A) flyout18A.style.display = 'none';
+        
+        let flyout = document.getElementById('flyoutMenuAktaKerja');
+        if (flyout) {
+            flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+            if (flyout.style.display === 'block') {
+                setTimeout(() => autoBetulkanPosisiFlyout('flyoutMenuAktaKerja'), 10);
+            }
+        }
+    });
+}
+
+// Tutup Flyout Jika Klik Di Luar
 document.addEventListener('click', function(e) {
-    let flyout = document.getElementById('flyoutMenu18ACustom');
-    if (flyout && flyout.style.display === 'block' && !e.target.closest('#flyoutMenu18ACustom') && !e.target.closest('button[onclick*="toggleFlyout18A"]')) {
-        flyout.style.display = 'none';
+    let flyout18A = document.getElementById('flyoutMenu18ACustom');
+    if (flyout18A && flyout18A.style.display === 'block' && !e.target.closest('#flyoutMenu18ACustom') && !e.target.closest('button[onclick*="toggleFlyout18A"]')) {
+        flyout18A.style.display = 'none';
+    }
+    let flyoutAkta = document.getElementById('flyoutMenuAktaKerja');
+    if (flyoutAkta && flyoutAkta.style.display === 'block' && !e.target.closest('#flyoutMenuAktaKerja') && !e.target.closest('button[onclick*="toggleFlyoutAktaKerja"]')) {
+        flyoutAkta.style.display = 'none';
     }
 });
 
-// Enjin Mengklon kalkulator dan tukar Mod Formula
+// Mengklon Kalkulator Untuk Mod Seksyen 18A
 window.tambahKalkulator18ACustom = function(templateId) {
-    // Tutup flyout menu
     document.getElementById('flyoutMenu18ACustom').style.display = 'none';
-    
-    // Panggil fungsi asal untuk salin UI
-    window.tambahKalkulator(templateId);
-    
+    window.asal_tambahKalkulator(templateId);
     setTimeout(() => {
         let semuaKad = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         let newCard = semuaKad[semuaKad.length - 1]; 
         if (!newCard) return;
 
-        // Ubah UI menjadi Merah untuk tandakan Mod 18A
         newCard.style.borderTop = "5px solid #d9534f";
         let h2 = newCard.querySelector('h2');
         if(h2) {
             h2.innerHTML = h2.innerHTML + ` <br><span style="font-size:12px; color:#d9534f; background:#ffe8e8; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:5px;">Mod Seksyen 18A (Bahagi Hari Dalam Bulan)</span>`;
         }
 
-        // Tambah Input "Hari Dalam Bulan"
         let formGroups = newCard.querySelectorAll('.form-group');
         if (formGroups.length > 0) {
             let divHari = document.createElement('div');
@@ -2653,7 +2884,6 @@ window.tambahKalkulator18ACustom = function(templateId) {
             formGroups[0].parentNode.insertBefore(divHari, formGroups[0]);
         }
 
-        // Rampas butang 'Kira' dan letak formula bahagi 'hari semasa'
         let btnKira = newCard.querySelector('button[data-action-func*="calculate"], button[onclick*="calculate"]');
         if (btnKira) {
             let newBtnKira = btnKira.cloneNode(true);
@@ -2670,9 +2900,9 @@ window.tambahKalkulator18ACustom = function(templateId) {
                 try {
                     let hariBulanInput = newCard.querySelector('.hari-bulan-18a');
                     let hariBulan = hariBulanInput ? (Number(hariBulanInput.value) || 26) : 26; 
-
-                    // Panggil fungsi asal dengan menghantar hariBulan sebagai parameter kedua
+                    
                     if (templateId === 'orp') calculateORP(e, hariBulan);
+                    else if (templateId === 'baki') calculateBakiUpah(e);
                     else if (templateId === 'otBiasa') calculateOTBiasa(e, hariBulan);
                     else if (templateId === 'lewat') calculateLewat(e, hariBulan);
                     else if (templateId === 'otRehat') calculateOTRH(e, hariBulan);
@@ -2682,7 +2912,7 @@ window.tambahKalkulator18ACustom = function(templateId) {
                     else if (templateId === 'kelepasan') calculatePH(e, hariBulan);
                     else if (templateId === 'cutiTahunan') calculateCutiTahunan(e, hariBulan);
                     else if (templateId === 'cutiSakit') calculateCutiSakit(e, hariBulan);
-                    
+                    else if (templateId === 'sec18A') calculate18ANew(e);
                 } finally {
                     activeCardContext = tempContext;
                 }
@@ -2690,3 +2920,261 @@ window.tambahKalkulator18ACustom = function(templateId) {
         }
     }, 50);
 };
+
+// =========================================================
+// 10. ENJIN DRAF & KAWALAN PERTUKARAN MENU
+// =========================================================
+
+// Semak Mod Semasa Aplikasi
+function dapatkanModSemasa() {
+    let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
+    if (kadAktif.length === 0) {
+        let kadSembunyi = document.querySelectorAll('.sementara-sembunyi');
+        if(kadSembunyi.length > 0) {
+            let is18A = false;
+            kadSembunyi.forEach(k => { if(k.querySelector('.hari-bulan-18a')) is18A = true; });
+            return is18A ? '18A' : 'AKTA';
+        }
+        return 'NONE';
+    }
+    let is18A = false;
+    kadAktif.forEach(k => { if(k.querySelector('.hari-bulan-18a')) is18A = true; });
+    return is18A ? '18A' : 'AKTA';
+}
+
+// Pintasan Amaran Pertukaran Mod / Navigasi Sidebar
+function urusPertukaranMenu(modDestinasi, fungsiCallback) {
+    let modSemasa = dapatkanModSemasa();
+    
+    // Jika tiada aktiviti pengiraan, teruskan navigasi
+    if (modSemasa === 'NONE' || modSemasa === modDestinasi) {
+        return fungsiCallback(); 
+    }
+
+    // Jika user sudah berada dalam menu Rekod
+    if (modDestinasi === 'REKOD' && document.getElementById('active-maklumatGaji')) {
+        return fungsiCallback();
+    }
+
+    let paparanMod = modSemasa === '18A' ? 'KALKULATOR SEKSYEN 18A' : 'KALKULATOR AKTA KERJA';
+    
+    let existingModal = document.getElementById('modalAmaranPertukaran');
+    if (existingModal) existingModal.remove();
+
+    let boxHtml = `
+    <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; box-sizing: border-box;">
+            <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
+            <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Aktiviti Pengiraan Dikesan</h3>
+            <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b>.<br><br>Sila pilih tindakan anda sebelum beralih:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="btnSimpanDraf" style="background: #198754; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(25,135,84,0.2);">💾 Simpan (Ke Senarai Rekod)</button>
+                <button id="btnBatalTukar" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">🛑 Batal (Kekal Di Paparan Sekarang)</button>
+                <button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">🗑️ Hapus (Padam Aktiviti)</button>
+            </div>
+        </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', boxHtml);
+
+    // 1. SIMPAN: Simpan aktiviti semasa ke draf dan bawa pengguna ke SENARAI REKOD
+    document.getElementById('btnSimpanDraf').onclick = function() {
+        document.getElementById('modalAmaranPertukaran').remove();
+        simpanKeDrafDOM(modSemasa);
+        if (typeof window.asal_tambahKalkulator === 'function') {
+            window.asal_tambahKalkulator('maklumatGaji');
+        }
+    };
+
+    // 2. BATAL: Tutup pop-up amaran dan KEKAL di paparan kalkulator semasa
+    document.getElementById('btnBatalTukar').onclick = function() {
+        document.getElementById('modalAmaranPertukaran').remove();
+    };
+
+    // 3. HAPUS: Padam aktiviti semasa dan teruskan membuka menu/kalkulator pilihan
+    document.getElementById('btnHapusDraf').onclick = function() {
+        document.getElementById('modalAmaranPertukaran').remove();
+        document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
+        if(typeof resetRumusan === 'function') resetRumusan();
+        senaraiElaunGlobal = [];
+        let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
+        fungsiCallback();
+    };
+}
+
+// Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod"
+window.simpanKeDrafDOM = function(modSemasa) {
+    let drafContainer = document.getElementById('drafStorageContainer');
+    if(!drafContainer) {
+        drafContainer = document.createElement('div');
+        drafContainer.id = 'drafStorageContainer';
+        drafContainer.style.display = 'none';
+        document.body.appendChild(drafContainer);
+    }
+
+    let drafId = 'draf_' + Date.now();
+    let wrapper = document.createElement('div');
+    wrapper.id = 'wrapper_' + drafId;
+
+    let kadContainer = document.createElement('div');
+    kadContainer.className = 'draf-kad-container';
+    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(kad => {
+        kad.classList.remove('sementara-sembunyi');
+        kad.style.display = ''; 
+        kadContainer.appendChild(kad); 
+    });
+    wrapper.appendChild(kadContainer);
+
+    let rumusanContainer = document.createElement('tbody');
+    rumusanContainer.className = 'draf-rumusan-container';
+    document.querySelectorAll('#badanJadualRumusan tr').forEach(tr => {
+        rumusanContainer.appendChild(tr); 
+    });
+    wrapper.appendChild(rumusanContainer);
+
+    wrapper.setAttribute('data-elaun', JSON.stringify(typeof senaraiElaunGlobal !== 'undefined' ? senaraiElaunGlobal : []));
+    drafContainer.appendChild(wrapper);
+
+    if(typeof kiraJumlahKeseluruhanRumusan === 'function') kiraJumlahKeseluruhanRumusan();
+
+    let labelMode = modSemasa === '18A' ? 'Seksyen 18A' : 'Akta Kerja 1955';
+    let tarikh = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    
+    let trHtml = `
+        <td style="padding: 15px; font-size: 13px; font-weight: bold; color: #d97706; vertical-align: middle;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
+                <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">⏳ DRAF PENGIRAAN</span>
+            </div>
+        </td>
+        <td style="padding: 15px; font-size: 13px; vertical-align: middle;"><strong style="color: #333;">${labelMode}</strong></td>
+        <td style="padding: 15px; font-size: 13px; vertical-align: middle;"><strong style="color: #666;">-</strong></td>
+        <td style="padding: 15px; text-align: center; font-size: 13px; color: #444; vertical-align: middle;">${tarikh}</td>
+        <td style="padding: 15px; text-align: center; vertical-align: middle;">
+            <button data-draf-id="${drafId}" onclick="bukaDraf(event)" style="background: #ffc107; color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📂 Sambung</button>
+            <button data-draf-id="${drafId}" onclick="hapusDraf(event)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>
+        </td>
+    `;
+
+    let tbodyTemplate = document.querySelector('#card-maklumatGaji tbody');
+    if (tbodyTemplate) {
+        let trTemplate = document.createElement('tr');
+        trTemplate.style.borderBottom = "1px solid #eee";
+        trTemplate.setAttribute('data-draf', drafId);
+        trTemplate.innerHTML = trHtml;
+        let firstRow = tbodyTemplate.querySelector('tr');
+        if (firstRow && firstRow.innerHTML.includes('KBR/10103')) firstRow.remove();
+        tbodyTemplate.appendChild(trTemplate);
+    }
+
+    let activeMg = document.getElementById('active-maklumatGaji');
+    if(activeMg) {
+        let activeTbody = activeMg.querySelector('tbody');
+        if(activeTbody) {
+            let trActive = document.createElement('tr');
+            trActive.style.borderBottom = "1px solid #eee";
+            trActive.setAttribute('data-draf', drafId);
+            trActive.innerHTML = trHtml;
+            let firstRowAct = activeTbody.querySelector('tr');
+            if (firstRowAct && firstRowAct.innerHTML.includes('KBR/10103')) firstRowAct.remove();
+            activeTbody.appendChild(trActive);
+        }
+    }
+};
+
+// Logik Buka Draf
+window.bukaDraf = function(e) {
+    let btn = e.currentTarget;
+    let drafId = btn.getAttribute('data-draf-id');
+    let wrapper = document.getElementById('wrapper_' + drafId);
+    
+    if(!wrapper) {
+        alert("Maaf, draf tidak dijumpai.");
+        return;
+    }
+
+    // 1. Padamkan sebarang kad aktif/panel Senarai Rekod yang sedang terbuka
+    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(k => k.remove());
+    let activeMg = document.getElementById('active-maklumatGaji');
+    if (activeMg) activeMg.remove();
+
+    // 2. Kosongkan jadual rumusan semasa
+    let rumusanTbodyTarget = document.getElementById('badanJadualRumusan');
+    if (rumusanTbodyTarget) rumusanTbodyTarget.innerHTML = ''; 
+
+    let grid = document.getElementById('active-calculators-grid');
+    let rumusanCard = document.querySelector('.rumusan-card');
+    
+    // 3. Kembalikan kad-kad kalkulator asal dari draf ke grid utama
+    let kadContainer = wrapper.querySelector('.draf-kad-container');
+    if (kadContainer) {
+        while(kadContainer.firstChild) {
+            let kad = kadContainer.firstChild;
+            kad.style.display = '';
+            kad.classList.remove('sementara-sembunyi');
+            if(rumusanCard) grid.insertBefore(kad, rumusanCard);
+            else grid.appendChild(kad);
+        }
+    }
+
+    // 4. Kembalikan data baris jadual rumusan
+    let rumusanContainer = wrapper.querySelector('.draf-rumusan-container');
+    if (rumusanContainer && rumusanTbodyTarget) {
+        while(rumusanContainer.firstChild) {
+            rumusanTbodyTarget.appendChild(rumusanContainer.firstChild);
+        }
+    }
+
+    // 5. Pulihkan senarai elaun global
+    try { 
+        senaraiElaunGlobal = JSON.parse(wrapper.getAttribute('data-elaun')) || []; 
+    } catch(err) { 
+        senaraiElaunGlobal = []; 
+    }
+
+    // 6. Hapus bekas simpanan draf & baris rekod draf dari Jadual Rekod
+    wrapper.remove();
+    document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
+
+    // 7. Paparkan semula Kad Rumusan dan Kotak Amaran
+    if(rumusanCard) rumusanCard.style.display = 'block';
+    let warningBox = document.querySelector('.warning-box');
+    if(warningBox) warningBox.style.display = 'block';
+    
+    // 8. Kemaskini semula pengiraan rumusan & pelarasan elaun dinamik
+    if(typeof kiraJumlahKeseluruhanRumusan === 'function') kiraJumlahKeseluruhanRumusan();
+    setTimeout(() => { 
+        if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); 
+    }, 50);
+
+    // 9. Skrol secara lancar ke kalkulator pertama yang disambung
+    let kadTelahDipulih = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+    if (kadTelahDipulih.length > 0) {
+        kadTelahDipulih[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+};
+
+// Logik Hapus Draf
+window.hapusDraf = function(e) {
+    let btn = e.currentTarget;
+    let drafId = btn.getAttribute('data-draf-id');
+    let sah = confirm("Adakah anda pasti mahu memadam draf ini?");
+    if(sah) {
+        let wrapper = document.getElementById('wrapper_' + drafId);
+        if(wrapper) wrapper.remove();
+        document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
+    }
+};
+// =====================================================
+// PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
+// =====================================================
+document.addEventListener("DOMContentLoaded", function() {
+    let tbody = document.querySelector('#card-maklumatGaji tbody');
+    if (tbody) {
+        let firstRow = tbody.querySelector('tr');
+        if (firstRow && firstRow.innerHTML.includes('KBR/10103')) {
+            firstRow.remove();
+        }
+    }
+});
