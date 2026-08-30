@@ -2779,6 +2779,17 @@ if (!window.asal_tambahKalkulator) {
 // Pemintas Navigasi Utama (Sidebar & Flyout)
 window.tambahKalkulator = function(templateId) {
     if (templateId === 'maklumatGaji') {
+        // Jika terdapat panggilan terus dari butang Simpan (Preview), teruskan tanpa amaran
+        if (window.isDirectSaveAction) {
+            window.isDirectSaveAction = false;
+            let modSemasa = dapatkanModSemasa();
+            if (modSemasa !== 'NONE') {
+                simpanKeDrafDOM(modSemasa);
+            }
+            return window.asal_tambahKalkulator(templateId);
+        }
+        
+        // Situasi 3: User klik menu button SENARAI REKOD secara manual
         urusPertukaranMenu('REKOD', function() {
             window.asal_tambahKalkulator(templateId);
         });
