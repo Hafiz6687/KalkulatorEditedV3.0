@@ -2766,9 +2766,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function fungsiBaruRumusan(e) {
     if (e) e.preventDefault();
 }
-
 // =========================================================
-// 9. ENJIN KHAS SEKSYEN 18A & FLYOUT MENU
+// 9. ENJIN KHAS SEKSYEN 18A & FLYOUT MENU (PENGASINGAN MUTLAK)
 // =========================================================
 
 // Simpan salinan fungsi asal tambahKalkulator
@@ -2784,8 +2783,8 @@ window.tambahKalkulator = function(templateId) {
         });
     } else {
         let modSemasa = dapatkanModSemasa();
-        if (modSemasa !== 'NONE') {
-            urusPertukaranMenu(modSemasa, function() {
+        if (modSemasa !== 'NONE' && modSemasa !== 'AKTA') {
+            urusPertukaranMenu('AKTA', function() {
                 window.asal_tambahKalkulator(templateId);
             });
         } else {
@@ -2859,86 +2858,105 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Mengklon Kalkulator Untuk Mod Seksyen 18A
+// Mengklon Kalkulator Khas Untuk Mod Seksyen 18A (Dengan Penanda Terasing)
 window.tambahKalkulator18ACustom = function(templateId) {
-    document.getElementById('flyoutMenu18ACustom').style.display = 'none';
-    window.asal_tambahKalkulator(templateId);
-    setTimeout(() => {
-        let semuaKad = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
-        let newCard = semuaKad[semuaKad.length - 1]; 
-        if (!newCard) return;
+    let modSemasa = dapatkanModSemasa();
+    
+    let prosesTambah = function() {
+        let flyout18A = document.getElementById('flyoutMenu18ACustom');
+        if (flyout18A) flyout18A.style.display = 'none';
+        
+        window.asal_tambahKalkulator(templateId);
+        setTimeout(() => {
+            let semuaKad = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+            let newCard = semuaKad[semuaKad.length - 1]; 
+            if (!newCard) return;
 
-        newCard.style.borderTop = "5px solid #d9534f";
-        let h2 = newCard.querySelector('h2');
-        if(h2) {
-            h2.innerHTML = h2.innerHTML + ` <br><span style="font-size:12px; color:#d9534f; background:#ffe8e8; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:5px;">Mod Seksyen 18A (Bahagi Hari Dalam Bulan)</span>`;
-        }
+            // Tanam penanda mod khas 18A pada kontena kad
+            newCard.setAttribute('data-mode-type', 'mod18a');
+            newCard.style.borderTop = "5px solid #d9534f";
+            
+            let h2 = newCard.querySelector('h2');
+            if(h2 && !h2.innerHTML.includes('Mod Seksyen 18A')) {
+                h2.innerHTML = h2.innerHTML + ` <br><span style="font-size:12px; color:#d9534f; background:#ffe8e8; padding:3px 8px; border-radius:4px; display:inline-block; margin-top:5px;">Mod Seksyen 18A (Bahagi Hari Dalam Bulan)</span>`;
+            }
 
-        let formGroups = newCard.querySelectorAll('.form-group');
-        if (formGroups.length > 0) {
-            let divHari = document.createElement('div');
-            divHari.className = "form-group";
-            divHari.style.width = "100%";
-            divHari.style.marginBottom = "15px";
-            divHari.innerHTML = `<label style="color:#d9534f; font-weight:bold; display:block; margin-bottom:5px;">Bilangan Hari Dalam Bulan</label><input type="number" class="hari-bulan-18a" placeholder="Contoh: 28, 30, 31" value="30" style="border: 2px solid #d9534f; border-radius: 4px; padding: 10px; width: 100%; box-sizing: border-box; background: #fffaf9; font-size:14px; font-weight:bold;">`;
-            formGroups[0].parentNode.insertBefore(divHari, formGroups[0]);
-        }
+            let formGroups = newCard.querySelectorAll('.form-group');
+            if (formGroups.length > 0 && !newCard.querySelector('.hari-bulan-18a')) {
+                let divHari = document.createElement('div');
+                divHari.className = "form-group";
+                divHari.style.width = "100%";
+                divHari.style.marginBottom = "15px";
+                divHari.innerHTML = `<label style="color:#d9534f; font-weight:bold; display:block; margin-bottom:5px;">Bilangan Hari Dalam Bulan</label><input type="number" class="hari-bulan-18a" placeholder="Contoh: 28, 30, 31" value="30" style="border: 2px solid #d9534f; border-radius: 4px; padding: 10px; width: 100%; box-sizing: border-box; background: #fffaf9; font-size:14px; font-weight:bold;">`;
+                formGroups[0].parentNode.insertBefore(divHari, formGroups[0]);
+            }
 
-        let btnKira = newCard.querySelector('button[data-action-func*="calculate"], button[onclick*="calculate"]');
-        if (btnKira) {
-            let newBtnKira = btnKira.cloneNode(true);
-            newBtnKira.removeAttribute('data-action-func');
-            newBtnKira.removeAttribute('onclick');
-            newBtnKira.style.background = "#d9534f"; 
-            newBtnKira.style.borderColor = "#c9302c";
-            newBtnKira.innerHTML = "Kira (Mod 18A)";
-            btnKira.parentNode.replaceChild(newBtnKira, btnKira);
+            let btnKira = newCard.querySelector('button[data-action-func*="calculate"], button[onclick*="calculate"]');
+            if (btnKira) {
+                let newBtnKira = btnKira.cloneNode(true);
+                newBtnKira.removeAttribute('data-action-func');
+                newBtnKira.removeAttribute('onclick');
+                newBtnKira.style.background = "#d9534f"; 
+                newBtnKira.style.borderColor = "#c9302c";
+                newBtnKira.innerHTML = "Kira (Mod 18A)";
+                btnKira.parentNode.replaceChild(newBtnKira, btnKira);
 
-            newBtnKira.addEventListener('click', function(e) {
-                let tempContext = activeCardContext;
-                activeCardContext = newCard;
-                try {
-                    let hariBulanInput = newCard.querySelector('.hari-bulan-18a');
-                    let hariBulan = hariBulanInput ? (Number(hariBulanInput.value) || 26) : 26; 
-                    
-                    if (templateId === 'orp') calculateORP(e, hariBulan);
-                    else if (templateId === 'baki') calculateBakiUpah(e);
-                    else if (templateId === 'otBiasa') calculateOTBiasa(e, hariBulan);
-                    else if (templateId === 'lewat') calculateLewat(e, hariBulan);
-                    else if (templateId === 'otRehat') calculateOTRH(e, hariBulan);
-                    else if (templateId === 'otKelepasan') calculateOTPH(e, hariBulan);
-                    else if (templateId === 'rehatKurang') calculateHariRehat(e, hariBulan);
-                    else if (templateId === 'rehatLebih') calculateHariRehatLebih(e, hariBulan);
-                    else if (templateId === 'kelepasan') calculatePH(e, hariBulan);
-                    else if (templateId === 'cutiTahunan') calculateCutiTahunan(e, hariBulan);
-                    else if (templateId === 'cutiSakit') calculateCutiSakit(e, hariBulan);
-                    else if (templateId === 'sec18A') calculate18ANew(e);
-                } finally {
-                    activeCardContext = tempContext;
-                }
-            });
-        }
-    }, 50);
+                newBtnKira.addEventListener('click', function(e) {
+                    let tempContext = activeCardContext;
+                    activeCardContext = newCard;
+                    try {
+                        let hariBulanInput = newCard.querySelector('.hari-bulan-18a');
+                        let hariBulan = hariBulanInput ? (Number(hariBulanInput.value) || 26) : 26; 
+                        
+                        if (templateId === 'orp') calculateORP(e, hariBulan);
+                        else if (templateId === 'baki') calculateBakiUpah(e);
+                        else if (templateId === 'otBiasa') calculateOTBiasa(e, hariBulan);
+                        else if (templateId === 'lewat') calculateLewat(e, hariBulan);
+                        else if (templateId === 'otRehat') calculateOTRH(e, hariBulan);
+                        else if (templateId === 'otKelepasan') calculateOTPH(e, hariBulan);
+                        else if (templateId === 'rehatKurang') calculateHariRehat(e, hariBulan);
+                        else if (templateId === 'rehatLebih') calculateHariRehatLebih(e, hariBulan);
+                        else if (templateId === 'kelepasan') calculatePH(e, hariBulan);
+                        else if (templateId === 'cutiTahunan') calculateCutiTahunan(e, hariBulan);
+                        else if (templateId === 'cutiSakit') calculateCutiSakit(e, hariBulan);
+                        else if (templateId === 'sec18A') calculate18ANew(e);
+                    } finally {
+                        activeCardContext = tempContext;
+                    }
+                });
+            }
+        }, 50);
+    };
+
+    if (modSemasa !== 'NONE' && modSemasa !== '18A') {
+        urusPertukaranMenu('18A', prosesTambah);
+    } else {
+        prosesTambah();
+    }
 };
 
 // =========================================================
-// 10. ENJIN DRAF & KAWALAN PERTUKARAN MENU
+// 10. ENJIN DRAF & KAWALAN PERTUKARAN MENU (STRICT ISOLATION)
 // =========================================================
 
-// Semak Mod Semasa Aplikasi
+// Semak Mod Semasa Aplikasi Secara Tepat & Terasing
 function dapatkanModSemasa() {
     let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
     if (kadAktif.length === 0) {
         let kadSembunyi = document.querySelectorAll('.sementara-sembunyi');
         if(kadSembunyi.length > 0) {
             let is18A = false;
-            kadSembunyi.forEach(k => { if(k.querySelector('.hari-bulan-18a')) is18A = true; });
+            kadSembunyi.forEach(k => { 
+                if(k.getAttribute('data-mode-type') === 'mod18a' || k.querySelector('.hari-bulan-18a')) is18A = true; 
+            });
             return is18A ? '18A' : 'AKTA';
         }
         return 'NONE';
     }
     let is18A = false;
-    kadAktif.forEach(k => { if(k.querySelector('.hari-bulan-18a')) is18A = true; });
+    kadAktif.forEach(k => { 
+        if(k.getAttribute('data-mode-type') === 'mod18a' || k.querySelector('.hari-bulan-18a')) is18A = true; 
+    });
     return is18A ? '18A' : 'AKTA';
 }
 
@@ -3166,6 +3184,8 @@ window.hapusDraf = function(e) {
         document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
     }
 };
+
+
 // =====================================================
 // PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
 // =====================================================
