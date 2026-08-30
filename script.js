@@ -2942,18 +2942,22 @@ function dapatkanModSemasa() {
     return is18A ? '18A' : 'AKTA';
 }
 
-// Pintasan Amaran Pertukaran Mod / Navigasi Sidebar (FIXED: HANYA UNTUK PERTUKARAN AKTA <-> 18A)
+// Pintasan Amaran Pertukaran Mod / Navigasi Sidebar (FIXED: HANYA UNTUK 3 SITUASI DIBENARKAN)
 function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     let modSemasa = dapatkanModSemasa();
     
-    // 1. Jika tiada aktiviti pengiraan, atau navigasi ke destinasi mod yang sama, teruskan tanpa pop-up
-    if (modSemasa === 'NONE' || modSemasa === modDestinasi) {
+    // 1. Jika tiada aktiviti pengiraan, teruskan navigasi tanpa pop-up
+    if (modSemasa === 'NONE') {
         return fungsiCallback(); 
     }
 
-    // 2. KAWALAN KETAT: Pop-up HANYA dipaparkan jika pertukaran sah antara AKTA <-> 18A sahaja.
-    // Jika user klik menu lain (contoh: REKOD), abaikan amaran dan jalankan fungsi callback asal.
-    let adakahPertukaranModSah = (modSemasa === 'AKTA' && modDestinasi === '18A') || (modSemasa === '18A' && modDestinasi === 'AKTA');
+    // 2. KAWALAN KETAT: Pop-up HANYA dipaparkan bagi 3 situasi ini:
+    // Situasi 1: AKTA -> 18A
+    // Situasi 2: 18A -> AKTA
+    // Situasi 3: Mana-mana mod ada aktiviti -> REKOD
+    let adakahPertukaranModSah = (modSemasa === 'AKTA' && modDestinasi === '18A') || 
+                                 (modSemasa === '18A' && modDestinasi === 'AKTA') || 
+                                 (modDestinasi === 'REKOD');
     
     if (!adakahPertukaranModSah) {
         return fungsiCallback();
@@ -2964,7 +2968,7 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     let existingModal = document.getElementById('modalAmaranPertukaran');
     if (existingModal) existingModal.remove();
 
-    // Pop-up amaran eksklusif pertukaran mod Akta Kerja <-> Seksyen 18A (Hanya Batal & Hapus)
+    // Pop-up amaran eksklusif pertukaran mod (Hanya Batal & Hapus)
     let boxHtml = `
     <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
         <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; box-sizing: border-box;">
