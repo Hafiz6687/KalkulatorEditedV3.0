@@ -2492,47 +2492,62 @@ function transformAllowanceField(allowInput) {
 function tunjukTourElaun(targetContainer) {
     let existingOverlay = document.getElementById('tourElaunOverlay');
     if (existingOverlay) existingOverlay.remove();
-    let existingBox = document.getElementById('tourElaunBox');
-    if (existingBox) existingBox.remove();
+    let existingPopover = document.getElementById('tourElaunPopoverBox');
+    if (existingPopover) existingPopover.remove();
 
     if (!targetContainer) return;
 
-    // Dapatkan kedudukan koordinat sebenar petak Maklumat Elaun dalam skrin
+    // 1. Dapatkan kedudukan dan saiz sebenar petak Maklumat Elaun
     let rect = targetContainer.getBoundingClientRect();
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
-    // 1. Overlay Latar Belakang
+    // 2. Cipta Backdrop Overlay Skrin Penuh (Latar Belakang Gelap)
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
 
-    // 2. Kotak Popover Terapung mengikut koordinat petak
-    let boxWidth = Math.min(420, window.innerWidth - 30);
+    // 3. Sorotkan (Highlight) Petak Maklumat Elaun Ke Hadapan Visual
+    let origPos = targetContainer.style.position;
+    let origZIndex = targetContainer.style.zIndex;
+    let origBg = targetContainer.style.background;
+    let origShadow = targetContainer.style.boxShadow;
+
+    targetContainer.style.position = 'relative';
+    targetContainer.style.zIndex = '999999';
+    targetContainer.style.background = '#ffffff';
+    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 7px #d9534f, 0 15px 35px rgba(0,0,0,0.5)';
+
+    // 4. Pengiraan Kedudukan Kotak Tooltip
+    let isMobile = window.innerWidth <= 600;
+    let popoverWidth = isMobile ? Math.min(340, window.innerWidth - 30) : 380;
     
-    // Kira kedudukan Y (Letak di bawah petak jika ada ruang, atau di tengah)
-    let boxTop = rect.bottom + 15;
-    let arrowOnTop = true;
-    if (boxTop + 350 > window.innerHeight) {
-        boxTop = Math.max(10, rect.top - 360);
-        arrowOnTop = false;
+    // Tentukan sama ada letak di Bawah atau di Atas petak bergantung ruang skrin
+    let absTop = rect.bottom + scrollTop + 15;
+    let isArrowTop = true;
+    if (rect.bottom + 380 > window.innerHeight && rect.top > 380) {
+        absTop = rect.top + scrollTop - 380;
+        isArrowTop = false;
     }
 
-    // Kira kedudukan X (Supaya tidak terpotong tepi skrin)
-    let boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
-    
-    // Kira posisi anak panah relatif kepada kotak popover
-    let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
+    let absLeft = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
+    absLeft = Math.max(15, Math.min(absLeft, window.innerWidth - popoverWidth - 15));
 
-    let popoverBox = document.createElement('div');
-    popoverBox.id = 'tourElaunBox';
-    popoverBox.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 999999; background: white; border-radius: 12px; max-height: 80vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
+    // Kedudukan anak panah relatif kepada kotak popover
+    let arrowLeft = (rect.left + scrollLeft + (rect.width / 2)) - absLeft - 12;
+    arrowLeft = Math.max(20, Math.min(arrowLeft, popoverWidth - 40));
 
-    let arrowStyleHtml = arrowOnTop 
-        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-           <div style="position: absolute; bottom: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
-        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
-           <div style="position: absolute; top: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
+    let popover = document.createElement('div');
+    popover.id = 'tourElaunPopoverBox';
+    popover.style.cssText = `position: absolute; top: ${absTop}px; left: ${absLeft}px; width: ${popoverWidth}px; z-index: 1000000; background: white; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
 
-    popoverBox.innerHTML = `
+    let arrowStyleHtml = isArrowTop 
+        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+           <div style="position: absolute; bottom: calc(100% - 7px); left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
+        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
+           <div style="position: absolute; top: calc(100% - 7px); left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
+
+    popover.innerHTML = `
         ${arrowStyleHtml}
         <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
             <span style="background: #1f4e79; color: white; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">💡</span>
@@ -2567,11 +2582,16 @@ function tunjukTourElaun(targetContainer) {
     `;
 
     document.body.appendChild(overlay);
-    document.body.appendChild(popoverBox);
+    document.body.appendChild(popover);
 
     const tutupTour = () => {
         overlay.remove();
-        popoverBox.remove();
+        popover.remove();
+        // Kembalikan gaya asal elemen sasaran
+        targetContainer.style.position = origPos;
+        targetContainer.style.zIndex = origZIndex;
+        targetContainer.style.background = origBg;
+        targetContainer.style.boxShadow = origShadow;
     };
 
     overlay.addEventListener('click', tutupTour);
@@ -2581,40 +2601,57 @@ function tunjukTourElaun(targetContainer) {
 function tunjukTourElaunPopup() {
     let existingOverlay = document.getElementById('tourElaunPopupOverlay');
     if (existingOverlay) existingOverlay.remove();
-    let existingBox = document.getElementById('tourElaunPopupBox');
-    if (existingBox) existingBox.remove();
+    let existingPopover = document.getElementById('tourElaunPopupBox');
+    if (existingPopover) existingPopover.remove();
 
     let targetContainer = document.getElementById('containerElaunModal');
     if (!targetContainer) return;
 
     let rect = targetContainer.getBoundingClientRect();
-    let boxWidth = Math.min(420, window.innerWidth - 30);
-    
-    let boxTop = rect.bottom + 15;
-    let arrowOnTop = true;
-    if (boxTop + 220 > window.innerHeight) {
-        boxTop = Math.max(10, rect.top - 230);
-        arrowOnTop = false;
-    }
-
-    let boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
-    let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunPopupOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
 
-    let popoverBox = document.createElement('div');
-    popoverBox.id = 'tourElaunPopupBox';
-    popoverBox.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 999999; background: white; border-radius: 12px; max-height: 80vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
+    let origPos = targetContainer.style.position;
+    let origZIndex = targetContainer.style.zIndex;
+    let origBg = targetContainer.style.background;
+    let origShadow = targetContainer.style.boxShadow;
 
-    let arrowStyleHtml = arrowOnTop 
-        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-           <div style="position: absolute; bottom: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
-        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
-           <div style="position: absolute; top: calc(100% - 6px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
+    targetContainer.style.position = 'relative';
+    targetContainer.style.zIndex = '999999';
+    targetContainer.style.background = '#ffffff';
+    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 7px #d9534f, 0 15px 35px rgba(0,0,0,0.5)';
 
-    popoverBox.innerHTML = `
+    let isMobile = window.innerWidth <= 600;
+    let popoverWidth = isMobile ? Math.min(340, window.innerWidth - 30) : 380;
+    
+    let absTop = rect.bottom + scrollTop + 15;
+    let isArrowTop = true;
+    if (rect.bottom + 250 > window.innerHeight && rect.top > 250) {
+        absTop = rect.top + scrollTop - 250;
+        isArrowTop = false;
+    }
+
+    let absLeft = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
+    absLeft = Math.max(15, Math.min(absLeft, window.innerWidth - popoverWidth - 15));
+
+    let arrowLeft = (rect.left + scrollLeft + (rect.width / 2)) - absLeft - 12;
+    arrowLeft = Math.max(20, Math.min(arrowLeft, popoverWidth - 40));
+
+    let popover = document.createElement('div');
+    popover.id = 'tourElaunPopupBox';
+    popover.style.cssText = `position: absolute; top: ${absTop}px; left: ${absLeft}px; width: ${popoverWidth}px; z-index: 1000000; background: white; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
+
+    let arrowStyleHtml = isArrowTop 
+        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+           <div style="position: absolute; bottom: calc(100% - 7px); left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
+        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
+           <div style="position: absolute; top: calc(100% - 7px); left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
+
+    popover.innerHTML = `
         ${arrowStyleHtml}
         <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
             <span style="background: #1f4e79; color: white; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">💡</span>
@@ -2636,11 +2673,15 @@ function tunjukTourElaunPopup() {
     `;
 
     document.body.appendChild(overlay);
-    document.body.appendChild(popoverBox);
+    document.body.appendChild(popover);
 
     const tutupTourPopup = () => {
         overlay.remove();
-        popoverBox.remove();
+        popover.remove();
+        targetContainer.style.position = origPos;
+        targetContainer.style.zIndex = origZIndex;
+        targetContainer.style.background = origBg;
+        targetContainer.style.boxShadow = origShadow;
     };
 
     overlay.addEventListener('click', tutupTourPopup);
