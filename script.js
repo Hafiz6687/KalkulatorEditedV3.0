@@ -2492,22 +2492,19 @@ if (!elaunTourDitunjuk && !window.tangguhTourElaunSeketika) {
 function tunjukTourElaun(targetContainer) {
     let existingOverlay = document.getElementById('tourElaunOverlay');
     if (existingOverlay) existingOverlay.remove();
-    let existingPopover = document.getElementById('tourElaunPopoverBox');
-    if (existingPopover) existingPopover.remove();
+    let existingBox = document.getElementById('tourElaunBox');
+    if (existingBox) existingBox.remove();
 
     if (!targetContainer) return;
 
-    // 1. Dapatkan kedudukan dan saiz sebenar petak Maklumat Elaun
     let rect = targetContainer.getBoundingClientRect();
-    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
-    // 2. Cipta Backdrop Overlay Skrin Penuh (Latar Belakang Gelap)
+    // 1. Overlay Latar Belakang Gelap
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
 
-    // 3. Sorotkan (Highlight) Petak Maklumat Elaun Ke Hadapan Visual
+    // 2. Sorotkan petak Elaun ke hadapan
     let origPos = targetContainer.style.position;
     let origZIndex = targetContainer.style.zIndex;
     let origBg = targetContainer.style.background;
@@ -2516,78 +2513,53 @@ function tunjukTourElaun(targetContainer) {
     targetContainer.style.position = 'relative';
     targetContainer.style.zIndex = '999999';
     targetContainer.style.background = '#ffffff';
-    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 7px #d9534f, 0 15px 35px rgba(0,0,0,0.5)';
+    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 6px #d9534f';
 
-    // 4. Pengiraan Kedudukan Kotak Tooltip
-    let isMobile = window.innerWidth <= 600;
-    let popoverWidth = isMobile ? Math.min(340, window.innerWidth - 30) : 380;
-    
-    // Tentukan sama ada letak di Bawah atau di Atas petak bergantung ruang skrin
-    let absTop = rect.bottom + scrollTop + 15;
-    let isArrowTop = true;
-    if (rect.bottom + 380 > window.innerHeight && rect.top > 380) {
-        absTop = rect.top + scrollTop - 380;
-        isArrowTop = false;
-    }
+    // 3. Kotak Panduan RAPAT TANPA JARAK (Top diset tepat di bawah petak elaun)
+    let boxWidth = Math.min(420, window.innerWidth - 30);
+    let boxTop = rect.bottom; // TEPAT DI BAWAH PETAK (TIADA TAMBAHAN MARGIN/GAP)
+    let boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
+    let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
 
-    let absLeft = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
-    absLeft = Math.max(15, Math.min(absLeft, window.innerWidth - popoverWidth - 15));
+    let popoverBox = document.createElement('div');
+    popoverBox.id = 'tourElaunBox';
+    popoverBox.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 1000000; background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 18px 20px; border-top: 4px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; margin-top: 8px;`;
 
-    // Kedudukan anak panah relatif kepada kotak popover
-    let arrowLeft = (rect.left + scrollLeft + (rect.width / 2)) - absLeft - 12;
-    arrowLeft = Math.max(20, Math.min(arrowLeft, popoverWidth - 40));
+    popoverBox.innerHTML = `
+        <div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 8px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+        <div style="position: absolute; bottom: calc(100% - 4px); left: ${arrowLeft}px; border-width: 8px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
 
-    let popover = document.createElement('div');
-    popover.id = 'tourElaunPopoverBox';
-    popover.style.cssText = `position: absolute; top: ${absTop}px; left: ${absLeft}px; width: ${popoverWidth}px; z-index: 1000000; background: white; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); padding: 22px; border-top: 5px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;`;
-
-    let arrowStyleHtml = isArrowTop 
-        ? `<div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-           <div style="position: absolute; bottom: calc(100% - 7px); left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>`
-        : `<div style="position: absolute; top: 100%; left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: #d9534f transparent transparent transparent;"></div>
-           <div style="position: absolute; top: calc(100% - 7px); left: ${arrowLeft}px; border-width: 12px; border-style: solid; border-color: #fff transparent transparent transparent;"></div>`;
-
-    popover.innerHTML = `
-        ${arrowStyleHtml}
-        <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-            <span style="background: #1f4e79; color: white; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">💡</span>
+        <h4 style="margin: 0 0 8px 0; color: #1f4e79; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+            <span style="background: #1f4e79; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">💡</span>
             Panduan Maklumat Elaun
         </h4>
         
-        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #333;">
+        <p style="margin: 0 0 6px 0; font-size: 11.5px; font-weight: bold; color: #333;">
             Elaun <span style="color:#d9534f; text-decoration: underline;">SELAIN / TIDAK TERMASUK:</span>
         </p>
         
-        <ul style="margin: 0 0 12px 0; padding-left: 18px; font-size: 11.5px; color: #444; line-height: 1.5;">
-            <li style="margin-bottom: 4px;"><strong>NILAI</strong> tempat tinggal, bekalan makanan, minyak, lampu, air, rawatan perubatan atau yang diluluskan JTK;</li>
-            <li style="margin-bottom: 4px;">Bayaran <strong>CARUMAN</strong>;</li>
-            <li style="margin-bottom: 4px;">Elaun Pengangkutan (Kenderaan/minyak (yang sama erti dengannya));</li>
-            <li style="margin-bottom: 4px;">Bayaran Khas untuk tujuan perbelanjaan pekerjaan;</li>
-            <li style="margin-bottom: 4px;">Bayaran persaraan/pemberhentian/pampasan;</li>
+        <ul style="margin: 0 0 10px 0; padding-left: 18px; font-size: 11px; color: #444; line-height: 1.45;">
+            <li style="margin-bottom: 3px;"><strong>NILAI</strong> tempat tinggal, bekalan makanan, minyak, lampu, air, rawatan perubatan atau yang diluluskan JTK;</li>
+            <li style="margin-bottom: 3px;">Bayaran <strong>CARUMAN</strong>;</li>
+            <li style="margin-bottom: 3px;">Elaun Pengangkutan (Kenderaan/minyak (yang sama erti dengannya));</li>
+            <li style="margin-bottom: 3px;">Bayaran Khas untuk tujuan perbelanjaan pekerjaan;</li>
+            <li style="margin-bottom: 3px;">Bayaran persaraan/pemberhentian/pampasan;</li>
             <li>Bonus tahunan.</li>
         </ul>
         
-        <p style="margin: 0 0 15px 0; font-size: 11px; font-weight: bold; color: #d9534f; background: #fff0f0; padding: 8px; border-radius: 5px; border-left: 3px solid #d9534f; line-height: 1.4;">
+        <p style="margin: 0 0 12px 0; font-size: 10.5px; font-weight: bold; color: #d9534f; background: #fff0f0; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #d9534f; line-height: 1.35;">
             * DAN TIDAK TERMASUK bayaran yang dibayar di luar waktu kerja normal.
         </p>
         
-        <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
-        <style>
-            @keyframes floatUpTour { 
-                0% { opacity: 0; transform: translateY(10px); } 
-                100% { opacity: 1; transform: translateY(0); } 
-            }
-            #btnTutupTour:hover { background: #153859 !important; }
-        </style>
+        <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 9px; border-radius: 5px; font-weight: bold; font-size: 12.5px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
     `;
 
     document.body.appendChild(overlay);
-    document.body.appendChild(popover);
+    document.body.appendChild(popoverBox);
 
     const tutupTour = () => {
         overlay.remove();
-        popover.remove();
-        // Kembalikan gaya asal elemen sasaran
+        popoverBox.remove();
         targetContainer.style.position = origPos;
         targetContainer.style.zIndex = origZIndex;
         targetContainer.style.background = origBg;
