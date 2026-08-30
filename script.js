@@ -989,7 +989,6 @@ function janaPenyataGaji() {
             }
         };
 
-        // BAHAGIAN YANG DIBUANG: Auto-popup event listener pada kiraBtn telah dikeluarkan di sini
         return;
     }
     
@@ -1379,7 +1378,6 @@ function paparModalLaporan(jenis) {
         setTimeout(() => tunjukTourElaunPopup(), 400);
         
     } else {
-        // [Kod Laporan Penuh di sini kekal sama - abaikan ubah yang tidak berkaitan]
         let modalHtml = `
         <div id="modalLaporanPenuh" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
             <div style="background: white; padding: 25px 30px; border-radius: 10px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: left; border-top: 5px solid #1f4e79;">
@@ -1418,7 +1416,6 @@ function teruskanJanaLaporan(jenis) {
 
     if (jenis === 'penyata') {
         
-        // VALIDASI: Semak Jika Maklumat Perkhidmatan Dikosongkan
         let msLayak = ['modPHLayak', 'modALLayak', 'modMCLayak', 'modWDLayak'];
         let msGuna = ['modPHGuna', 'modALGuna', 'modMCGuna', 'modWDGuna'];
         let isIncomplete = false;
@@ -1430,7 +1427,7 @@ function teruskanJanaLaporan(jenis) {
 
         if (isIncomplete) {
             if(typeof tunjukTourMaklumatPerkhidmatan === 'function') tunjukTourMaklumatPerkhidmatan();
-            return; // Hentikan janaan
+            return; 
         }
 
         noDaftarMajikan = getV('inputNoDaftarMajikan');
@@ -1441,7 +1438,7 @@ function teruskanJanaLaporan(jenis) {
         pendahuluanN = getV('inputPendahuluanNilai');
         absentH = getV('inputAbsentHari'); absentN = getV('inputAbsentNilai');
 
-svcData = {
+        svcData = {
             phL: getV('modPHLayak'), phG: getV('modPHGuna'), phB: getV('modPHBaki'), phS: getV('inputPHSemasa'),
             alL: getV('modALLayak'), alG: getV('modALGuna'), alB: getV('modALBaki'), alS: getV('inputALSemasa'),
             mcL: getV('modMCLayak'), mcG: getV('modMCGuna'), mcB: getV('modMCBaki'), mcS: getV('inputMCSemasa'),
@@ -1471,19 +1468,16 @@ svcData = {
         });
     }
 
-let namaPekerja = getV('inputNamaLaporan');
+    let namaPekerja = getV('inputNamaLaporan');
     let icPekerja = getV('inputICLaporan');
     let noPekerja = getV('inputNoPekerjaLaporan');
 
-    // JANA ID UNIK UNTUK REKOD INI
     let unikId = 'rekod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
     tambahRekodKeMaklumatGaji(jenis, namaPekerja, namaMajikan, tempohUpah, unikId);
 
-    // KEKALKAN DATA MODAL (Hanya hide, jangan remove)
     document.getElementById('modalLaporanPenuh').style.display = 'none'; 
     
-// TAMBAH unikId DI HUJUNG PARAMETER
     prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenis, { 
         senaraiElaun, senaraiPotongan, kwspP, kwspN, perkesoP, perkesoN, sipP, sipN, pendahuluanN, absentH, absentN, svcData 
     }, unikId);
@@ -1498,10 +1492,8 @@ window.bukaRekodSimpanan = function(e) {
     let htmlContent = window.simpananHTMLGlobal[id];
     
     if(htmlContent) {
-        // PENAMBAHBAIKAN 1: Buang butang "Simpan" secara dinamik untuk paparan peringkat ini sahaja
         htmlContent = htmlContent.replace(/<a[^>]*>💾 Simpan<\/a>/gi, '');
 
-        // PENAMBAHBAIKAN 2: Ubah fungsi Kemaskini supaya memanggil pengembali state kalkulator asal
         htmlContent = htmlContent.replace(
             /<a href="#" onclick="window\.close\(\); return false;">✏️ Kemaskini<\/a>/gi,
             '<a href="#" onclick="if(window.opener && typeof window.opener.kembaliKeKalkulator === \'function\') { window.opener.kembaliKeKalkulator(); } window.close(); return false;">✏️ Kemaskini</a>'
@@ -1518,7 +1510,6 @@ window.bukaRekodSimpanan = function(e) {
 };
 
 window.hapusRekodSimpanan = function(e) {
-    // Tangkap butang yang ditekan dan tarik ID yang disorokkan (data-id)
     let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
     if (!btn) return;
     
@@ -1532,17 +1523,14 @@ window.hapusRekodSimpanan = function(e) {
 };
 
 window.kembaliKeKalkulator = function() {
-    // 1. Buang panel jadual Maklumat Gaji yang sedang dipapar
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
 
-    // 2. Munculkan kembali kesemua kalkulator dan pengiraan asal pengguna
     document.querySelectorAll('.sementara-sembunyi').forEach(kad => {
         kad.style.display = '';
         kad.classList.remove('sementara-sembunyi');
     });
 
-    // 3. Pastikan Rumusan dan Warning Box dipaparkan semula seperti biasa
     let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
     if (semuaKadAktif.length > 0) {
         let rumusanCard = document.querySelector('.rumusan-card');
@@ -1559,25 +1547,21 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
     let warnaTeks = jenis === 'penyata' ? '#198754' : '#0d6efd'; 
     let warnaBg   = jenis === 'penyata' ? '#d1e7dd' : '#cfe2ff';
 
-    // Pastikan tiada ruang kosong (space) yang berlebihan merosakkan semakan
     let safeNama = (namaPekerja || '-').trim();
     let safeMajikan = (majikan || '-').trim();
 
-    // PENAMBAHBAIKAN: Semakan pintar menyokong rekod lama dan baru
     let semuaBaris = tbody.querySelectorAll('tr');
     semuaBaris.forEach(baris => {
         let isMatch = false;
         let oldJenis = baris.getAttribute('data-jenis');
         
         if (oldJenis) {
-            // Jika rekod dicipta menggunakan kod versi baharu (ada data-attribute)
             let oldPekerja = baris.getAttribute('data-pekerja');
             let oldMajikan = baris.getAttribute('data-majikan');
             if (oldJenis === jenisTeks && oldPekerja === safeNama && oldMajikan === safeMajikan) {
                 isMatch = true;
             }
         } else {
-            // Fallback: Jika rekod lama dicipta sebelum ini (tiada data-attribute)
             let tds = baris.querySelectorAll('td');
             if (tds.length >= 3) {
                 let textJenis = tds[0].innerText.includes('Penyata Gaji') ? 'Penyata Gaji' : (tds[0].innerText.includes('Laporan') ? 'Laporan' : '');
@@ -1589,7 +1573,6 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
             }
         }
 
-        // Padam label BARU pada rekod lama yang dijumpai
         if (isMatch) {
             let labelLama = baris.querySelector('.label-rekod-baru');
             if (labelLama) labelLama.remove();
@@ -1599,7 +1582,6 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
     let tr = document.createElement('tr');
     tr.style.borderBottom = "1px solid #eee";
     
-    // Tanam identiti untuk mudah dikesan kelak
     tr.setAttribute('data-jenis', jenisTeks);
     tr.setAttribute('data-pekerja', safeNama);
     tr.setAttribute('data-majikan', safeMajikan);
@@ -1625,6 +1607,7 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
 
     tbody.appendChild(tr);
 }
+
 function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenisCetak, xtra, unikId) {
     const senaraiKalkulator = [
         { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, { id: "bakiData", tajuk: "Baki Upah / Gaji" }, 
@@ -1814,7 +1797,7 @@ function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPe
         
         let v_basic = "", v_elaun = "";
         let r_otb = "", h_otb = ""; let r_rh05 = "", h_rh05 = ""; let r_rh1 = "", h_rh1 = "";
-        let r_otrh = "", h_otrh = ""; let r_ph = "", h_ph = ""; let r_otph = "", h_otph = "";
+        let r_otrh = "", h_otrh = ""; let r_ph = "", h_ph = ""; let r_otph = "", h_otrh = "";
         let r_cs = "", h_cs = ""; let r_ct = "", h_ct = "";
         let totalUpah = 0; let totalPotongan = 0;
 
@@ -1881,7 +1864,7 @@ function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPe
             </table>
         `;
 
-let htmlPotonganDalaman = "";
+        let htmlPotonganDalaman = "";
         if (xtra) {
             let itemsPotongan = [
                 { label: "Pendahuluan", amt: xtra.pendahuluanN },
@@ -1925,11 +1908,9 @@ let htmlPotonganDalaman = "";
             </div>
         `;
 
-// KUTIP DATA KELAYAKAN DARI XTRA (MODAL POP-UP)
         let svc = xtra.svcData || {};
         let fDay = (val) => (val && val !== "-" && val !== "") ? val : "0";
 
-// TAMBAHAN BARU: JADUAL REKOD CUTI BULAN SEMASA (40% RUANG KANAN)
         let htmlCutiSemasa = `
             <div class="report-box" style="padding: 0; border: 1px solid #aaa; display: flex; flex-direction: column; height: 100%;">
                 <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px; margin: 0; border-radius: 0; border-bottom: 1px solid #aaa;">CUTI BULAN SEMASA</div>
@@ -1944,7 +1925,6 @@ let htmlPotonganDalaman = "";
             </div>
         `;
 
-        // DIKEMASKINI: JADUAL MAKLUMAT PERKHIDMATAN (60% RUANG KIRI)
         let htmlMaklumatPerkhidmatan = `
             <div class="report-box" style="padding: 0; border: 1px solid #aaa; display: flex; flex-direction: column; height: 100%; border-left: 5px solid #1f4e79;">
                 <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px; margin: 0; border-radius: 0; border-bottom: 1px solid #aaa;">MAKLUMAT BERKAITAN PERKHIDMATAN</div>
@@ -2004,7 +1984,6 @@ let htmlPotonganDalaman = "";
         </div>
         ${bersihHtml}
         
-        <!-- DIKEMASKINI: GRID LAYOUT 60(3) : 40(2) SEPERTI YANG DIMINTA -->
         <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 15px; margin-bottom: 15px; grid-column: 1 / -1; align-items: stretch;">
             ${htmlMaklumatPerkhidmatan}
             ${htmlCutiSemasa}
@@ -2021,7 +2000,7 @@ let htmlPotonganDalaman = "";
         contentSeterusnya = htmlLaporan; 
     }
 
-let maklumatSyarikatPekerjaHTML = "";
+    let maklumatSyarikatPekerjaHTML = "";
     if (namaPekerja !== "" || icPekerja !== "" || noPekerja !== "" || namaMajikan !== "") {
         maklumatSyarikatPekerjaHTML = `<div class="report-box" style="grid-column: 1 / -1; margin-bottom: 3pt; border-left: 5px solid #1f4e79;">
             <div class="report-header" style="background:#e8eaed; color:#1a1a1a; text-align: left; padding-left: 10px;">MAKLUMAT PEKERJA & SYARIKAT</div>
@@ -2036,9 +2015,9 @@ let maklumatSyarikatPekerjaHTML = "";
 
     let cssBaru = `.floating-action-bar { position: fixed; top: 25px; right: 25px; display: flex; z-index: 9999; align-items: center; } .kebab-btn { background: #0d6efd; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; line-height: 1; padding-bottom: 5px; } .kebab-btn:hover { background: #0b5ed7; transform: scale(1.05); } .kebab-dropdown { display: none; position: absolute; right: 0; top: 115%; background-color: white; min-width: 170px; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid #ddd; text-align: left; } .kebab-dropdown a { color: #333; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; font-weight: bold; transition: 0.2s; } .kebab-dropdown a:hover { background-color: #f4f6f9; } .kebab-dropdown a:first-child { border-bottom: 1px solid #eee; } @media print { .floating-action-bar, .print-btn-container { display: none !important; } }`;
     
-let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a><a href="#" onclick="if(window.opener){window.opener.tambahKalkulator('maklumatGaji');} window.close(); return false;">💾 Simpan</a></div></div></div>${tajukHeaderHTML}<div class="grid-container">${maklumatSyarikatPekerjaHTML}${contentSeterusnya}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div></body></html>`;
+    // PEMBETULAN PADA BUTANG SIMPAN UNTUK MEMASTIKAN `isDirectSaveAction` DIPANGGIL
+    let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a><a href="#" onclick="if(window.opener){window.opener.isDirectSaveAction = true; window.opener.tambahKalkulator('maklumatGaji');} window.close(); return false;">💾 Simpan</a></div></div></div>${tajukHeaderHTML}<div class="grid-container">${maklumatSyarikatPekerjaHTML}${contentSeterusnya}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div></body></html>`;
     
-    // ++ KOD SIMPANAN DATA UNTUK FUNGSI BUKA ++
     if (unikId) {
         window.simpananHTMLGlobal = window.simpananHTMLGlobal || {};
         window.simpananHTMLGlobal[unikId] = cetakHTML;
@@ -2048,6 +2027,7 @@ let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><tit
     if (!tetingkapCetak) { alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan."); return; }
     tetingkapCetak.document.write(cetakHTML); tetingkapCetak.document.close(); tetingkapCetak.focus(); 
 }
+
 // =====================================================
 // 6. SISTEM LOGIN & RESET 
 // =====================================================
@@ -2464,9 +2444,9 @@ function transformAllowanceField(allowInput) {
     if (senaraiElaunGlobal.length > 0) { updateGlobalElaunSum(container); }
 
     // SEMAKAN PENTING: Tahan Popup Tour jika diarahkan
-if (!elaunTourDitunjuk && !window.tangguhTourElaunSeketika) {
-    elaunTourDitunjuk = true;
-    tunjukTourElaun(container);
+    if (!elaunTourDitunjuk && !window.tangguhTourElaunSeketika) {
+        elaunTourDitunjuk = true;
+        tunjukTourElaun(container);
     }
 }
 
@@ -3201,6 +3181,7 @@ window.hapusDraf = function(e) {
         document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
     }
 };
+
 // =====================================================
 // PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
 // =====================================================
