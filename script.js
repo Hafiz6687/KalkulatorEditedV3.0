@@ -3129,7 +3129,7 @@ window.bukaDraf = function(e) {
     if (kadContainer) {
         while(kadContainer.firstChild) {
             let kad = kadContainer.firstChild;
-            kad.style.display = ''; // Pastikan paparan terbuka
+            kad.style.display = ''; // Menjadikan kad kelihatan semula
             kad.classList.remove('sementara-sembunyi'); // Tanggalkan kelas sembunyi
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
