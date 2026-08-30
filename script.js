@@ -2497,14 +2497,12 @@ function tunjukTourElaun(targetContainer) {
 
     if (!targetContainer) return;
 
-    let rect = targetContainer.getBoundingClientRect();
-
-    // 1. Overlay Latar Belakang Gelap
+    // 1. Overlay Gelap Latar Belakang
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px); transition: opacity 0.3s;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px);';
 
-    // 2. Sorotkan petak Elaun ke hadapan
+    // 2. Naikkan z-index petak Maklumat Elaun
     let origPos = targetContainer.style.position;
     let origZIndex = targetContainer.style.zIndex;
     let origBg = targetContainer.style.background;
@@ -2515,19 +2513,15 @@ function tunjukTourElaun(targetContainer) {
     targetContainer.style.background = '#ffffff';
     targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 6px #d9534f';
 
-    // 3. Kotak Panduan RAPAT TANPA JARAK (Top diset tepat di bawah petak elaun)
-    let boxWidth = Math.min(420, window.innerWidth - 30);
-    let boxTop = rect.bottom; // TEPAT DI BAWAH PETAK (TIADA TAMBAHAN MARGIN/GAP)
-    let boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
-    let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
-
+    // 3. Bina Kotak Panduan Tepat Di Bawah Petak (Satu Struktur)
     let popoverBox = document.createElement('div');
     popoverBox.id = 'tourElaunBox';
-    popoverBox.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 1000000; background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 18px 20px; border-top: 4px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; margin-top: 8px;`;
+    popoverBox.style.cssText = 'position: absolute; top: calc(100% + 10px); left: 0; width: 100%; z-index: 1000000; background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 18px 20px; border-top: 4px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; animation: floatUpTour 0.3s ease-out;';
 
     popoverBox.innerHTML = `
-        <div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 8px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-        <div style="position: absolute; bottom: calc(100% - 4px); left: ${arrowLeft}px; border-width: 8px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
+        <!-- Anak Panah Melekat Tepat Pada Border Atas -->
+        <div style="position: absolute; bottom: 100%; left: 30px; border-width: 8px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+        <div style="position: absolute; bottom: calc(100% - 4px); left: 30px; border-width: 8px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
 
         <h4 style="margin: 0 0 8px 0; color: #1f4e79; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
             <span style="background: #1f4e79; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">💡</span>
@@ -2552,10 +2546,17 @@ function tunjukTourElaun(targetContainer) {
         </p>
         
         <button id="btnTutupTour" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 9px; border-radius: 5px; font-weight: bold; font-size: 12.5px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
+        <style>
+            @keyframes floatUpTour { 
+                0% { opacity: 0; transform: translateY(10px); } 
+                100% { opacity: 1; transform: translateY(0); } 
+            }
+            #btnTutupTour:hover { background: #153859 !important; }
+        </style>
     `;
 
     document.body.appendChild(overlay);
-    document.body.appendChild(popoverBox);
+    targetContainer.appendChild(popoverBox); // Dimasukkan terus di dalam petak Elaun
 
     const tutupTour = () => {
         overlay.remove();
