@@ -2790,17 +2790,27 @@ function fungsiBaruRumusan(e) {
 // 9. ENJIN KHAS SEKSYEN 18A & FLYOUT MENU
 // =========================================================
 
-// Simpan fungsi asal untuk dipanggil kemudian
-const asal_tambahKalkulator = window.tambahKalkulator;
+// Simpan salinan fungsi asal
+if (!window.asal_tambahKalkulator) {
+    window.asal_tambahKalkulator = window.tambahKalkulator;
+}
 
-// Pemintas (Interceptor) untuk navigasi Senarai Rekod
+// Pemintas Navigasi Utama
 window.tambahKalkulator = function(templateId) {
     if (templateId === 'maklumatGaji') {
         urusPertukaranMenu('REKOD', function() {
-            asal_tambahKalkulator(templateId);
+            window.asal_tambahKalkulator(templateId);
         });
     } else {
-        asal_tambahKalkulator(templateId);
+        // Jika pilih butang kalkulator baharu selain Jana Laporan Penuh & Jana Penyata Gaji
+        let modSemasa = dapatkanModSemasa();
+        if (modSemasa !== 'NONE') {
+            urusPertukaranMenu(modSemasa, function() {
+                window.asal_tambahKalkulator(templateId);
+            });
+        } else {
+            window.asal_tambahKalkulator(templateId);
+        }
     }
 };
 
@@ -2955,46 +2965,60 @@ function dapatkanModSemasa() {
     return is18A ? '18A' : 'AKTA';
 }
 
-// Pintasan sekiranya user tukar mode sebelum memadam/menyimpan
+// Pintasan sekiranya user tukar mode/pilih butang lain sebelum memadam/menyimpan
 function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     let modSemasa = dapatkanModSemasa();
     
-    // Jika tiada aktiviti atau destinasi adalah sama dengan aktiviti semasa
+    // Jika tiada aktiviti pengiraan langsung, teruskan navigasi seperti biasa
     if (modSemasa === 'NONE' || modSemasa === modDestinasi) {
         return fungsiCallback(); 
     }
 
-    // Jika user dah ada dalam menu Rekod, biarkan
+    // Jika user sudah berada dalam menu Rekod, biarkan
     if (modDestinasi === 'REKOD' && document.getElementById('active-maklumatGaji')) {
         return fungsiCallback();
     }
 
     let paparanMod = modSemasa === '18A' ? 'KALKULATOR SEKSYEN 18A' : 'KALKULATOR AKTA KERJA';
     
+    // Padam modal amaran lama sekiranya wujud
+    let existingModal = document.getElementById('modalAmaranPertukaran');
+    if (existingModal) existingModal.remove();
+
     let boxHtml = `
-    <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
-        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12;">
+    <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; box-sizing: border-box;">
             <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
-            <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Simpan Draf Aktiviti?</h3>
+            <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Aktiviti Pengiraan Dikesan</h3>
             <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
-                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b> yang belum disimpan.<br><br>Adakah anda ingin <b>Menyimpan</b> maklumat ini ke Senarai Rekod sebelum beralih ke menu lain?
+                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b>.<br><br>Sila pilih tindakan anda sebelum beralih ke paparan lain:
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button id="btnSimpanDraf" style="background: #198754; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(25,135,84,0.2);">💾 Ya, Simpan ke Senarai Rekod</button>
-                <button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">🗑️ Tidak, Hapus Maklumat</button>
-                <button id="btnBatalTukar" style="background: #6c757d; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; margin-top: 5px;">Batal (Kekal di sini)</button>
+                <button id="btnSimpanDraf" style="background: #198754; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(25,135,84,0.2);">💾 Simpan (Ke Senarai Rekod)</button>
+                <button id="btnBatalTukar" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">🛑 Batal (Kekal Di Paparan Sekarang)</button>
+                <button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">🗑️ Hapus (Padam Aktiviti)</button>
             </div>
         </div>
     </div>
     `;
     document.body.insertAdjacentHTML('beforeend', boxHtml);
 
+    // 1. BUTANG SIMPAN: Simpan draf dan bawa pengguna ke SENARAI REKOD
     document.getElementById('btnSimpanDraf').onclick = function() {
         document.getElementById('modalAmaranPertukaran').remove();
         simpanKeDrafDOM(modSemasa);
-        fungsiCallback();
+        // Buka paparan Senarai Rekod secara automatik
+        if (typeof window.tambahKalkulator === 'function') {
+            window.tambahKalkulator('maklumatGaji');
+        }
     };
 
+    // 2. BUTANG BATAL: Tutup pop-up & kekalkan pengguna pada paparan kalkulator semasa
+    document.getElementById('btnBatalTukar').onclick = function() {
+        document.getElementById('modalAmaranPertukaran').remove();
+    };
+
+    // 3. BUTANG HAPUS: Kekalkan fungsi sedia ada (Padam aktiviti & teruskan navigasi)
     document.getElementById('btnHapusDraf').onclick = function() {
         document.getElementById('modalAmaranPertukaran').remove();
         document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
@@ -3002,10 +3026,6 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
         senaraiElaunGlobal = [];
         let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
         fungsiCallback();
-    };
-
-    document.getElementById('btnBatalTukar').onclick = function() {
-        document.getElementById('modalAmaranPertukaran').remove();
     };
 }
 
