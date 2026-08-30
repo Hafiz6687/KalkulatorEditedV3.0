@@ -3022,7 +3022,7 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     };
 }
 
-// Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod" (Diperbaiki)
+// Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod" (Pembaikan Rasmi)
 window.simpanKeDrafDOM = function(modSemasa) {
     let drafContainer = document.getElementById('drafStorageContainer');
     if(!drafContainer) {
@@ -3039,7 +3039,7 @@ window.simpanKeDrafDOM = function(modSemasa) {
     let kadContainer = document.createElement('div');
     kadContainer.className = 'draf-kad-container';
     
-    // Pindahkan kad kalkulator aktif secara langsung ke dalam kontena draf
+    // Pindahkan kad kalkulator aktif ke kontena simpanan draf
     document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(kad => {
         kad.style.display = 'block';
         kad.classList.remove('sementara-sembunyi');
@@ -3075,25 +3075,20 @@ window.simpanKeDrafDOM = function(modSemasa) {
         </td>
     `;
 
-    // PASTI KAN KAD MAKLUMAT GAJI DIJANAKAN TERLEBIH DAHULU JIKA BELUM ADA
+    // 1. Tampilkan panel Maklumat Gaji di skrin
     if (typeof window.asal_tambahKalkulator === 'function') {
         window.asal_tambahKalkulator('maklumatGaji');
     }
 
-    // TENTUKAN TBODY DAN TAMPAL BARIS REKOD DRAF DENGAN TEPAT
-    setTimeout(() => {
-        let activeMg = document.getElementById('active-maklumatGaji');
-        if (activeMg) {
-            let activeTbody = activeMg.querySelector('tbody');
-            if (activeTbody) {
-                let trActive = document.createElement('tr');
-                trActive.style.borderBottom = "1px solid #eee";
-                trActive.setAttribute('data-draf', drafId);
-                trActive.innerHTML = trHtml;
-                activeTbody.appendChild(trActive);
-            }
-        }
-    }, 50);
+    // 2. Insert baris <tr> draf secara teliti ke SEMUA elemen Maklumat Gaji (sama ada templat atau kad aktif)
+    let senaraiTbody = document.querySelectorAll('#card-maklumatGaji tbody, #active-maklumatGaji tbody');
+    senaraiTbody.forEach(tbody => {
+        let trNew = document.createElement('tr');
+        trNew.style.borderBottom = "1px solid #eee";
+        trNew.setAttribute('data-draf', drafId);
+        trNew.innerHTML = trHtml;
+        tbody.appendChild(trNew);
+    });
 };
 
 window.bukaDraf = function(e) {
