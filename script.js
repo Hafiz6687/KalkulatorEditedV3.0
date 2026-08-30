@@ -984,7 +984,7 @@ function janaPenyataGaji() {
                         elaunTourDitunjuk = true;
                         let containerElaun = orpCardWujud.querySelector('.dynamic-allowance-wrapper');
                         if (containerElaun) {
-                            setTimeout(() => tunjukTourElaun(containerElaun), 500);
+                            setTimeout(() => tunjukTourElaun(containerElaun), 50);
                         }
                     }
                 }
@@ -1120,7 +1120,7 @@ function paparModalLaporan(jenis) {
             if (jenis === 'penyata') {
                 autoKiraPotonganBerkanun();
                 if (window.autoKiraBakiSvc) window.autoKiraBakiSvc();
-                setTimeout(() => tunjukTourElaunPopup(), 400);
+                setTimeout(() => tunjukTourElaunPopup(), 50);
             }
             return;
         } else {
@@ -2483,9 +2483,9 @@ function transformAllowanceField(allowInput) {
     if (senaraiElaunGlobal.length > 0) { updateGlobalElaunSum(container); }
 
     // SEMAKAN PENTING: Tahan Popup Tour jika diarahkan
-    if (!elaunTourDitunjuk && !window.tangguhTourElaunSeketika) {
-        elaunTourDitunjuk = true;
-        setTimeout(() => tunjukTourElaun(container), 400);
+if (!elaunTourDitunjuk && !window.tangguhTourElaunSeketika) {
+    elaunTourDitunjuk = true;
+    tunjukTourElaun(container);
     }
 }
 
