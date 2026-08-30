@@ -839,12 +839,15 @@ function semakKalkulatorTakLengkap() {
     return null;
 }
 
+// =====================================================
+// 5. LAPORAN PENUH & PENYATA GAJI (PDF)
+// =====================================================
+
 function janaLaporanPenuh() { 
     // 1. SEMAKAN ADA DATA ATAU TIDAK
     let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
     let adaDataKira = false;
 
-    // Semak jika ada sekurang-kurangnya 1 kad yang telah dikira (Data Keputusan dipaparkan)
     semuaKadAktif.forEach(kad => {
         let dataDivs = kad.querySelectorAll('[id$="Data"], [data-original-id$="Data"], [id^="ggnRes"]:not(#ggnResPending)');
         dataDivs.forEach(div => {
@@ -854,14 +857,12 @@ function janaLaporanPenuh() {
         });
     });
 
-    // Semak juga jadual rumusan (jika pengguna masukkan data secara manual di situ)
     let rumusanTbody = document.getElementById('badanJadualRumusan');
     if (rumusanTbody && rumusanTbody.children.length > 0) {
         adaDataKira = true;
     }
 
     if (!adaDataKira) {
-        // PAPARKAN AMARAN POP-UP JIKA TIADA DATA
         let existingAmaran = document.getElementById('modalTiadaData');
         if (existingAmaran) existingAmaran.remove();
 
@@ -876,7 +877,6 @@ function janaLaporanPenuh() {
                 <button onclick="document.getElementById('modalTiadaData').remove()" style="background: #1f4e79; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(31,78,121,0.2);">OK, SAYA FAHAM</button>
             </div>
         </div>
-        <style>@keyframes floatUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }</style>
         `;
         document.body.insertAdjacentHTML('beforeend', amaranTiadaDataHtml);
         return;
@@ -885,7 +885,6 @@ function janaLaporanPenuh() {
     // 2. SEMAKAN KALKULATOR TAK LENGKAP
     let takLengkap = semakKalkulatorTakLengkap();
     if (takLengkap) {
-        // Guna Pop-up yang cantik (sama seperti fungsi Jana Penyata Gaji)
         let existingTakLengkap = document.getElementById('modalTakLengkap');
         if (existingTakLengkap) existingTakLengkap.remove();
 
@@ -964,7 +963,7 @@ function janaPenyataGaji() {
         document.body.insertAdjacentHTML('beforeend', amaranORPHtml);
 
         if (!orpCardWujud) {
-            window.tangguhTourElaunSeketika = true; // TAHAN TOUR DARI MUNCUL DAHULU
+            window.tangguhTourElaunSeketika = true; 
             if (typeof window.tambahKalkulator === 'function') {
                 window.tambahKalkulator('orp');
                 let cards = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
@@ -977,7 +976,6 @@ function janaPenyataGaji() {
             if (orpCardWujud) {
                 orpCardWujud.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // LEPASKAN TOUR SELEPAS PENGGUNA KLIK 'OK'
                 if (window.tangguhTourElaunSeketika) {
                     window.tangguhTourElaunSeketika = false;
                     if (!elaunTourDitunjuk) {
@@ -991,29 +989,12 @@ function janaPenyataGaji() {
             }
         };
 
-        if (orpCardWujud) {
-            let kiraBtn = orpCardWujud.querySelector('button[data-action-func*="calculateORP"]');
-            if (!kiraBtn) kiraBtn = orpCardWujud.querySelector('button[onclick*="calculateORP"]');
-            
-            if (kiraBtn) {
-                const autoPopup = function() {
-                    setTimeout(() => {
-                        let dataEl = orpCardWujud.querySelector('[id="orpData"], [data-original-id="orpData"]');
-                        if (dataEl && window.getComputedStyle(dataEl).display !== "none") {
-                            paparModalLaporan('penyata');
-                            kiraBtn.removeEventListener('click', autoPopup); 
-                        }
-                    }, 500);
-                };
-                kiraBtn.addEventListener('click', autoPopup);
-            }
-        }
+        // BAHAGIAN YANG DIBUANG: Auto-popup event listener pada kiraBtn telah dikeluarkan di sini
         return;
     }
     
     paparModalLaporan('penyata'); 
 }
-
 function tambahBarisElaunModal() {
     let div = document.createElement('div');
     div.style.cssText = "display: flex; gap: 10px; margin-bottom: 10px;";
