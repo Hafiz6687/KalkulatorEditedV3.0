@@ -2931,9 +2931,69 @@ window.tambahKalkulator18ACustom = function(templateId) {
         }
     }, 50);
 };
+
 // =========================================================
 // 10. ENJIN DRAF & KAWALAN PERTUKARAN MENU
 // =========================================================
+
+// Simpan salinan fungsi asal tambahKalkulator
+if (!window.asal_tambahKalkulator) {
+    window.asal_tambahKalkulator = window.tambahKalkulator;
+}
+
+// Pemintas Navigasi Utama (Sidebar & Flyout)
+window.tambahKalkulator = function(templateId) {
+    if (templateId === 'maklumatGaji') {
+        // Jika terdapat panggilan terus dari butang Simpan (Preview), teruskan tanpa amaran
+        if (window.isDirectSaveAction) {
+            window.isDirectSaveAction = false;
+            let modSemasa = dapatkanModSemasa();
+            if (modSemasa !== 'NONE') {
+                simpanKeDrafDOM(modSemasa);
+            }
+            return window.asal_tambahKalkulator(templateId);
+        }
+        
+        // Situasi 3: User klik menu button SENARAI REKOD secara manual
+        urusPertukaranMenu('REKOD', function() {
+            window.asal_tambahKalkulator(templateId);
+        });
+    } else {
+        let modSemasa = dapatkanModSemasa();
+        if (modSemasa !== 'NONE') {
+            urusPertukaranMenu(modSemasa, function() {
+                window.asal_tambahKalkulator(templateId);
+            });
+        } else {
+            window.asal_tambahKalkulator(templateId);
+        }
+    }
+};
+
+// Semak Adakah Terdapat Aktiviti Pengiraan Sebenar (Input Diisi ATAU Hasil Dikira)
+function semakAdaAktivitiPengiraan() {
+    let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
+    
+    for (let kad of kadAktif) {
+        // 1. Semak jika terdapat sebarang input yang telah diisi oleh pengguna
+        let inputs = kad.querySelectorAll('input:not([type="button"]):not([type="submit"]), select');
+        for (let inp of inputs) {
+            if (inp.classList.contains('hari-bulan-18a')) continue; // Abaikan nilai laluan Mod 18A
+            if (inp.value && inp.value.trim() !== "" && inp.value !== "RM 0.00" && inp.value !== "0" && !inp.readOnly) {
+                return true;
+            }
+        }
+        
+        // 2. Semak jika pengiraan telah dilaksanakan (Hasil Paparan Keluar)
+        let dataDivs = kad.querySelectorAll('[id$="Data"], [data-original-id$="Data"], [id^="ggnRes"]:not(#ggnResPending)');
+        for (let div of dataDivs) {
+            if (window.getComputedStyle(div).display !== 'none') {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 // Semak Mod Semasa Aplikasi
 function dapatkanModSemasa() {
@@ -2952,24 +3012,25 @@ function dapatkanModSemasa() {
     return is18A ? '18A' : 'AKTA';
 }
 
-// Pintasan Amaran Pertukaran Mod / Navigasi Sidebar (FIXED: HANYA UNTUK 3 SITUASI DIBENARKAN)
+// Kawalan Pertukaran Menu Eksklusif Bagi 3 Situasi Sahaja
 function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     let modSemasa = dapatkanModSemasa();
+    let adaAktiviti = semakAdaAktivitiPengiraan();
     
-    // 1. Jika tiada aktiviti pengiraan, teruskan navigasi tanpa pop-up
-    if (modSemasa === 'NONE') {
+    // Jika TIADA aktiviti pengiraan sebenar, teruskan navigasi terus tanpa sebarang pop-up
+    if (!adaAktiviti) {
         return fungsiCallback(); 
     }
 
-    // 2. KAWALAN KETAT: Pop-up HANYA dipaparkan bagi 3 situasi ini:
-    // Situasi 1: AKTA -> 18A
-    // Situasi 2: 18A -> AKTA
-    // Situasi 3: Mana-mana mod ada aktiviti -> REKOD
-    let adakahPertukaranModSah = (modSemasa === 'AKTA' && modDestinasi === '18A') || 
-                                 (modSemasa === '18A' && modDestinasi === 'AKTA') || 
-                                 (modDestinasi === 'REKOD');
+    // KAWALAN KETAT: Pop-up HANYA dipaparkan bagi 3 situasi berikut sahaja:
+    // Situasi 1: Akta Kerja (ada aktiviti) -> Klik Seksyen 18A
+    // Situasi 2: Seksyen 18A (ada aktiviti) -> Klik Akta Kerja
+    // Situasi 3: Ada aktiviti -> Klik SENARAI REKOD
+    let adakah3SituasiSah = (modSemasa === 'AKTA' && modDestinasi === '18A') || 
+                             (modSemasa === '18A' && modDestinasi === 'AKTA') || 
+                             (modDestinasi === 'REKOD');
     
-    if (!adakahPertukaranModSah) {
+    if (!adakah3SituasiSah) {
         return fungsiCallback();
     }
 
