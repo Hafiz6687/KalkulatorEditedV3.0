@@ -3101,7 +3101,7 @@ window.simpanKeDrafDOM = function(modSemasa) {
     }
 };
 
-// Logik Buka Draf
+// Logik Buka Draf / Sambung Pengiraan
 window.bukaDraf = function(e) {
     let btn = e.currentTarget;
     let drafId = btn.getAttribute('data-draf-id');
@@ -3124,13 +3124,13 @@ window.bukaDraf = function(e) {
     let grid = document.getElementById('active-calculators-grid');
     let rumusanCard = document.querySelector('.rumusan-card');
     
-    // 3. Kembalikan kad-kad kalkulator asal dari draf ke grid utama
+    // 3. Kembalikan kad-kad kalkulator asal dari draf & pastikan dipapar secara visual
     let kadContainer = wrapper.querySelector('.draf-kad-container');
     if (kadContainer) {
         while(kadContainer.firstChild) {
             let kad = kadContainer.firstChild;
-            kad.style.display = '';
-            kad.classList.remove('sementara-sembunyi');
+            kad.style.display = ''; // Pastikan paparan terbuka
+            kad.classList.remove('sementara-sembunyi'); // Tanggalkan kelas sembunyi
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
         }
