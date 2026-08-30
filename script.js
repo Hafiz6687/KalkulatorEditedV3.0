@@ -3094,40 +3094,65 @@ window.bukaDraf = function(e) {
         return;
     }
 
-    document.querySelectorAll('.calculator-card:not(.hidden-template):not(#active-maklumatGaji):not(.rumusan-card)').forEach(k => k.remove());
-    document.getElementById('badanJadualRumusan').innerHTML = ''; 
-
+    // 1. Padamkan sebarang kad aktif/panel Senarai Rekod yang sedang terbuka
+    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(k => k.remove());
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
+
+    // 2. Kosongkan jadual rumusan semasa
+    let rumusanTbodyTarget = document.getElementById('badanJadualRumusan');
+    if (rumusanTbodyTarget) rumusanTbodyTarget.innerHTML = ''; 
 
     let grid = document.getElementById('active-calculators-grid');
     let rumusanCard = document.querySelector('.rumusan-card');
     
+    // 3. Kembalikan kad-kad kalkulator asal dari draf ke grid utama
     let kadContainer = wrapper.querySelector('.draf-kad-container');
-    while(kadContainer.firstChild) {
-        if(rumusanCard) grid.insertBefore(kadContainer.firstChild, rumusanCard);
-        else grid.appendChild(kadContainer.firstChild);
+    if (kadContainer) {
+        while(kadContainer.firstChild) {
+            let kad = kadContainer.firstChild;
+            kad.style.display = '';
+            kad.classList.remove('sementara-sembunyi');
+            if(rumusanCard) grid.insertBefore(kad, rumusanCard);
+            else grid.appendChild(kad);
+        }
     }
 
-    let rumusanTbodyTarget = document.getElementById('badanJadualRumusan');
+    // 4. Kembalikan data baris jadual rumusan
     let rumusanContainer = wrapper.querySelector('.draf-rumusan-container');
-    while(rumusanContainer.firstChild) {
-        rumusanTbodyTarget.appendChild(rumusanContainer.firstChild);
+    if (rumusanContainer && rumusanTbodyTarget) {
+        while(rumusanContainer.firstChild) {
+            rumusanTbodyTarget.appendChild(rumusanContainer.firstChild);
+        }
     }
 
-    try { senaraiElaunGlobal = JSON.parse(wrapper.getAttribute('data-elaun')); } catch(err) { senaraiElaunGlobal = []; }
+    // 5. Pulihkan senarai elaun global
+    try { 
+        senaraiElaunGlobal = JSON.parse(wrapper.getAttribute('data-elaun')) || []; 
+    } catch(err) { 
+        senaraiElaunGlobal = []; 
+    }
 
+    // 6. Hapus bekas simpanan draf & baris rekod draf dari Jadual Rekod
     wrapper.remove();
     document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
 
+    // 7. Paparkan semula Kad Rumusan dan Kotak Amaran
     if(rumusanCard) rumusanCard.style.display = 'block';
     let warningBox = document.querySelector('.warning-box');
     if(warningBox) warningBox.style.display = 'block';
     
+    // 8. Kemaskini semula pengiraan rumusan & pelarasan elaun dinamik
     if(typeof kiraJumlahKeseluruhanRumusan === 'function') kiraJumlahKeseluruhanRumusan();
-    setTimeout(() => { if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); }, 50);
-    
-    alert("Draf telah berjaya disambung semula.");
+    setTimeout(() => { 
+        if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); 
+    }, 50);
+
+    // 9. Skrol secara lancar ke kalkulator pertama yang disambung
+    let kadTelahDipulih = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+    if (kadTelahDipulih.length > 0) {
+        kadTelahDipulih[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 };
 
 // Logik Hapus Draf
