@@ -3091,8 +3091,13 @@ window.simpanKeDrafDOM = function(modSemasa) {
     });
 };
 
+// =====================================================
+// ULTIMATE FIX: FUNGSI BUKA DRAF / SAMBUNG (FIX VISIBILITY)
+// =====================================================
 window.bukaDraf = function(e) {
-    let btn = e.currentTarget;
+    let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
+    if (!btn) return;
+
     let drafId = btn.getAttribute('data-draf-id');
     let wrapper = document.getElementById('wrapper_' + drafId);
     
@@ -3101,11 +3106,11 @@ window.bukaDraf = function(e) {
         return;
     }
 
-    // 1. Padamkan sebarang kad Maklumat Gaji yang sedang terbuka
+    // 1. Padamkan sebarang kad Maklumat Gaji / Senarai Rekod yang sedang terbuka
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
 
-    // 2. Bersihkan kad aktif dan rumusan yang ada di skrin
+    // 2. Padamkan kad aktif biasa & bersihkan jadual rumusan semasa
     document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(k => k.remove());
     let rumusanTbodyTarget = document.getElementById('badanJadualRumusan');
     if (rumusanTbodyTarget) rumusanTbodyTarget.innerHTML = ''; 
@@ -3113,19 +3118,25 @@ window.bukaDraf = function(e) {
     let grid = document.getElementById('active-calculators-grid');
     let rumusanCard = document.querySelector('.rumusan-card');
     
-    // 3. Memindahkan semula elemen asal secara langsung (melindungi event listener & state)
+    // 3. ULTIMATE FIX: Pindahkan kad asal DENGAN MEMBUANG KELAS HIDDEN-TEMPLATE & MEMAKSA VISIBILITY
     let kadContainer = wrapper.querySelector('.draf-kad-container');
     if (kadContainer) {
-        while(kadContainer.firstChild) {
-            let kad = kadContainer.firstChild;
-            kad.style.display = 'block';
+        let senaraiKad = Array.from(kadContainer.children);
+        senaraiKad.forEach(kad => {
+            // BUANG KELAS & CSS TERSEMBUNYI SECARA MUTLAK
+            kad.classList.remove('hidden-template');
             kad.classList.remove('sementara-sembunyi');
+            kad.style.setProperty('display', 'block', 'important');
+            kad.style.visibility = 'visible';
+            kad.style.opacity = '1';
+
+            // Pindahkan kad ke dalam grid utama di atas kad Rumusan
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
-        }
+        });
     }
 
-    // 4. Memindahkan semula baris rumusan asal
+    // 4. Pindahkan semula baris rumusan asal jika ada
     let rumusanContainer = wrapper.querySelector('.draf-rumusan-container');
     if (rumusanContainer && rumusanTbodyTarget) {
         while(rumusanContainer.firstChild) {
@@ -3140,22 +3151,22 @@ window.bukaDraf = function(e) {
         senaraiElaunGlobal = []; 
     }
 
-    // 6. Hapus simpanan draf & baris rekod draf dari senarai
+    // 6. Buang simpanan draf dari DOM & baris rekod draf dari Senarai Rekod
     wrapper.remove();
     document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
 
-    // 7. Tampilkan semula Rumusan & Warning Box
+    // 7. Paparkan semula Rumusan & Warning Box
     if(rumusanCard) rumusanCard.style.display = 'block';
     let warningBox = document.querySelector('.warning-box');
     if(warningBox) warningBox.style.display = 'block';
     
-    // 8. Kemaskini UI & Khas untuk Pengiraan
+    // 8. Kemaskini UI, Pengiraan Rumusan & Elaun
     if(typeof kiraJumlahKeseluruhanRumusan === 'function') kiraJumlahKeseluruhanRumusan();
     setTimeout(() => { 
         if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); 
     }, 50);
 
-    // 9. Skrol secara lancar ke kalkulator pertama
+    // 9. Skrol secara lancar ke kalkulator pertama yang telah disambung
     let kadTelahDipulih = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
     if (kadTelahDipulih.length > 0) {
         kadTelahDipulih[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
