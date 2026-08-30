@@ -3101,7 +3101,7 @@ window.simpanKeDrafDOM = function(modSemasa) {
     }
 };
 
-// Logik Buka Draf / Sambung Pengiraan
+// KOD BAHARU (SILA TAMPAL):
 window.bukaDraf = function(e) {
     let btn = e.currentTarget;
     let drafId = btn.getAttribute('data-draf-id');
@@ -3129,8 +3129,8 @@ window.bukaDraf = function(e) {
     if (kadContainer) {
         while(kadContainer.firstChild) {
             let kad = kadContainer.firstChild;
-            kad.style.display = ''; // Menjadikan kad kelihatan semula
-            kad.classList.remove('sementara-sembunyi'); // Tanggalkan kelas sembunyi
+            kad.style.display = ''; // Memastikan kad kelihatan semula di skrin
+            kad.classList.remove('sementara-sembunyi'); // Menanggalkan kelas tersembunyi
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
         }
