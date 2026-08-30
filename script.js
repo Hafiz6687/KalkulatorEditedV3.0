@@ -3022,7 +3022,10 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     };
 }
 
-// Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod" (Pembaikan Rasmi)
+// =====================================================
+// PEMBEBETULAN MUTLAK: SIMPAN & BUKA DRAF (FIX DOM REMOVAL)
+// =====================================================
+
 window.simpanKeDrafDOM = function(modSemasa) {
     let drafContainer = document.getElementById('drafStorageContainer');
     if(!drafContainer) {
@@ -3039,14 +3042,18 @@ window.simpanKeDrafDOM = function(modSemasa) {
     let kadContainer = document.createElement('div');
     kadContainer.className = 'draf-kad-container';
     
-    // Pindahkan kad kalkulator aktif ke kontena simpanan draf
-    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(kad => {
-        kad.style.display = 'block';
+    // 1. PINDAHKAN KAD AKTIF KE KONTENA DRAF SEBELUM DIPADAM DARI SKRIN
+    let kadKadSemasa = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
+    kadKadSemasa.forEach(kad => {
+        // Pelihara status paparan visual
+        kad.classList.remove('hidden-template');
         kad.classList.remove('sementara-sembunyi');
-        kadContainer.appendChild(kad); 
+        kad.style.display = 'block';
+        kadContainer.appendChild(kad); // Pindahkan kad fizikal ke draf
     });
     wrapper.appendChild(kadContainer);
 
+    // 2. PINDAHKAN BARIS JADUAL RUMUSAN KE DRAF
     let rumusanContainer = document.createElement('tbody');
     rumusanContainer.className = 'draf-rumusan-container';
     document.querySelectorAll('#badanJadualRumusan tr').forEach(tr => {
@@ -3075,25 +3082,23 @@ window.simpanKeDrafDOM = function(modSemasa) {
         </td>
     `;
 
-    // 1. Tampilkan panel Maklumat Gaji di skrin
+    // 3. TAMPILKAN MAKLUMAT GAJI DI SKRIN & TAMBAH REKOD DRAF
     if (typeof window.asal_tambahKalkulator === 'function') {
         window.asal_tambahKalkulator('maklumatGaji');
     }
 
-    // 2. Insert baris <tr> draf secara teliti ke SEMUA elemen Maklumat Gaji (sama ada templat atau kad aktif)
-    let senaraiTbody = document.querySelectorAll('#card-maklumatGaji tbody, #active-maklumatGaji tbody');
-    senaraiTbody.forEach(tbody => {
-        let trNew = document.createElement('tr');
-        trNew.style.borderBottom = "1px solid #eee";
-        trNew.setAttribute('data-draf', drafId);
-        trNew.innerHTML = trHtml;
-        tbody.appendChild(trNew);
-    });
+    setTimeout(() => {
+        let senaraiTbody = document.querySelectorAll('#card-maklumatGaji tbody, #active-maklumatGaji tbody');
+        senaraiTbody.forEach(tbody => {
+            let trNew = document.createElement('tr');
+            trNew.style.borderBottom = "1px solid #eee";
+            trNew.setAttribute('data-draf', drafId);
+            trNew.innerHTML = trHtml;
+            tbody.appendChild(trNew);
+        });
+    }, 50);
 };
 
-// =====================================================
-// ULTIMATE FIX: FUNGSI BUKA DRAF / SAMBUNG (FIX VISIBILITY)
-// =====================================================
 window.bukaDraf = function(e) {
     let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
     if (!btn) return;
@@ -3106,11 +3111,11 @@ window.bukaDraf = function(e) {
         return;
     }
 
-    // 1. Padamkan sebarang kad Maklumat Gaji / Senarai Rekod yang sedang terbuka
+    // 1. Padamkan sebarang kad Maklumat Gaji / Senarai Rekod dari skrin
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
 
-    // 2. Padamkan kad aktif biasa & bersihkan jadual rumusan semasa
+    // 2. Bersihkan kad terdampar yang tidak lengkap di skrin
     document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(k => k.remove());
     let rumusanTbodyTarget = document.getElementById('badanJadualRumusan');
     if (rumusanTbodyTarget) rumusanTbodyTarget.innerHTML = ''; 
@@ -3118,25 +3123,21 @@ window.bukaDraf = function(e) {
     let grid = document.getElementById('active-calculators-grid');
     let rumusanCard = document.querySelector('.rumusan-card');
     
-    // 3. ULTIMATE FIX: Pindahkan kad asal DENGAN MEMBUANG KELAS HIDDEN-TEMPLATE & MEMAKSA VISIBILITY
+    // 3. PINDAHKAN KAD ASAL DARI DRAF KEMBALI KE GRID UTAMA
     let kadContainer = wrapper.querySelector('.draf-kad-container');
     if (kadContainer) {
         let senaraiKad = Array.from(kadContainer.children);
         senaraiKad.forEach(kad => {
-            // BUANG KELAS & CSS TERSEMBUNYI SECARA MUTLAK
             kad.classList.remove('hidden-template');
             kad.classList.remove('sementara-sembunyi');
             kad.style.setProperty('display', 'block', 'important');
-            kad.style.visibility = 'visible';
-            kad.style.opacity = '1';
-
-            // Pindahkan kad ke dalam grid utama di atas kad Rumusan
+            
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
         });
     }
 
-    // 4. Pindahkan semula baris rumusan asal jika ada
+    // 4. Pindahkan semula baris rumusan
     let rumusanContainer = wrapper.querySelector('.draf-rumusan-container');
     if (rumusanContainer && rumusanTbodyTarget) {
         while(rumusanContainer.firstChild) {
@@ -3151,22 +3152,22 @@ window.bukaDraf = function(e) {
         senaraiElaunGlobal = []; 
     }
 
-    // 6. Buang simpanan draf dari DOM & baris rekod draf dari Senarai Rekod
+    // 6. Buang simpanan draf & baris rekod draf dari senarai
     wrapper.remove();
     document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
 
-    // 7. Paparkan semula Rumusan & Warning Box
+    // 7. Paparkan semula Kad Rumusan & Warning Box
     if(rumusanCard) rumusanCard.style.display = 'block';
     let warningBox = document.querySelector('.warning-box');
     if(warningBox) warningBox.style.display = 'block';
     
-    // 8. Kemaskini UI, Pengiraan Rumusan & Elaun
+    // 8. Kemaskini UI & Pengiraan
     if(typeof kiraJumlahKeseluruhanRumusan === 'function') kiraJumlahKeseluruhanRumusan();
     setTimeout(() => { 
         if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); 
     }, 50);
 
-    // 9. Skrol secara lancar ke kalkulator pertama yang telah disambung
+    // 9. Skrol lancar ke kalkulator pertama
     let kadTelahDipulih = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
     if (kadTelahDipulih.length > 0) {
         kadTelahDipulih[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
