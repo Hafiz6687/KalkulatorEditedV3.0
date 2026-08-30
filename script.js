@@ -2495,23 +2495,27 @@ function tunjukTourElaun(targetContainer) {
 
     if (!targetContainer) return;
 
-    // Dapatkan kedudukan koordinat sebenar petak Maklumat Elaun
-    let rect = targetContainer.getBoundingClientRect();
-    let isMobile = window.innerWidth <= 600;
-
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunOverlay';
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999999; backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; pointer-events: none;';
 
-    // Kira kedudukan mendatar anak panah supaya menunjuk tepat ke tengah petak Elaun
-    let arrowLeftPos = Math.max(30, Math.min(rect.left + (rect.width / 2) - (window.innerWidth > 520 ? (window.innerWidth - 480)/2 : 20), 420));
+    // Kira kedudukan dinamik relatif terhadap lebar popover box
+    let targetRect = targetContainer.getBoundingClientRect();
+    let isMobile = window.innerWidth <= 600;
+    
+    // Kira titik tengah elemen sasaran berbanding modal
+    let boxWidth = Math.min(480, window.innerWidth - 40);
+    let targetCenter = targetRect.left + (targetRect.width / 2);
+    let boxLeft = (window.innerWidth - boxWidth) / 2;
+    let computedArrowLeft = targetCenter - boxLeft - 12; // 12px separuh lebar anak panah
+    let arrowLeftPos = Math.max(25, Math.min(computedArrowLeft, boxWidth - 45));
 
     overlay.innerHTML = `
         <div class="tour-popover-box" style="pointer-events: auto; position: relative; background: white; border-radius: 12px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.4); padding: 25px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatUpTour 0.3s ease-out; text-align: left; box-sizing: border-box;">
             
-            <!-- Anak Panah Penunjuk (Arrow Pointer) -->
-            <div style="position: absolute; bottom: 100%; left: ${isMobile ? '40px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent; transition: left 0.2s;"></div>
-            <div style="position: absolute; bottom: calc(100% - 7px); left: ${isMobile ? '40px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent; transition: left 0.2s;"></div>
+            <!-- Anak Panah Penunjuk Dinamik (Arrow Pointer) -->
+            <div style="position: absolute; bottom: 100%; left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent; transition: left 0.2s;"></div>
+            <div style="position: absolute; bottom: calc(100% - 7px); left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent; transition: left 0.2s;"></div>
 
             <h4 style="margin: 0 0 12px 0; color: #1f4e79; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
                 <span style="background: #1f4e79; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">💡</span>
@@ -2562,13 +2566,17 @@ function tunjukTourElaunPopup() {
     if (existingOverlay) existingOverlay.remove();
 
     let targetContainer = document.getElementById('containerElaunModal');
-    let arrowLeftPos = 40;
-    if (targetContainer) {
-        let rect = targetContainer.getBoundingClientRect();
-        arrowLeftPos = Math.max(30, Math.min(rect.left + (rect.width / 2) - (window.innerWidth > 520 ? (window.innerWidth - 480)/2 : 20), 420));
-    }
-
     let isMobile = window.innerWidth <= 600;
+    let arrowLeftPos = 35;
+
+    if (targetContainer) {
+        let targetRect = targetContainer.getBoundingClientRect();
+        let boxWidth = Math.min(480, window.innerWidth - 40);
+        let targetCenter = targetRect.left + (targetRect.width / 2);
+        let boxLeft = (window.innerWidth - boxWidth) / 2;
+        let computedArrowLeft = targetCenter - boxLeft - 12;
+        arrowLeftPos = Math.max(25, Math.min(computedArrowLeft, boxWidth - 45));
+    }
 
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunPopupOverlay';
@@ -2577,9 +2585,9 @@ function tunjukTourElaunPopup() {
     overlay.innerHTML = `
         <div class="tour-popover-box" style="pointer-events: auto; position: relative; background: white; border-radius: 12px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.4); padding: 25px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatUpTour 0.3s ease-out; text-align: left; box-sizing: border-box;">
             
-            <!-- Anak Panah Penunjuk (Arrow Pointer) -->
-            <div style="position: absolute; bottom: 100%; left: ${isMobile ? '40px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-            <div style="position: absolute; bottom: calc(100% - 7px); left: ${isMobile ? '40px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
+            <!-- Anak Panah Penunjuk Dinamik (Arrow Pointer) -->
+            <div style="position: absolute; bottom: 100%; left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #d9534f transparent; transition: left 0.2s;"></div>
+            <div style="position: absolute; bottom: calc(100% - 7px); left: ${isMobile ? '35px' : arrowLeftPos + 'px'}; border-width: 12px; border-style: solid; border-color: transparent transparent #fff transparent; transition: left 0.2s;"></div>
 
             <h4 style="margin: 0 0 12px 0; color: #1f4e79; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
                 <span style="background: #1f4e79; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;">💡</span>
