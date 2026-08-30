@@ -2768,7 +2768,7 @@ function fungsiBaruRumusan(e) {
 }
 
 // =========================================================
-// 9. ENJIN KHAS SEKSYEN 18A & FLYOUT MENU (DIKEMASKINI)
+// 9. ENJIN KHAS SEKSYEN 18A & FLYOUT MENU
 // =========================================================
 
 // Simpan salinan fungsi asal tambahKalkulator
@@ -2779,13 +2779,9 @@ if (!window.asal_tambahKalkulator) {
 // Pemintas Navigasi Utama (Sidebar & Flyout)
 window.tambahKalkulator = function(templateId) {
     if (templateId === 'maklumatGaji') {
-        // PENAMBAHBAIKAN: Jika dipanggil dari butang Simpan (Preview Laporan),
-        // simpan terus ke draf TANPA menayangkan pop-up amaran.
-        let modSemasa = dapatkanModSemasa();
-        if (modSemasa !== 'NONE') {
-            simpanKeDrafDOM(modSemasa);
-        }
-        window.asal_tambahKalkulator(templateId);
+        urusPertukaranMenu('REKOD', function() {
+            window.asal_tambahKalkulator(templateId);
+        });
     } else {
         let modSemasa = dapatkanModSemasa();
         if (modSemasa !== 'NONE') {
@@ -2924,7 +2920,6 @@ window.tambahKalkulator18ACustom = function(templateId) {
         }
     }, 50);
 };
-
 // =========================================================
 // 10. ENJIN DRAF & KAWALAN PERTUKARAN MENU
 // =========================================================
