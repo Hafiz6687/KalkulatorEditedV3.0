@@ -2646,86 +2646,79 @@ function tunjukTourElaunPopup() {
     let existingBox = document.getElementById('tourElaunPopupBox');
     if (existingBox) existingBox.remove();
 
-    let targetContainer = document.getElementById('containerElaunModal');
-    if (!targetContainer) return;
+    // Sasar keseluruhan kotak Elaun di dalam pop-up
+    let targetContainer = document.getElementById('tourTargetElaunPopup');
+    if (!targetContainer) targetContainer = document.getElementById('containerElaunModal');
+    let whiteBox = document.getElementById('modalPenyataWhiteBox');
+    
+    if (!targetContainer || !whiteBox) return;
 
-    let rect = targetContainer.getBoundingClientRect();
-    let isMobile = window.innerWidth <= 768;
+    targetContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+    // 1. Cipta overlay GELAP (Screen Dim) TEPAT di dalam pop-up putih
     let overlay = document.createElement('div');
     overlay.id = 'tourElaunPopupOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 999998; backdrop-filter: blur(2px);';
+    overlay.style.cssText = `position: absolute; top: 0; left: 0; width: 100%; height: ${whiteBox.scrollHeight}px; background: rgba(0, 0, 0, 0.75); z-index: 100; border-radius: 10px; transition: opacity 0.3s;`;
+    whiteBox.appendChild(overlay);
 
+    // 2. Simpan CSS asal target sebelum ditukar
     let origPos = targetContainer.style.position;
     let origZIndex = targetContainer.style.zIndex;
     let origBg = targetContainer.style.background;
     let origShadow = targetContainer.style.boxShadow;
+    let origPadding = targetContainer.style.padding;
 
+    // 3. Serlahkan target (Spotlight) ke atas dari overlay
     targetContainer.style.position = 'relative';
-    targetContainer.style.zIndex = '999999';
+    targetContainer.style.zIndex = '101';
     targetContainer.style.background = '#ffffff';
-    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 6px #d9534f';
+    targetContainer.style.padding = '15px';
+    targetContainer.style.borderRadius = '8px';
+    targetContainer.style.boxShadow = '0 0 0 4px #ffffff, 0 0 0 6px #d9534f, 0 15px 35px rgba(0,0,0,0.5)';
 
-    let boxWidth = isMobile ? Math.min(360, window.innerWidth - 30) : 380;
-    let boxLeft, boxTop, arrowStyleHtml;
-
-    if (isMobile || (rect.right + boxWidth + 20 > window.innerWidth)) {
-        boxLeft = Math.max(15, Math.min(rect.left + (rect.width / 2) - (boxWidth / 2), window.innerWidth - boxWidth - 15));
-        boxTop = rect.bottom + 12;
-        let arrowLeft = Math.max(20, Math.min(rect.left + (rect.width / 2) - boxLeft - 10, boxWidth - 30));
-        arrowStyleHtml = `
-            <div style="position: absolute; bottom: 100%; left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent; z-index: 1000001;"></div>
-            <div style="position: absolute; bottom: calc(100% - 3px); left: ${arrowLeft}px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1000002;"></div>
-        `;
-    } else {
-        boxLeft = rect.right + 15;
-        boxTop = Math.max(15, rect.top);
-        let arrowTop = Math.max(20, Math.min(rect.top + 20 - boxTop, 150));
-        arrowStyleHtml = `
-            <div style="position: absolute; right: 100%; top: ${arrowTop}px; border-width: 10px; border-style: solid; border-color: transparent #d9534f transparent transparent; z-index: 1000001;"></div>
-            <div style="position: absolute; right: calc(100% - 3px); top: ${arrowTop}px; border-width: 10px; border-style: solid; border-color: transparent #fff transparent transparent; z-index: 1000002;"></div>
-        `;
-    }
-
-    let popoverWrapper = document.createElement('div');
-    popoverWrapper.id = 'tourElaunPopupBox';
-    popoverWrapper.style.cssText = `position: fixed; top: ${boxTop}px; left: ${boxLeft}px; width: ${boxWidth}px; z-index: 1000000; animation: floatRightTour 0.3s ease-out;`;
-
-    popoverWrapper.innerHTML = `
-        ${arrowStyleHtml}
-        <div style="background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 18px 20px; border-top: 4px solid #d9534f; color: #333; font-family: sans-serif; text-align: left; box-sizing: border-box; max-height: 80vh; overflow-y: auto;">
-            <h4 style="margin: 0 0 8px 0; color: #1f4e79; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                <span style="background: #1f4e79; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">💡</span>
+    // 4. Cipta kotak maklumat (Popover)
+    let popover = document.createElement('div');
+    popover.id = 'tourElaunPopupBox';
+    
+    popover.innerHTML = `
+        <div class="tour-popover-box" style="position: absolute; top: calc(100% + 15px); left: 0; background: white; border-radius: 8px; width: 100%; min-width: 320px; max-width: 380px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 20px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatDown 0.4s ease-out; z-index: 102; text-align: left;">
+            
+            <div style="position: absolute; bottom: 100%; left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
+            <div style="position: absolute; bottom: calc(100% - 6px); left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
+            
+            <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <span style="background: #1f4e79; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;">💡</span>
                 Panduan Senarai Elaun
             </h4>
             
-            <p style="margin: 0 0 12px 0; font-size: 11.5px; font-weight: bold; color: #1f4e79; background: #e8eaed; padding: 10px; border-radius: 6px; line-height: 1.45;">
+            <p style="margin: 0 0 15px 0; font-size: 11.5px; font-weight: bold; color: #1f4e79; background: #e8eaed; padding: 10px; border-radius: 4px; line-height: 1.5;">
                 CATATAN: Klik + Tambah. Masukkan semua ELAUN selain yang telah dinyatakan di dalam Bahagian Kalkulator (Sama ada dibayar di dalam waktu kerja normal atau di luar waktu kerja normal).
             </p>
             
-            <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 9px; border-radius: 5px; font-weight: bold; font-size: 12.5px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
+            <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
         </div>
         <style>
-            @keyframes floatRightTour { 
-                0% { opacity: 0; transform: translateX(-10px); } 
-                100% { opacity: 1; transform: translateX(0); } 
-            }
+            @keyframes floatDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
             #btnTutupTourPopup:hover { background: #153859 !important; }
         </style>
     `;
+    
+    // Masukkan popover ke dalam target
+    targetContainer.appendChild(popover);
 
-    document.body.appendChild(overlay);
-    document.body.appendChild(popoverWrapper);
-
+    // Fungsi pembersihan setelah ditutup
     const tutupTourPopup = () => {
-        overlay.remove();
-        popoverWrapper.remove();
+        if(overlay) overlay.remove();
+        if(popover) popover.remove();
+        
         targetContainer.style.position = origPos;
         targetContainer.style.zIndex = origZIndex;
         targetContainer.style.background = origBg;
         targetContainer.style.boxShadow = origShadow;
+        targetContainer.style.padding = origPadding;
     };
 
+    // Tutup apabila pengguna klik pada overlay gelap atau butang 'OK'
     overlay.addEventListener('click', tutupTourPopup);
     document.getElementById('btnTutupTourPopup').addEventListener('click', tutupTourPopup);
 }
