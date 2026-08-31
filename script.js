@@ -3262,7 +3262,7 @@ window.simpanDrafManual = function() {
     let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
     
     if (kadAktif.length === 0) {
-        // Pop-up Profesional: Tiada Pengiraan (Menggantikan alert)
+        // Pop-up Profesional: Tiada Pengiraan
         let existingWarn = document.getElementById('modalWarnDraf');
         if (existingWarn) existingWarn.remove();
         let warnHtml = `
@@ -3307,7 +3307,8 @@ window.simpanDrafManual = function() {
     document.getElementById('btnOkSuccessDraf').onclick = function() {
         document.getElementById('modalSuccessDraf').remove();
         
-        kadAktif.forEach(k => k.remove());
+        // BUG FIX: Baris pemadaman kadAktif.forEach(k => k.remove()); TELAH DIBUANG sepenuhnya
+        
         if(typeof resetRumusan === 'function') resetRumusan();
         senaraiElaunGlobal = [];
         let rc = document.querySelector('.rumusan-card'); 
@@ -3317,6 +3318,7 @@ window.simpanDrafManual = function() {
         window.tambahKalkulator('maklumatGaji', true);
     };
 };
+
 // =====================================================
 // PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
 // =====================================================
