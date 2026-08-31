@@ -2801,6 +2801,17 @@ const observerKalkulator = new MutationObserver((mutations) => {
     });
     if (perluSemak) {
         setTimeout(() => window.semakDanTukarElaun(), 50);
+        
+        // PENAMBAHBAIKAN: Papar/Sembunyi butang Simpan Draf secara automatik
+        let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
+        let btnSimpan = document.getElementById('butangSimpanDraf');
+        if (btnSimpan) {
+            if (kadAktif.length > 0) {
+                btnSimpan.style.display = 'block';
+            } else {
+                btnSimpan.style.display = 'none';
+            }
+        }
     }
 });
 
@@ -3237,6 +3248,37 @@ window.hapusDraf = function(e) {
         if(wrapper) wrapper.remove();
         document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
     }
+};
+// =========================================================
+// 11. ENJIN BUTANG SIMPAN DRAF MANUAL (FAB)
+// =========================================================
+
+window.simpanDrafManual = function() {
+    // 1. Semak jika ada kalkulator aktif
+    let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
+    
+    if (kadAktif.length === 0) {
+        alert("Tiada pengiraan untuk disimpan.");
+        return;
+    }
+
+    let modSemasa = dapatkanModSemasa();
+    
+    // 2. Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada
+    simpanKeDrafDOM(modSemasa);
+    
+    // 3. Notifikasi visual ringkas
+    alert("✅ Draf berjaya disimpan ke Senarai Rekod!");
+    
+    // 4. Bersihkan skrin dan bawa pengguna terus ke Senarai Rekod
+    kadAktif.forEach(k => k.remove());
+    if(typeof resetRumusan === 'function') resetRumusan();
+    senaraiElaunGlobal = [];
+    let rc = document.querySelector('.rumusan-card'); 
+    if(rc) rc.style.display = 'none';
+    
+    // Buka menu Senarai Rekod menggunakan "Bypass skipWarning" (true)
+    window.tambahKalkulator('maklumatGaji', true);
 };
 // =====================================================
 // PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
