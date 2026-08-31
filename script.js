@@ -2680,11 +2680,13 @@ function tunjukTourElaunPopup() {
     let popover = document.createElement('div');
     popover.id = 'tourElaunPopupBox';
     
+    // PENAMBAHBAIKAN: Posisi popover di SEBELAH KANAN (left: calc(100% + 15px)) & Anak Panah ke KIRI
     popover.innerHTML = `
-        <div class="tour-popover-box" style="position: absolute; top: calc(100% + 15px); left: 0; background: white; border-radius: 8px; width: 100%; min-width: 320px; max-width: 380px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 20px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatDown 0.4s ease-out; z-index: 102; text-align: left;">
+        <div class="tour-popover-box" style="position: absolute; top: 0; left: calc(100% + 15px); background: white; border-radius: 8px; width: 100%; min-width: 320px; max-width: 380px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.3); padding: 20px; border-top: 6px solid #d9534f; color: #333; font-family: sans-serif; cursor: default; animation: floatRight 0.4s ease-out; z-index: 102; text-align: left;">
             
-            <div style="position: absolute; bottom: 100%; left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #d9534f transparent;"></div>
-            <div style="position: absolute; bottom: calc(100% - 6px); left: 30px; border-width: 10px; border-style: solid; border-color: transparent transparent #fff transparent;"></div>
+            <!-- Anak Panah Menunjuk Ke Kiri -->
+            <div style="position: absolute; right: 100%; top: 25px; border-width: 10px; border-style: solid; border-color: transparent #d9534f transparent transparent;"></div>
+            <div style="position: absolute; right: calc(100% - 3px); top: 25px; border-width: 10px; border-style: solid; border-color: transparent #fff transparent transparent;"></div>
             
             <h4 style="margin: 0 0 10px 0; color: #1f4e79; font-size: 15px; display: flex; align-items: center; gap: 8px;">
                 <span style="background: #1f4e79; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;">💡</span>
@@ -2698,8 +2700,20 @@ function tunjukTourElaunPopup() {
             <button id="btnTutupTourPopup" style="width: 100%; background: #1f4e79; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s;">OK, SAYA FAHAM</button>
         </div>
         <style>
-            @keyframes floatDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
+            @keyframes floatRight { 0% { opacity: 0; transform: translateX(-20px); } 100% { opacity: 1; transform: translateX(0); } }
             #btnTutupTourPopup:hover { background: #153859 !important; }
+            
+            /* Fallback Responsive: Jika skrin terlampau sempit (Mobile), bawa ia ke bawah */
+            @media (max-width: 768px) {
+                .tour-popover-box {
+                    left: 0 !important;
+                    top: calc(100% + 15px) !important;
+                    animation: floatDown 0.4s ease-out !important;
+                }
+                .tour-popover-box > div:nth-child(1) { bottom: 100%; left: 30px; top: auto; right: auto; border-color: transparent transparent #d9534f transparent !important; }
+                .tour-popover-box > div:nth-child(2) { bottom: calc(100% - 6px); left: 30px; top: auto; right: auto; border-color: transparent transparent #fff transparent !important; }
+            }
+            @keyframes floatDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
         </style>
     `;
     
