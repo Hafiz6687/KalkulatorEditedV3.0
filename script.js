@@ -2858,11 +2858,28 @@ document.addEventListener('click', function(e) {
         flyoutAkta.style.display = 'none';
     }
 });
+// =========================================================
+// ENJIN SSOT: BILANGAN HARI DALAM BULAN (SEKSYEN 18A)
+// =========================================================
+window.globalHariBulan18A = 30; // Nilai lalai (default)
+
+window.updateGlobalHariBulan18A = function(element) {
+    let nilaiBaru = element.value;
+    window.globalHariBulan18A = nilaiBaru;
+    
+    // Sync (Selaraskan) kepada semua input 'Bilangan Hari Dalam Bulan' di kad 18A yang lain
+    document.querySelectorAll('.hari-bulan-18a').forEach(input => {
+        if (input !== element && input.value !== nilaiBaru) {
+            input.value = nilaiBaru;
+        }
+    });
+};
 
 // Mengklon Kalkulator Untuk Mod Seksyen 18A
 window.tambahKalkulator18ACustom = function(templateId) {
     document.getElementById('flyoutMenu18ACustom').style.display = 'none';
     window.asal_tambahKalkulator(templateId);
+    
     setTimeout(() => {
         let semuaKad = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         let newCard = semuaKad[semuaKad.length - 1]; 
@@ -2880,7 +2897,10 @@ window.tambahKalkulator18ACustom = function(templateId) {
             divHari.className = "form-group";
             divHari.style.width = "100%";
             divHari.style.marginBottom = "15px";
-            divHari.innerHTML = `<label style="color:#d9534f; font-weight:bold; display:block; margin-bottom:5px;">Bilangan Hari Dalam Bulan</label><input type="number" class="hari-bulan-18a" placeholder="Contoh: 28, 30, 31" value="30" style="border: 2px solid #d9534f; border-radius: 4px; padding: 10px; width: 100%; box-sizing: border-box; background: #fffaf9; font-size:14px; font-weight:bold;">`;
+            
+            // PENAMBAHBAIKAN: Nilai ditarik dari globalHariBulan18A & fungsi updateGlobalHariBulan18A diletakkan pada oninput
+            divHari.innerHTML = `<label style="color:#d9534f; font-weight:bold; display:block; margin-bottom:5px;">Bilangan Hari Dalam Bulan</label><input type="number" class="hari-bulan-18a" placeholder="Contoh: 28, 30, 31" value="${window.globalHariBulan18A}" style="border: 2px solid #d9534f; border-radius: 4px; padding: 10px; width: 100%; box-sizing: border-box; background: #fffaf9; font-size:14px; font-weight:bold;" oninput="updateGlobalHariBulan18A(this)">`;
+            
             formGroups[0].parentNode.insertBefore(divHari, formGroups[0]);
         }
 
@@ -2899,7 +2919,8 @@ window.tambahKalkulator18ACustom = function(templateId) {
                 activeCardContext = newCard;
                 try {
                     let hariBulanInput = newCard.querySelector('.hari-bulan-18a');
-                    let hariBulan = hariBulanInput ? (Number(hariBulanInput.value) || 26) : 26; 
+                    // Mengambil data dari input tempatan yang sentiasa sync dengan global
+                    let hariBulan = hariBulanInput ? (Number(hariBulanInput.value) || 26) : (Number(window.globalHariBulan18A) || 26); 
                     
                     if (templateId === 'orp') calculateORP(e, hariBulan);
                     else if (templateId === 'baki') calculateBakiUpah(e);
