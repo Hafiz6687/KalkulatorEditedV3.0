@@ -62,12 +62,6 @@
           transition: all 0.2s ease;
           text-align: left;
         }
-        
-        .menu-btn-modern .menu-icon {
-          flex-shrink: 0;
-          color: #64748b;
-          transition: color 0.2s ease;
-        }
 
         .menu-btn-modern .menu-text {
           display: flex;
@@ -86,7 +80,6 @@
           font-size: 10px;
           font-weight: 500;
           color: #94a3b8;
-          text-transform: uppercase;
           letter-spacing: 0.5px;
         }
 
@@ -94,13 +87,13 @@
         .menu-btn-modern:hover { background: #f1f5f9; border-color: #e2e8f0; }
         
         /* Tema Biru (Akta Kerja) */
-        .primary-menu:hover .menu-title, .primary-menu:hover .menu-icon { color: #1d4ed8; }
+        .primary-menu:hover .menu-title { color: #1d4ed8; }
         
         /* Tema Merah (18A) */
-        .danger-menu:hover .menu-title, .danger-menu:hover .menu-icon { color: #dc2626; }
+        .danger-menu:hover .menu-title { color: #dc2626; }
         
         /* Tema Kelabu (Standard) */
-        .standard-menu:hover .menu-title, .standard-menu:hover .menu-icon { color: #0f172a; }
+        .standard-menu:hover .menu-title { color: #0f172a; }
 
         /* Flyout Moden */
         .flyout-modern {
@@ -126,11 +119,9 @@
       <!-- ============================================== -->
       <div style="position: relative; width: 100%;">
         <button class="menu-btn-modern primary-menu" onclick="toggleFlyoutAktaKerja(event)">
-          <!-- SVG Icon Lucide: Book Open -->
-          <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
           <div class="menu-text">
-            <span class="menu-title">Kalkulator Akta Kerja</span>
-            <span class="menu-subtitle">Bahagian XII & XIIA</span>
+            <span class="menu-title">KALKULATOR AKTA KERJA</span>
+            <span class="menu-subtitle">Bahagian XII (Selain Seksyen 60I(1C)) & XIIA</span>
           </div>
         </button>
 
@@ -161,10 +152,8 @@
       <!-- ============================================== -->
       <div style="position: relative; width: 100%;">
         <button class="menu-btn-modern danger-menu" onclick="toggleFlyout18A(event)">
-          <!-- SVG Icon Lucide: Scale -->
-          <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
           <div class="menu-text">
-            <span class="menu-title">Seksyen 18A</span>
+            <span class="menu-title">SEKSYEN 18A</span>
             <span class="menu-subtitle">Pengiraan Gaji Ganti</span>
           </div>
         </button>
@@ -194,28 +183,22 @@
 
       <!-- 3. SENARAI REKOD -->
       <button class="menu-btn-modern standard-menu" onclick="tambahKalkulator('maklumatGaji')">
-        <!-- SVG Icon Lucide: Archive -->
-        <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
         <div class="menu-text">
-          <span class="menu-title">Senarai Rekod</span>
+          <span class="menu-title">SENARAI REKOD</span>
         </div>
       </button>
 
       <!-- 4. JANA LAPORAN PENUH -->
       <button class="menu-btn-modern standard-menu" onclick="janaLaporanPenuh()">
-        <!-- SVG Icon Lucide: File Text -->
-        <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
         <div class="menu-text">
-          <span class="menu-title">Jana Laporan Penuh</span>
+          <span class="menu-title">JANA LAPORAN PENUH</span>
         </div>
       </button>
 
       <!-- 5. JANA PENYATA GAJI -->
       <button class="menu-btn-modern standard-menu" onclick="janaPenyataGaji()">
-        <!-- SVG Icon Lucide: Receipt -->
-        <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
         <div class="menu-text">
-          <span class="menu-title">Jana Penyata Gaji</span>
+          <span class="menu-title">JANA PENYATA GAJI</span>
         </div>
       </button>
 
