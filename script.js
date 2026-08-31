@@ -3108,7 +3108,12 @@ window.simpanKeDrafDOM = function(modSemasa) {
     kadContainer.className = 'draf-kad-container';
     document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(kad => {
         kad.classList.remove('sementara-sembunyi');
-        kad.style.display = ''; 
+        
+        // FIX PENTING: Tambah 'hidden-template' supaya kad draf ini kebal 
+        // daripada dipadam tanpa sengaja oleh querySelectorAll global
+        kad.classList.add('hidden-template'); 
+        
+        kad.style.display = 'none'; 
         kadContainer.appendChild(kad); 
     });
     wrapper.appendChild(kadContainer);
@@ -3199,6 +3204,10 @@ window.bukaDraf = function(e) {
             let kad = kadContainer.firstChild;
             kad.style.display = '';
             kad.classList.remove('sementara-sembunyi');
+            
+            // FIX PENTING: Buang class hidden-template supaya ia aktif berfungsi semula
+            kad.classList.remove('hidden-template'); 
+            
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
         }
