@@ -283,7 +283,7 @@ grid-auto-flow: dense; /* Tambah kod ini */
     .main-content { overflow-y: visible; padding: 15px; }
     body { overflow: auto; }
     .calculator-card { flex: 1 1 100%; max-width: 100%; padding: 20px; }
-    .btn-floating.log-keluar, .btn-floating.reset-semua-baru { position: absolute; }
+    .btn-floating.log-keluar, .btn-floating.reset-semua-baru, .btn-floating.simpan-draf-baru { position: absolute; }
 }
 
 /* Memastikan cetakan PDF kekal kemas */
