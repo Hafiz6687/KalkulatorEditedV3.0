@@ -3491,3 +3491,67 @@ if (typeof window.hapusRekodSimpanan === "function") {
         }
     };
 }
+// =========================================================
+// UPGRADE KOSMETIK: POP-UP CUSTOM UNTUK HAPUS REKOD
+// (Selamat: Overwrite fungsi asal tanpa menjejaskan auto-save)
+// =========================================================
+window.hapusRekodSimpanan = function(e) {
+    let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
+    if (!btn) return;
+    
+    let id = btn.getAttribute('data-id');
+    
+    // Buang pop-up lama jika ia kebetulan wujud
+    let existingModal = document.getElementById('modalConfirmHapus');
+    if (existingModal) existingModal.remove();
+
+    // Bina Pop-up Custom Moden
+    let modalHtml = `
+    <div id="modalConfirmHapus" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #dc3545; animation: floatUp 0.3s ease-out; box-sizing: border-box;">
+            <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">🗑️</div>
+            <h3 style="margin-top: 0; color: #dc3545; font-size: 20px; font-weight: 800;">Pengesahan Padam</h3>
+            <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                Adakah anda pasti mahu memadam rekod ini?<br>Tindakan ini <b>tidak boleh diundur</b>.
+            </p>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnBatalHapus" style="flex: 1; background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">Batal</button>
+                <button id="btnSahkanHapus" style="flex: 1; background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">Ya, Padam</button>
+            </div>
+        </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Tindakan 1: Jika user klik "Batal"
+    document.getElementById('btnBatalHapus').onclick = function() {
+        document.getElementById('modalConfirmHapus').remove();
+    };
+
+    // Tindakan 2: Jika user klik "Ya, Padam"
+    document.getElementById('btnSahkanHapus').onclick = function() {
+        document.getElementById('modalConfirmHapus').remove(); // Tutup Pop-up
+
+        // 1. Padam fail PDF dari memori global
+        if (id && window.simpananHTMLGlobal && window.simpananHTMLGlobal[id]) {
+            delete window.simpananHTMLGlobal[id];
+        }
+
+        // 2. Padam baris dari UI yang sedang dilihat sekarang
+        let barisTerkini = btn.closest('tr');
+        if (barisTerkini) barisTerkini.remove();
+
+        // 3. Padam dari jadual Master (di sebalik skrin) supaya tidak muncul semula
+        if (id) {
+            let barisMaster = document.querySelector(`#card-maklumatGaji tbody button[data-id="${id}"]`);
+            if (barisMaster && barisMaster.closest('tr')) {
+                barisMaster.closest('tr').remove();
+            }
+        }
+
+        // 4. Update data pemadaman ini ke LocalStorage (Autopilot Trigger)
+        if (typeof window.simpanDataKekal === "function") {
+            window.simpanDataKekal();
+        }
+    };
+};
