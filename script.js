@@ -3389,3 +3389,106 @@ function teruskanJanaUPL() {
     // 3. Panggil semula fungsi cetakan penyata gaji anda
     teruskanJanaLaporan('penyata'); 
 }
+// =========================================================
+// 12. ENJIN PENYIMPANAN KEKAL (LOCALSTORAGE) - MACAM APP (SaaS)
+// =========================================================
+
+window.simpananHTMLGlobal = window.simpananHTMLGlobal || {};
+
+// 1. FUNGSI UNTUK MEMUAT (LOAD) DATA APABILA SISTEM DIBUKA
+window.muatDataKekal = function() {
+    // A) Muat Kembali Data Fail Laporan/Penyata Gaji
+    let simpananLama = localStorage.getItem('appData_HTMLGlobal');
+    if (simpananLama) { 
+        window.simpananHTMLGlobal = JSON.parse(simpananLama); 
+    }
+
+    // B) Muat Kembali Senarai Jadual Maklumat Gaji (Rekod)
+    let jadualLama = localStorage.getItem('appData_JadualGaji');
+    let tbodyMaklumatGaji = document.querySelector('#card-maklumatGaji tbody');
+    if (jadualLama && tbodyMaklumatGaji) { 
+        tbodyMaklumatGaji.innerHTML = jadualLama; 
+    }
+
+    // C) Muat Kembali Draf Pengiraan
+    let drafLama = localStorage.getItem('appData_Draf');
+    if (drafLama) {
+        let drafContainer = document.getElementById('drafStorageContainer');
+        if (!drafContainer) {
+            drafContainer = document.createElement('div');
+            drafContainer.id = 'drafStorageContainer';
+            drafContainer.style.display = 'none';
+            document.body.appendChild(drafContainer);
+        }
+        drafContainer.innerHTML = drafLama;
+    }
+};
+
+// 2. FUNGSI UNTUK MENYIMPAN (SAVE) DATA SECARA SENYAP (BACKGROUND)
+window.simpanDataKekal = function() {
+    localStorage.setItem('appData_HTMLGlobal', JSON.stringify(window.simpananHTMLGlobal || {}));
+    
+    let tbodyMaklumatGaji = document.querySelector('#card-maklumatGaji tbody');
+    if (tbodyMaklumatGaji) {
+        localStorage.setItem('appData_JadualGaji', tbodyMaklumatGaji.innerHTML);
+    }
+    
+    let drafContainer = document.getElementById('drafStorageContainer');
+    if (drafContainer) {
+        localStorage.setItem('appData_Draf', drafContainer.innerHTML);
+    }
+};
+
+// 3. SISTEM AUTOPILOT (PEMERHATI TANPA GANGGU FUNGSI ASAL)
+function pasangEnjinKekal() {
+    // Muat data lama sebaik sahaja web sedia
+    muatDataKekal();
+    
+    // Gunakan MutationObserver (Menyimpan secara automatik bila ada rekod ditambah/dibuang)
+    const pemerhatiAutoSave = new MutationObserver(() => {
+        simpanDataKekal();
+    });
+
+    let tbodyMaklumatGaji = document.querySelector('#card-maklumatGaji tbody');
+    if (tbodyMaklumatGaji) {
+        pemerhatiAutoSave.observe(tbodyMaklumatGaji, { childList: true, subtree: true });
+    }
+    
+    let drafContainer = document.getElementById('drafStorageContainer');
+    if (!drafContainer) {
+        drafContainer = document.createElement('div');
+        drafContainer.id = 'drafStorageContainer';
+        drafContainer.style.display = 'none';
+        document.body.appendChild(drafContainer);
+    }
+    pemerhatiAutoSave.observe(drafContainer, { childList: true, subtree: true });
+}
+
+// Pastikan skrip berjalan walaupun diletakkan di bawah
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', pasangEnjinKekal);
+} else {
+    pasangEnjinKekal();
+}
+
+// 4. PEMBETULAN KECIL (BUG FIX) UNTUK BUTANG HAPUS REKOD LAMA
+// (Memastikan rekod terhapus sepenuhnya dari memori apabila ditekan)
+if (typeof window.hapusRekodSimpanan === "function") {
+    let fungsiHapusAsal = window.hapusRekodSimpanan;
+    window.hapusRekodSimpanan = function(e) {
+        let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
+        let id = btn ? btn.getAttribute('data-id') : null;
+        
+        // Panggil fungsi asal (untuk popup confirm & padam di skrin)
+        fungsiHapusAsal(e);
+        
+        // Padam terus dari senarai Master supaya tak kembali bila direfresh
+        if (id) {
+            let barisMaster = document.querySelector(`#card-maklumatGaji tbody button[data-id="${id}"]`);
+            if (barisMaster && barisMaster.closest('tr')) {
+                barisMaster.closest('tr').remove();
+            }
+            simpanDataKekal(); // Auto-save pemadaman
+        }
+    };
+}
