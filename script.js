@@ -1648,7 +1648,7 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
     tr.setAttribute('data-pekerja', safeNama);
     tr.setAttribute('data-majikan', safeMajikan);
     
-    // PENAMBAHBAIKAN: Penambahan butang 'Sambung' dan white-space: nowrap supaya butang tidak berterabur
+// PENAMBAHBAIKAN: Penyingkiran butang 'Sambung' yang bertindih fungsi dengan butang Kemaskini dalam 'Buka'
     tr.innerHTML = `
         <td style="padding: 15px; font-size: 13px; font-weight: bold; color: ${warnaTeks}; vertical-align: middle;">
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
@@ -1661,7 +1661,6 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
         <td style="padding: 15px; text-align: center; font-size: 13px; color: #444; vertical-align: middle;">${tempoh || '-'}</td>
         <td style="padding: 15px; text-align: center; vertical-align: middle; white-space: nowrap;">
             <button data-id="${unikId}" onclick="bukaRekodSimpanan(event)" style="background: #0d6efd; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📂 Buka</button>
-            <button onclick="kembaliKeKalkulator()" style="background: #ffc107; color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">✏️ Sambung</button>
             <button data-id="${unikId}" onclick="hapusRekodSimpanan(event)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>
         </td>
     `;
