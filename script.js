@@ -1457,7 +1457,8 @@ function teruskanJanaLaporan(jenis) {
         let inputUPL = document.getElementById('inputUPLSemasa');
         let nilaiUPL = inputUPL ? (parseFloat(inputUPL.value) || 0) : 0; 
 
-        if (nilaiUPL > 0 && !window.statusUPLDisahkan) {
+        // Bypass Amaran UPL jika ini adalah kemaskini auto-save (senyap)
+        if (nilaiUPL > 0 && !window.statusUPLDisahkan && !senyap) {
             document.getElementById('modalAmaranUPL').style.display = 'flex';
             return; 
         }
@@ -1516,10 +1517,11 @@ function teruskanJanaLaporan(jenis) {
         });
     }
 
-    // PENAMBAHBAIKAN: Check jika ia adalah 'Kemaskini', kita timpa baris lama
+    // 1. Tentukan ID rekod. Jika Kemaskini, kekalkan ID lama.
     let isUpdate = window.rekodSedangDikemaskini ? true : false;
     let unikId = isUpdate ? window.rekodSedangDikemaskini : ('rekod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
 
+    // 2. Padam visual baris jadual yang lama sebelum digantikan
     if (isUpdate) {
         let tbody = document.querySelector('#card-maklumatGaji tbody');
         if (tbody) {
@@ -1539,10 +1541,11 @@ function teruskanJanaLaporan(jenis) {
         senaraiElaun, senaraiPotongan, kwspP, kwspN, perkesoP, perkesoN, sipP, sipN, pendahuluanN, absentH, absentN, svcData 
     }, unikId, senyap);
 
+    // 3. Matikan status kemaskini & status senyap selepas selesai
     window.rekodSedangDikemaskini = null;
     window._isSenyapUpdate = false;
 
-    // Trigger LocalStorage Auto-Save
+    // 4. Trigger LocalStorage Auto-Save
     if (typeof window.simpanDataKekal === "function") {
         window.simpanDataKekal();
     }
@@ -1557,13 +1560,16 @@ window.bukaRekodSimpanan = function(e) {
     let id = btn.getAttribute('data-id');
     let htmlContent = window.simpananHTMLGlobal[id];
     
+    window._pendingKemaskiniId = id; // Sandaran (Fallback) ID untuk memori sistem
+    
     if(htmlContent) {
+        // Buang butang Simpan asal dari Preview
         htmlContent = htmlContent.replace(/<a[^>]*>💾 Simpan<\/a>/gi, '');
 
-        // PENAMBAHBAIKAN: Hantar 'id' rekod kepada fungsi kembaliKeKalkulator
+        // Tukar butang Kemaskini untuk menghantar 'id' ke fungsi kembaliKeKalkulator
         htmlContent = htmlContent.replace(
-            /<a href="#" onclick="window\.close\(\); return false;">✏️ Kemaskini<\/a>/gi,
-            `<a href="#" onclick="if(window.opener && typeof window.opener.kembaliKeKalkulator === 'function') { window.opener.kembaliKeKalkulator('${id}'); } window.close(); return false;">✏️ Kemaskini</a>`
+            /onclick="window\.close\(\); return false;">✏️ Kemaskini<\/a>/gi,
+            `onclick="if(window.opener && typeof window.opener.kembaliKeKalkulator === 'function') { window.opener.kembaliKeKalkulator('${id}'); } else if(window.opener) { window.opener._pendingKemaskiniId = '${id}'; } window.close(); return false;">✏️ Kemaskini</a>`
         );
 
         let tetingkapCetak = window.open('', '_blank'); 
@@ -1576,27 +1582,15 @@ window.bukaRekodSimpanan = function(e) {
     }
 };
 
-window.hapusRekodSimpanan = function(e) {
-    // Tangkap butang yang ditekan dan tarik ID yang disorokkan (data-id)
-    let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
-    if (!btn) return;
-    
-    let id = btn.getAttribute('data-id');
-    let sah = confirm("Adakah anda pasti mahu memadam rekod ini?");
-    
-    if(sah) {
-        if(window.simpananHTMLGlobal[id]) delete window.simpananHTMLGlobal[id];
-        btn.closest('tr').remove();
-    }
-};
-
 window.kembaliKeKalkulator = function(updateId) {
-    // PENAMBAHBAIKAN: Simpan ID rekod dalam memori bagi mengesan sama ada ia adalah Kemaskini
-    if (typeof updateId === 'string' && updateId.startsWith('rekod_')) {
-        window.rekodSedangDikemaskini = updateId;
+    // 1. Simpan memori bahawa sistem kini dalam Mod 'Kemaskini' (Laporan)
+    let finalId = updateId || window._pendingKemaskiniId;
+    if (typeof finalId === 'string' && finalId.startsWith('rekod_')) {
+        window.rekodSedangDikemaskini = finalId;
     } else {
         window.rekodSedangDikemaskini = null;
     }
+    window._pendingKemaskiniId = null;
 
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
@@ -1612,6 +1606,20 @@ window.kembaliKeKalkulator = function(updateId) {
         if (rumusanCard) rumusanCard.style.display = "block";
         let warningBox = document.querySelector('.warning-box');
         if (warningBox) warningBox.style.display = "block";
+    }
+};
+
+window.hapusRekodSimpanan = function(e) {
+    // Tangkap butang yang ditekan dan tarik ID yang disorokkan (data-id)
+    let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
+    if (!btn) return;
+    
+    let id = btn.getAttribute('data-id');
+    let sah = confirm("Adakah anda pasti mahu memadam rekod ini?");
+    
+    if(sah) {
+        if(window.simpananHTMLGlobal[id]) delete window.simpananHTMLGlobal[id];
+        btn.closest('tr').remove();
     }
 };
 
@@ -3220,6 +3228,10 @@ window.simpanKeDrafDOM = function(modSemasa) {
 window.bukaDraf = function(e) {
     let btn = e.currentTarget;
     let drafId = btn.getAttribute('data-draf-id');
+    
+    // Simpan memori bahawa sistem kini dalam Mod 'Kemaskini' (Draf)
+    window.drafSedangDikemaskini = drafId; 
+    
     let wrapper = document.getElementById('wrapper_' + drafId);
     
     if(!wrapper) {
@@ -3246,10 +3258,7 @@ window.bukaDraf = function(e) {
             let kad = kadContainer.firstChild;
             kad.style.display = '';
             kad.classList.remove('sementara-sembunyi');
-            
-            // FIX PENTING: Buang class hidden-template supaya ia aktif berfungsi semula
             kad.classList.remove('hidden-template'); 
-            
             if(rumusanCard) grid.insertBefore(kad, rumusanCard);
             else grid.appendChild(kad);
         }
@@ -3329,7 +3338,7 @@ window.simpanDrafManual = function() {
         return;
     }
 
-    // PENAMBAHBAIKAN: Jika pengguna sedang 'Kemaskini' laporan sedia ada, TIDAK PERLU cipta Draf Pengiraan baru!
+    // --- ALIRAN A: KEMASKINI LAPORAN/PENYATA GAJI (Tiada Draf Pengiraan dicipta) ---
     if (window.rekodSedangDikemaskini && window.rekodSedangDikemaskini.startsWith('rekod_')) {
         let jenisCetak = 'penyata';
         let tbody = document.querySelector('#card-maklumatGaji tbody');
@@ -3340,10 +3349,8 @@ window.simpanDrafManual = function() {
             }
         }
         
-        // Memaksa pengiraan elaun terkini
+        // Kemaskini Laporan Asal secara Auto-Pilot (Senyap)
         autoKiraPotonganBerkanun();
-        
-        // Bypass dan terus timpa laporan asal tanpa mengeluarkan Pop-up PDF
         window._isSenyapUpdate = true;
         teruskanJanaLaporan(jenisCetak);
         
@@ -3356,7 +3363,7 @@ window.simpanDrafManual = function() {
                 <div style="font-size: 50px; margin-bottom: 10px; line-height: 1;">✅</div>
                 <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Berjaya Dikemaskini!</h3>
                 <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
-                    Maklumat gaji telah berjaya dikemaskini dan direkodkan semula. (Tiada draf baharu dicipta)
+                    Maklumat gaji telah berjaya dikemaskini dan ditimpa (overwrite) pada rekod sedia ada.
                 </p>
                 <button id="btnOkSuccessDraf" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(16,185,129,0.3);">TUTUP & TERUSKAN</button>
             </div>
@@ -3372,13 +3379,24 @@ window.simpanDrafManual = function() {
             if(rc) rc.style.display = 'none';
             window.tambahKalkulator('maklumatGaji', true);
         };
-        return;
+        return; 
     }
 
-    // --- Jika bukan kemaskini Laporan, teruskan proses cipta Draf asal ---
+    // --- ALIRAN B: KEMASKINI DRAF PENGIRAAN SEDIA ADA ---
+    if (window.drafSedangDikemaskini && window.drafSedangDikemaskini.startsWith('draf_')) {
+        let oldDraf = document.getElementById('wrapper_' + window.drafSedangDikemaskini);
+        if (oldDraf) oldDraf.remove();
+        document.querySelectorAll(`tr[data-draf="${window.drafSedangDikemaskini}"]`).forEach(tr => tr.remove());
+        window.drafSedangDikemaskini = null;
+    }
+
+    // --- ALIRAN C: CIPTA DRAF PENGIRAAN BAHARU (Belum lalu JANA) ---
     let modSemasa = dapatkanModSemasa();
     simpanKeDrafDOM(modSemasa);
     
+    // Trigger Auto-Save LocalStorage untuk Draf Baru
+    if (typeof window.simpanDataKekal === "function") window.simpanDataKekal();
+
     let existingModal = document.getElementById('modalSuccessDraf');
     if (existingModal) existingModal.remove();
 
