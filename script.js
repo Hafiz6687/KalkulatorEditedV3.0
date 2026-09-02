@@ -1435,7 +1435,7 @@ function paparModalLaporan(jenis) {
     }
 }
 
-function teruskanJanaLaporan(jenis, editId = null) {
+function teruskanJanaLaporan(jenis) {
     let getV = (id) => document.getElementById(id) ? document.getElementById(id).value.trim() : "";
     
     window.globalNamaMajikan = getV('inputNamaMajikan');
@@ -1453,13 +1453,17 @@ function teruskanJanaLaporan(jenis, editId = null) {
     let namaMajikan = window.globalNamaMajikan;
 
     if (jenis === 'penyata') {
+        
+        // --- LETAKKAN KOD PEMINTAS UPL DI SINI ---
         let inputUPL = document.getElementById('inputUPLSemasa');
         let nilaiUPL = inputUPL ? (parseFloat(inputUPL.value) || 0) : 0; 
-        if (nilaiUPL > 0 && !window.statusUPLDisahkan && !editId) {
+
+        if (nilaiUPL > 0 && !window.statusUPLDisahkan) {
             document.getElementById('modalAmaranUPL').style.display = 'flex';
-            return; 
+            return; // Hentikan kod dari berjalan, tunggu user klik Teruskan
         }
-        window.statusUPLDisahkan = false; 
+        window.statusUPLDisahkan = false; // Reset semula status
+        // --- TAMAT KOD PEMINTAS ---
 
         let msLayak = ['modPHLayak', 'modALLayak', 'modMCLayak', 'modWDLayak'];
         let msGuna = ['modPHGuna', 'modALGuna', 'modMCGuna', 'modWDGuna'];
@@ -1518,44 +1522,13 @@ function teruskanJanaLaporan(jenis, editId = null) {
     let icPekerja = window.globalIcPekerja;
     let noPekerja = window.globalNoPekerja;
 
-    let unikId = editId ? editId : 'rekod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    
-    // Ganti atau cipta baris baru
-    if (!editId) {
-        tambahRekodKeMaklumatGaji(jenis, namaPekerja, namaMajikan, tempohUpah, unikId);
-    } else {
-        let btn = document.querySelector(`button[data-id="${editId}"]`);
-        if (btn) {
-            let tr = btn.closest('tr');
-            let safeNama = (namaPekerja || '-').trim();
-            let safeMajikan = (namaMajikan || '-').trim();
-            tr.setAttribute('data-pekerja', safeNama);
-            tr.setAttribute('data-majikan', safeMajikan);
-            tr.children[1].innerHTML = `<strong style="color: #333;">${safeNama}</strong>`;
-            tr.children[2].innerHTML = `<strong style="color: #333;">${safeMajikan}</strong>`;
-            tr.children[3].innerText = tempohUpah || '-';
-            
-            // Buang tag 'BARU' jika ia wujud
-            let labelBaru = tr.querySelector('.label-rekod-baru');
-            if (labelBaru && labelBaru.innerText === 'BARU') labelBaru.remove();
-            
-            // Letak tag 'DIKEMASKINI' pada ruang jenis dokumen
-            let badgeContainer = tr.children[0].querySelector('div');
-            if (badgeContainer && !badgeContainer.innerHTML.includes('DIKEMASKINI')) {
-                 badgeContainer.innerHTML += `<span class="label-rekod-baru" style="background: #17a2b8; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">DIKEMASKINI</span>`;
-            }
-        }
-    }
-
-    if (document.getElementById('modalLaporanPenuh')) {
-        document.getElementById('modalLaporanPenuh').style.display = 'none'; 
-    }
-    
-    let isSilent = editId ? true : false;
+    let unikId = 'rekod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    tambahRekodKeMaklumatGaji(jenis, namaPekerja, namaMajikan, tempohUpah, unikId);
+    document.getElementById('modalLaporanPenuh').style.display = 'none'; 
     
     prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenis, { 
         senaraiElaun, senaraiPotongan, kwspP, kwspN, perkesoP, perkesoN, sipP, sipN, pendahuluanN, absentH, absentN, svcData 
-    }, unikId, isSilent);
+    }, unikId);
 }
 
 window.simpananHTMLGlobal = window.simpananHTMLGlobal || {};
@@ -1571,15 +1544,10 @@ window.bukaRekodSimpanan = function(e) {
         // PENAMBAHBAIKAN 1: Buang butang "Simpan" secara dinamik untuk paparan peringkat ini sahaja
         htmlContent = htmlContent.replace(/<a[^>]*>💾 Simpan<\/a>/gi, '');
 
-        // PENAMBAHBAIKAN 2: Hantar ID ke dalam memori aplikasi apabila "Kemaskini" ditekan
+        // PENAMBAHBAIKAN 2: Ubah fungsi Kemaskini supaya memanggil pengembali state kalkulator asal
         htmlContent = htmlContent.replace(
-            /<a href="#" onclick="if\(window\.opener && typeof window\.opener\.kembaliKeKalkulator === 'function'\) \{ window\.opener\.kembaliKeKalkulator\([^)]*\); \} window\.close\(\); return false;">✏️ Kemaskini<\/a>/gi,
-            `<a href="#" onclick="if(window.opener && typeof window.opener.kembaliKeKalkulator === 'function') { window.opener.kembaliKeKalkulator('${id}'); } window.close(); return false;">✏️ Kemaskini</a>`
-        );
-        // Fallback fallback untuk string lama
-        htmlContent = htmlContent.replace(
-            /window\.opener\.kembaliKeKalkulator\(\)/gi,
-            `window.opener.kembaliKeKalkulator('${id}')`
+            /<a href="#" onclick="window\.close\(\); return false;">✏️ Kemaskini<\/a>/gi,
+            '<a href="#" onclick="if(window.opener && typeof window.opener.kembaliKeKalkulator === \'function\') { window.opener.kembaliKeKalkulator(); } window.close(); return false;">✏️ Kemaskini</a>'
         );
 
         let tetingkapCetak = window.open('', '_blank'); 
@@ -1591,6 +1559,7 @@ window.bukaRekodSimpanan = function(e) {
         alert("Maaf, rekod tidak dijumpai atau telah dipadam.");
     }
 };
+
 window.hapusRekodSimpanan = function(e) {
     // Tangkap butang yang ditekan dan tarik ID yang disorokkan (data-id)
     let btn = e.currentTarget || (e.target && e.target.closest ? e.target.closest('button') : null);
@@ -1605,25 +1574,18 @@ window.hapusRekodSimpanan = function(e) {
     }
 };
 
-window.kembaliKeKalkulator = function(editId = null) {
-    // 1. Simpan Memori Rekod Yang Sedang Disunting
-    if (editId) {
-        window.rekodSedangDiedit = editId;
-    } else {
-        window.rekodSedangDiedit = null;
-    }
-
-    // 2. Buang panel jadual Maklumat Gaji yang sedang dipapar
+window.kembaliKeKalkulator = function() {
+    // 1. Buang panel jadual Maklumat Gaji yang sedang dipapar
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
 
-    // 3. Munculkan kembali kesemua kalkulator dan pengiraan asal pengguna
+    // 2. Munculkan kembali kesemua kalkulator dan pengiraan asal pengguna
     document.querySelectorAll('.sementara-sembunyi').forEach(kad => {
         kad.style.display = '';
         kad.classList.remove('sementara-sembunyi');
     });
 
-    // 4. Pastikan Rumusan dan Warning Box dipaparkan semula seperti biasa
+    // 3. Pastikan Rumusan dan Warning Box dipaparkan semula seperti biasa
     let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
     if (semuaKadAktif.length > 0) {
         let rumusanCard = document.querySelector('.rumusan-card');
@@ -1709,7 +1671,7 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
     tbody.appendChild(tr);
 }
 
-function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenisCetak, xtra, unikId, isSilent = false) {    
+function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenisCetak, xtra, unikId) {
     const senaraiKalkulator = [
         { id: "orpData", tajuk: "Kadar Upah Biasa (ORP)" }, { id: "bakiData", tajuk: "Baki Upah / Gaji" }, 
         { id: "otData", tajuk: "OT Hari Biasa" }, { id: "rhData", tajuk: "Kerja Hari Rehat (½ Hari @ Kurang)" }, 
@@ -2138,23 +2100,14 @@ function prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPe
     
     let cetakHTML = `<!DOCTYPE html><html lang="ms"><head><meta charset="UTF-8"><title>Laporan Pengiraan Akta Kerja 1955</title><style>* { font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; } body { color: #111; line-height: 1.35; padding: 20px; font-size: 11px; background: #fdfdfd; margin-bottom: 80px; } .main-title { text-align: center; margin-bottom: 2px; font-size: 18px; font-weight: bold; border-bottom: 2px solid #222; padding-bottom: 6px; text-transform: uppercase; color: #000; letter-spacing: 1px; } .subtitle { text-align: center; color: #555; margin-top: 5px; margin-bottom: 25px; font-size: 11px; } .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: start; } .report-box { border: 1px solid #aaa; padding: 12px; border-radius: 6px; page-break-inside: avoid; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); } .report-header { font-size: 13px; font-weight: 800; text-align: center; background: #e8eaed; padding: 8px; border-bottom: 1px solid #aaa; margin: -12px -12px 12px -12px; border-radius: 6px 6px 0 0; text-transform: uppercase; color: #1a1a1a; letter-spacing: 0.5px; } .report-section-title { font-size: 10px; font-weight: bold; color: #1f4e79; letter-spacing: 0.5px; border-bottom: 1px dashed #ccc; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; } .param-table { width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 12px; } .param-label { padding: 3px 0; color: #444; width: 55%; } .param-value { padding: 3px 0; text-align: right; font-weight: 700; color: #000; } .formula-box { background-color: #f4f6f9; border-left: 3px solid #1f4e79; padding: 10px 12px; margin: 12px 0; font-size: 11px; color: #222; border-radius: 0 4px 4px 0; } .formula-title { font-weight: bold; font-size: 10px; color: #1f4e79; margin-bottom: 6px; letter-spacing: 0.5px; } .compact-result .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; flex-wrap: wrap; } .compact-result .result-row span { font-size: 11px; color: #333; } .compact-result .result-row strong, #orpBakiAmount { font-size: 12px; color: #000; white-space: nowrap; } .compact-result hr { display: none !important; } .clean-table { width: 100%; border-collapse: collapse; font-size: 11px; border: none; margin-bottom: 5px; } .clean-table td { padding: 4px 2px; border: none; color: #222; } .highlight-row, .result-row[style*="background"] { background: transparent !important; border: 1.5px solid #1f4e79; padding: 8px !important; border-radius: 4px; margin-top: 10px; } .highlight-row span, .result-row[style*="background"] span { color: #1f4e79 !important; font-weight: bold; } .highlight-row strong, .result-row[style*="background"] strong { color: #1f4e79 !important; font-size: 14px !important; } @media print { body { padding: 0; background: #fff; margin-bottom: 0; } .report-box { border: 1px solid #aaa; box-shadow: none; } .report-header, .formula-box, .highlight-row, .result-row[style*="background"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; } } ${cssBaru} </style></head><body><div class="floating-action-bar"><div style="position: relative;"><button class="kebab-btn" onclick="var d = document.getElementById('kebabDropdown'); d.style.display = d.style.display === 'block' ? 'none' : 'block';">&#8942;</button><div id="kebabDropdown" class="kebab-dropdown"><a href="#" onclick="window.close(); return false;">✏️ Kemaskini</a><a href="#" onclick="window.print(); return false;">🖨️ Cetak Laporan</a><a href="#" onclick="if(window.opener){window.opener.tambahKalkulator('maklumatGaji', true);} window.close(); return false;">💾 Simpan</a></div></div></div>${tajukHeaderHTML}<div class="grid-container">${maklumatSyarikatPekerjaHTML}${contentSeterusnya}</div><div class="print-btn-container" style="text-align: center; margin-top: 30px; grid-column: 1 / -1;"><p style="font-size: 11px; color:#666; font-style: italic;">*Untuk simpan dalam peranti, sila pilih <b>'Save as PDF'</b> pada tetingkap pencetak (Destination).</p></div></body></html>`;
     
-if (unikId) {
+    if (unikId) {
         window.simpananHTMLGlobal = window.simpananHTMLGlobal || {};
         window.simpananHTMLGlobal[unikId] = cetakHTML;
     }
 
-    // Jika ianya Silent Regenerate, jangan buka window pop-up baru
-    if (!isSilent) {
-        let tetingkapCetak = window.open('', '_blank'); 
-        if (!tetingkapCetak) { alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan."); return; }
-        tetingkapCetak.document.write(cetakHTML); 
-        tetingkapCetak.document.close(); 
-        tetingkapCetak.focus(); 
-    }
-    
-    if (typeof window.simpanDataKekal === 'function') {
-        window.simpanDataKekal();
-    }
+    let tetingkapCetak = window.open('', '_blank'); 
+    if (!tetingkapCetak) { alert("Pop-up disekat oleh pelayar web (browser) anda. Sila benarkan 'Pop-ups and redirects' untuk laman ini bagi melihat laporan."); return; }
+    tetingkapCetak.document.write(cetakHTML); tetingkapCetak.document.close(); tetingkapCetak.focus(); 
 }
 
 // =====================================================
@@ -2175,10 +2128,10 @@ function logKeluar() { let btn = document.getElementById("butangAuth"); if (btn)
 // =====================================================
 // ENJIN RESET (DIKEMASKINI)
 // =====================================================
+
 window.resetSemua = function() {
-    window.rekodSedangDiedit = null; // Tambahkan ini di atas let sah = confirm...
     let sah = confirm("Adakah anda pasti mahu memadam KESEMUA data pengiraan? Tindakan ini tidak boleh diundur.");
-if (sah) {
+    if (sah) {
         let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         semuaKadAktif.forEach(kad => kad.remove());
         
@@ -2905,8 +2858,7 @@ if (!window.asal_tambahKalkulator) {
 
 // Pemintas Navigasi Utama (Sidebar & Flyout)
 window.tambahKalkulator = function(templateId, skipWarning = false) {
-       if (templateId === 'maklumatGaji') {
-        window.rekodSedangDiedit = null; // Clear edit session apabila ke menu rekod
+    if (templateId === 'maklumatGaji') {
         if (skipWarning) {
             // Bypass pop-up amaran jika flow "Simpan" dari laporan digunakan
             window.asal_tambahKalkulator(templateId);
@@ -3333,9 +3285,11 @@ window.hapusDraf = function(e) {
 // =========================================================
 
 window.simpanDrafManual = function() {
+    // 1. Semak jika ada kalkulator aktif
     let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
     
     if (kadAktif.length === 0) {
+        // Pop-up Profesional: Tiada Pengiraan
         let existingWarn = document.getElementById('modalWarnDraf');
         if (existingWarn) existingWarn.remove();
         let warnHtml = `
@@ -3353,58 +3307,12 @@ window.simpanDrafManual = function() {
         return;
     }
 
-    // --- CATCH FLOW KEMASKINI (AUTO-REGENERATE) ---
-    if (window.rekodSedangDiedit) {
-        let id = window.rekodSedangDiedit;
-        let btn = document.querySelector(`button[data-id="${id}"]`);
-        if (btn) {
-            let tr = btn.closest('tr');
-            let isPenyata = tr.getAttribute('data-jenis') === 'Penyata Gaji';
-            let jenisLaporan = isPenyata ? 'penyata' : 'penuh';
-            
-            // Render modal virtually di background jika tiada (untuk keselamatan extract input)
-            let existingModal = document.getElementById('modalLaporanPenuh');
-            if (!existingModal) {
-                paparModalLaporan(jenisLaporan);
-                document.getElementById('modalLaporanPenuh').style.display = 'none';
-            }
-            
-            // Laksanakan Auto-Regenerate senyap
-            teruskanJanaLaporan(jenisLaporan, id);
-            
-            window.rekodSedangDiedit = null; // Clear memori
-            
-            let modalSuccess = `
-            <div id="modalSuccessKemaskini" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
-                <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; border-top: 6px solid #0dcaf0; animation: floatUp 0.3s ease-out;">
-                    <div style="font-size: 50px; margin-bottom: 10px; line-height: 1;">🔄</div>
-                    <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Berjaya Dikemaskini!</h3>
-                    <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
-                        Laporan sedia ada telah di-kemaskini dengan pengiraan baharu.
-                    </p>
-                    <button id="btnOkSuccessKemaskini" style="background: #0dcaf0; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(13,202,240,0.3);">TUTUP & KEMBALI</button>
-                </div>
-            </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalSuccess);
-            
-            document.getElementById('btnOkSuccessKemaskini').onclick = function() {
-                document.getElementById('modalSuccessKemaskini').remove();
-                if(typeof resetRumusan === 'function') resetRumusan();
-                senaraiElaunGlobal = [];
-                let rc = document.querySelector('.rumusan-card'); 
-                if(rc) rc.style.display = 'none';
-                
-                window.tambahKalkulator('maklumatGaji', true);
-            };
-            return; // Hentikan fungsi supaya tiada DRAF baru tercipta
-        }
-    }
-
-    // --- NORMAL FLOW (SIMPAN DRAF PENGIRAAN BARU) ---
     let modSemasa = dapatkanModSemasa();
+    
+    // 2. Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada
     simpanKeDrafDOM(modSemasa);
     
+    // 3. Pop-up Profesional: Draf Berjaya Disimpan (Tengah Skrin)
     let existingModal = document.getElementById('modalSuccessDraf');
     if (existingModal) existingModal.remove();
 
@@ -3422,13 +3330,18 @@ window.simpanDrafManual = function() {
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
+    // 4. Proses membersihkan skrin DITANGGUHKAN sehingga pengguna menekan butang TUTUP
     document.getElementById('btnOkSuccessDraf').onclick = function() {
         document.getElementById('modalSuccessDraf').remove();
+        
+        // BUG FIX: Baris pemadaman kadAktif.forEach(k => k.remove()); TELAH DIBUANG sepenuhnya
+        
         if(typeof resetRumusan === 'function') resetRumusan();
         senaraiElaunGlobal = [];
         let rc = document.querySelector('.rumusan-card'); 
         if(rc) rc.style.display = 'none';
         
+        // Buka menu Senarai Rekod menggunakan "Bypass skipWarning" (true)
         window.tambahKalkulator('maklumatGaji', true);
     };
 };
