@@ -129,7 +129,7 @@ document.addEventListener("change", function(e) {
     if (!isMathInput) return;
     try {
         let nilai = e.target.value.trim();
-        if (/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) \vert{}\vert{} /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai)) return; 
+        if (/^\d{1,4}-\d{1,2}-\d{1,4}$/.test(nilai) || /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nilai)) return;
         if (/[+\-*/()]/.test(nilai) && !nilai.includes("RM")) {
             let hasil = evaluateSmartMath(nilai);
             if (hasil !== undefined && !isNaN(hasil)) { e.target.value = hasil; e.target.dispatchEvent(new Event('input', { bubbles: true })); }
