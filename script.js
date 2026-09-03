@@ -2164,6 +2164,14 @@ window.resetSemua = function() {
         resetRumusan();
         senaraiElaunGlobal = [];
         
+        // --- PENAMBAHBAIKAN: CUCI MEMORI MAKLUMAT LAPORAN ---
+        window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
+        window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
+        window.rekodSedangDikemaskini = null;
+        let sediaAdaModal = document.getElementById('modalLaporanPenuh');
+        if (sediaAdaModal) sediaAdaModal.remove();
+        // ----------------------------------------------------
+        
         let kadRumusan = document.querySelector('.rumusan-card');
         if (kadRumusan) {
             kadRumusan.style.display = "none";
@@ -2299,11 +2307,9 @@ window.tambahKalkulator = function(templateId) {
     let warningBox = document.querySelector('.warning-box');
 
     if (templateId === 'maklumatGaji') {
-        // 1. Padamkan kad Maklumat Gaji sedia ada (jika ada) untuk elak duplikasi
         let existingMg = document.querySelectorAll('#active-maklumatGaji');
         existingMg.forEach(mg => mg.remove());
 
-        // 2. Sembunyikan kad aktif sementara
         let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
         semuaKadAktif.forEach(kad => {
             kad.classList.add('sementara-sembunyi');
@@ -2317,8 +2323,6 @@ window.tambahKalkulator = function(templateId) {
         if (existingMg) {
             existingMg.remove();
             
-            // PENAMBAHBAIKAN UTAMA: Jika pilih kalkulator baharu semasa di paparan Maklumat Gaji,
-            // anggap sebagai MULA PROSES BARU. Padam semua kad yang disorok, reset rumusan & elaun.
             document.querySelectorAll('.sementara-sembunyi').forEach(kad => {
                 kad.remove();
             });
@@ -2327,12 +2331,20 @@ window.tambahKalkulator = function(templateId) {
             if (typeof senaraiElaunGlobal !== 'undefined') senaraiElaunGlobal = [];
             if (rumusanCard) rumusanCard.style.display = "none";
             setTimeout(() => { if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); }, 50);
+
+            // --- PENAMBAHBAIKAN: CUCI MEMORI MAKLUMAT LAPORAN (PENGIRAAN BARU) ---
+            window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
+            window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
+            window.rekodSedangDikemaskini = null;
+            let sediaAdaModal = document.getElementById('modalLaporanPenuh');
+            if (sediaAdaModal) sediaAdaModal.remove();
+            // ----------------------------------------------------
         }
     }
 
     let templateCard = document.getElementById('card-' + templateId);
     if (!templateCard) return alert('Kalkulator tidak ditemui!');
-    
+        
     let clone = templateCard.cloneNode(true);
     clone.classList.remove('hidden-template');
     
@@ -3124,12 +3136,21 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     };
 
     // 2. HAPUS: Padam aktiviti semasa dan teruskan membuka menu/kalkulator pilihan
-    document.getElementById('btnHapusDraf').onclick = function() {
+document.getElementById('btnHapusDraf').onclick = function() {
         document.getElementById('modalAmaranPertukaran').remove();
         document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
         if(typeof resetRumusan === 'function') resetRumusan();
         senaraiElaunGlobal = [];
         let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
+
+        // --- PENAMBAHBAIKAN: CUCI MEMORI MAKLUMAT LAPORAN (SELEPAS KLIK HAPUS) ---
+        window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
+        window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
+        window.rekodSedangDikemaskini = null;
+        let sediaAdaModal = document.getElementById('modalLaporanPenuh');
+        if (sediaAdaModal) sediaAdaModal.remove();
+        // ----------------------------------------------------
+
         fungsiCallback();
     };
 }
