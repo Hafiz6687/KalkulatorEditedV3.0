@@ -3306,7 +3306,6 @@ window.simpanDrafManual = function() {
     let kadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)');
     
     if (kadAktif.length === 0) {
-        // Pop-up Profesional: Tiada Pengiraan
         let existingWarn = document.getElementById('modalWarnDraf');
         if (existingWarn) existingWarn.remove();
         let warnHtml = `
@@ -3324,33 +3323,45 @@ window.simpanDrafManual = function() {
         return;
     }
 
-    // --- PENAMBAHBAIKAN BARU: PINTASAN KEMASKINI OVERWRITE ---
-    // Jika sistem mengesan pengguna sedang mengemaskini rekod sedia ada (Buka > Kemaskini),
-    // sistem tidak akan mencipta Draf Baru, sebaliknya mencetuskan Pop-up overwrite Laporan/Penyata.
+    // --- PINTASAN KEMASKINI OVERWRITE (100% BULLETPROOF) ---
+    // Di sini sistem diwajibkan return dan tidak akan mencipta Draf.
     if (window.rekodSedangDikemaskini) {
-        let btnLama = document.querySelector(`button[data-id="${window.rekodSedangDikemaskini}"]`);
-        if (btnLama) {
-            let tr = btnLama.closest('tr');
-            if (tr) {
-                let jenisRekod = tr.getAttribute('data-jenis');
-                if (jenisRekod === 'Penyata Gaji') {
-                    janaPenyataGaji();
-                    return; // Hentikan fungsi draf
-                } else if (jenisRekod === 'Laporan') {
-                    janaLaporanPenuh();
-                    return; // Hentikan fungsi draf
-                }
+        let isPenyata = false;
+        
+        // Teknik 1: Periksa dari dalam HTML laporan asal di memori (Sangat Tepat)
+        if (window.simpananHTMLGlobal && window.simpananHTMLGlobal[window.rekodSedangDikemaskini]) {
+            if (window.simpananHTMLGlobal[window.rekodSedangDikemaskini].includes('PENYATA GAJI')) {
+                isPenyata = true;
             }
         }
+        
+        // Teknik 2: Periksa dari Jadual DOM
+        let btnLama = document.querySelector(`button[data-id="${window.rekodSedangDikemaskini}"]`);
+        if (btnLama && btnLama.closest('tr')) {
+            let trText = btnLama.closest('tr').innerText || "";
+            let trJenis = btnLama.closest('tr').getAttribute('data-jenis');
+            if (trText.includes('Penyata Gaji') || trJenis === 'Penyata Gaji') {
+                isPenyata = true;
+            }
+        }
+        
+        // Laksana terus tindakan Overwrite 
+        if (isPenyata) {
+            janaPenyataGaji();
+        } else {
+            janaLaporanPenuh();
+        }
+        
+        return; // ⛔ WAJIB BERHENTI DI SINI. DRAF TIDAK AKAN TERCIPTA SAMA SEKALI!
     }
-    // --- TAMAT PENAMBAHBAIKAN ---
+    // --- TAMAT PINTASAN KEMASKINI ---
 
     let modSemasa = dapatkanModSemasa();
     
-    // 2. Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada
+    // Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada sebagai DRAF
     simpanKeDrafDOM(modSemasa);
     
-    // 3. Pop-up Profesional: Draf Berjaya Disimpan (Tengah Skrin)
+    // Pop-up Profesional: Draf Berjaya Disimpan 
     let existingModal = document.getElementById('modalSuccessDraf');
     if (existingModal) existingModal.remove();
 
@@ -3368,7 +3379,6 @@ window.simpanDrafManual = function() {
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // 4. Proses membersihkan skrin DITANGGUHKAN sehingga pengguna menekan butang TUTUP
     document.getElementById('btnOkSuccessDraf').onclick = function() {
         document.getElementById('modalSuccessDraf').remove();
         
