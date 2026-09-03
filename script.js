@@ -3324,6 +3324,27 @@ window.simpanDrafManual = function() {
         return;
     }
 
+    // --- PENAMBAHBAIKAN BARU: PINTASAN KEMASKINI OVERWRITE ---
+    // Jika sistem mengesan pengguna sedang mengemaskini rekod sedia ada (Buka > Kemaskini),
+    // sistem tidak akan mencipta Draf Baru, sebaliknya mencetuskan Pop-up overwrite Laporan/Penyata.
+    if (window.rekodSedangDikemaskini) {
+        let btnLama = document.querySelector(`button[data-id="${window.rekodSedangDikemaskini}"]`);
+        if (btnLama) {
+            let tr = btnLama.closest('tr');
+            if (tr) {
+                let jenisRekod = tr.getAttribute('data-jenis');
+                if (jenisRekod === 'Penyata Gaji') {
+                    janaPenyataGaji();
+                    return; // Hentikan fungsi draf
+                } else if (jenisRekod === 'Laporan') {
+                    janaLaporanPenuh();
+                    return; // Hentikan fungsi draf
+                }
+            }
+        }
+    }
+    // --- TAMAT PENAMBAHBAIKAN ---
+
     let modSemasa = dapatkanModSemasa();
     
     // 2. Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada
@@ -3350,8 +3371,6 @@ window.simpanDrafManual = function() {
     // 4. Proses membersihkan skrin DITANGGUHKAN sehingga pengguna menekan butang TUTUP
     document.getElementById('btnOkSuccessDraf').onclick = function() {
         document.getElementById('modalSuccessDraf').remove();
-        
-        // BUG FIX: Baris pemadaman kadAktif.forEach(k => k.remove()); TELAH DIBUANG sepenuhnya
         
         if(typeof resetRumusan === 'function') resetRumusan();
         senaraiElaunGlobal = [];
