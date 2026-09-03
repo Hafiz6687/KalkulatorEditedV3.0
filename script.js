@@ -1586,17 +1586,27 @@ window.bukaRekodSimpanan = function(e) {
 };
 
 window.kembaliKeKalkulator = function(idRekod) {
-    // 1. Buang panel jadual Maklumat Gaji yang sedang dipapar
+    // 1. SEMAKAN KESELAMATAN (SAFETY NET): 
+    // Periksa jika kalkulator asal masih wujud dalam memori atau telah dihapuskan.
+    let kadSembunyi = document.querySelectorAll('.sementara-sembunyi');
+    
+    if (kadSembunyi.length === 0) {
+        // Jika tiada (telah dihapus di pop-up / di-refresh), halang skrin dari menjadi kosong.
+        alert("Maaf, data pengiraan asal bagi rekod ini telah terpadam dari memori semasa. Anda hanya boleh mencetak atau melihat paparan ini sahaja.");
+        return; // Berhenti di sini. Jadual Maklumat Gaji tidak akan dibuang dari skrin.
+    }
+
+    // 2. Buang panel jadual Maklumat Gaji yang sedang dipapar
     let activeMg = document.getElementById('active-maklumatGaji');
     if (activeMg) activeMg.remove();
 
-    // 2. Munculkan kembali kesemua kalkulator dan pengiraan asal pengguna
-    document.querySelectorAll('.sementara-sembunyi').forEach(kad => {
+    // 3. Munculkan kembali kesemua kalkulator dan pengiraan asal pengguna
+    kadSembunyi.forEach(kad => {
         kad.style.display = '';
         kad.classList.remove('sementara-sembunyi');
     });
 
-    // 3. Pastikan Rumusan dan Warning Box dipaparkan semula seperti biasa
+    // 4. Pastikan Rumusan dan Warning Box dipaparkan semula seperti biasa
     let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
     if (semuaKadAktif.length > 0) {
         let rumusanCard = document.querySelector('.rumusan-card');
@@ -1605,8 +1615,7 @@ window.kembaliKeKalkulator = function(idRekod) {
         if (warningBox) warningBox.style.display = "block";
     }
 
-    // PENAMBAHBAIKAN 3: Daftarkan rekod ini sebagai sedang dikemaskini.
-    // Ini membenarkan sistem (overwrite) menyambung proses tanpa memaparkan pop-up Draf Peringatan.
+    // 5. Daftarkan rekod ini sebagai sedang dikemaskini
     if (idRekod) {
         window.rekodSedangDikemaskini = idRekod;
     }
