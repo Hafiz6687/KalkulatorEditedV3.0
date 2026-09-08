@@ -3340,36 +3340,20 @@ window.simpanDrafManual = function() {
         return;
     }
 
-    // --- PINTASAN KEMASKINI OVERWRITE (100% BULLETPROOF) ---
-    // Di sini sistem diwajibkan return dan tidak akan mencipta Draf.
+    // --- PINTASAN KEMASKINI OVERWRITE (DIKEMASKINI) ---
+    // Jika pengguna menekan "Simpan Draf" semasa mengemaskini rekod, 
+    // sistem akan membuang rekod PDF lama dan menukarnya menjadi Draf tanpa gangguan fungsi lain.
     if (window.rekodSedangDikemaskini) {
-        let isPenyata = false;
-        
-        // Teknik 1: Periksa dari dalam HTML laporan asal di memori (Sangat Tepat)
+        // Padam rekod lama dari memori dan jadual supaya tak berlaku duplikasi
         if (window.simpananHTMLGlobal && window.simpananHTMLGlobal[window.rekodSedangDikemaskini]) {
-            if (window.simpananHTMLGlobal[window.rekodSedangDikemaskini].includes('PENYATA GAJI')) {
-                isPenyata = true;
-            }
+            delete window.simpananHTMLGlobal[window.rekodSedangDikemaskini];
         }
-        
-        // Teknik 2: Periksa dari Jadual DOM
-        let btnLama = document.querySelector(`button[data-id="${window.rekodSedangDikemaskini}"]`);
-        if (btnLama && btnLama.closest('tr')) {
-            let trText = btnLama.closest('tr').innerText || "";
-            let trJenis = btnLama.closest('tr').getAttribute('data-jenis');
-            if (trText.includes('Penyata Gaji') || trJenis === 'Penyata Gaji') {
-                isPenyata = true;
-            }
+        let barisLama = document.querySelector(`#card-maklumatGaji tbody button[data-id="${window.rekodSedangDikemaskini}"]`);
+        if (barisLama && barisLama.closest('tr')) {
+            barisLama.closest('tr').remove();
         }
-        
-        // Laksana terus tindakan Overwrite 
-        if (isPenyata) {
-            janaPenyataGaji();
-        } else {
-            janaLaporanPenuh();
-        }
-        
-        return; // ⛔ WAJIB BERHENTI DI SINI. DRAF TIDAK AKAN TERCIPTA SAMA SEKALI!
+        // Putuskan memori kemaskini
+        window.rekodSedangDikemaskini = null; 
     }
     // --- TAMAT PINTASAN KEMASKINI ---
 
@@ -3403,6 +3387,11 @@ window.simpanDrafManual = function() {
         senaraiElaunGlobal = [];
         let rc = document.querySelector('.rumusan-card'); 
         if(rc) rc.style.display = 'none';
+        
+        // Simpan data pemadaman ke LocalStorage (Autopilot Trigger)
+        if (typeof window.simpanDataKekal === "function") {
+            window.simpanDataKekal();
+        }
         
         // Buka menu Senarai Rekod menggunakan "Bypass skipWarning" (true)
         window.tambahKalkulator('maklumatGaji', true);
