@@ -2325,6 +2325,15 @@ window.tambahKalkulator = function(templateId) {
             if (typeof resetRumusan === 'function') resetRumusan();
             if (typeof senaraiElaunGlobal !== 'undefined') senaraiElaunGlobal = [];
             if (rumusanCard) rumusanCard.style.display = "none";
+            // --- TAMBAHAN FIX: PEMBERSIHAN MUTLAK REKOD LAMA ---
+            window.rekodSedangDikemaskini = null; 
+            window.globalNamaMajikan = "";
+            window.globalNoDaftarMajikan = "";
+            window.globalTempohUpah = "";
+            window.globalNamaPekerja = "";
+            window.globalIcPekerja = "";
+            window.globalNoPekerja = "";
+            // ---------------------------------------------------
             setTimeout(() => { if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); }, 50);
         }
     }
