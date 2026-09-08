@@ -3794,3 +3794,167 @@ window.resetSemua = function() {
     window.isSambungDrafAktif = false; // Reset apabila buang semua kalkulator
     asal_resetSemua();
 };
+// =========================================================
+// PENAMBAHBAIKAN KHAS: KAWALAN POP-UP UNTUK FLOW 'SAMBUNG DRAF' KE 'SEKSYEN 18A'
+// =========================================================
+
+// 1. KEMASKINI FUNGSI BUKA DRAF (Hidupkan flag bahawa draf sedang disambung)
+window.bukaDraf = function(e) {
+    // --- TAMBAHAN BARU: Hidupkan flag sambung draf ---
+    window.isSambungDrafAktif = true; 
+    // --------------------------------------------------
+
+    let btn = e.currentTarget;
+    let drafId = btn.getAttribute('data-draf-id');
+    let wrapper = document.getElementById('wrapper_' + drafId);
+    
+    if(!wrapper) {
+        alert("Maaf, draf tidak dijumpai.");
+        return;
+    }
+
+    // 1. Padamkan sebarang kad aktif/panel Senarai Rekod yang sedang terbuka
+    document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(k => k.remove());
+    let activeMg = document.getElementById('active-maklumatGaji');
+    if (activeMg) activeMg.remove();
+
+    // 2. Kosongkan jadual rumusan semasa
+    let rumusanTbodyTarget = document.getElementById('badanJadualRumusan');
+    if (rumusanTbodyTarget) rumusanTbodyTarget.innerHTML = ''; 
+
+    let grid = document.getElementById('active-calculators-grid');
+    let rumusanCard = document.querySelector('.rumusan-card');
+    
+    // 3. Kembalikan kad-kad kalkulator asal dari draf ke grid utama
+    let kadContainer = wrapper.querySelector('.draf-kad-container');
+    if (kadContainer) {
+        while(kadContainer.firstChild) {
+            let kad = kadContainer.firstChild;
+            kad.style.display = '';
+            kad.classList.remove('sementara-sembunyi');
+            kad.classList.remove('hidden-template'); 
+            
+            if(rumusanCard) grid.insertBefore(kad, rumusanCard);
+            else grid.appendChild(kad);
+        }
+    }
+
+    // 4. Kembalikan data baris jadual rumusan
+    let rumusanContainer = wrapper.querySelector('.draf-rumusan-container');
+    if (rumusanContainer && rumusanTbodyTarget) {
+        while(rumusanContainer.firstChild) {
+            rumusanTbodyTarget.appendChild(rumusanContainer.firstChild);
+        }
+    }
+
+    // 5. Pulihkan senarai elaun global
+    try { 
+        senaraiElaunGlobal = JSON.parse(wrapper.getAttribute('data-elaun')) || []; 
+    } catch(err) { 
+        senaraiElaunGlobal = []; 
+    }
+
+    // 6. Hapus bekas simpanan draf & baris rekod draf dari Jadual Rekod
+    wrapper.remove();
+    document.querySelectorAll(`tr[data-draf="${drafId}"]`).forEach(tr => tr.remove());
+
+    // 7. Paparkan semula Kad Rumusan dan Kotak Amaran
+    if(rumusanCard) rumusanCard.style.display = 'block';
+    let warningBox = document.querySelector('.warning-box');
+    if(warningBox) warningBox.style.display = 'block';
+    
+    // 8. Kemaskini semula pengiraan rumusan & pelarasan elaun dinamik
+    if(typeof kiraJumlahKeseluruhanRumusan === 'function') kiraJumlahKeseluruhanRumusan();
+    setTimeout(() => { 
+        if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); 
+    }, 50);
+
+    // 9. Skrol secara lancar ke kalkulator pertama yang disambung
+    let kadTelahDipulih = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
+    if (kadTelahDipulih.length > 0) {
+        kadTelahDipulih[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+};
+
+// 2. KEMASKINI FUNGSI URUS PERTUKARAN MENU (Sembunyi butang Hapus bagi flow berkaitan)
+window.urusPertukaranMenu = function(modDestinasi, fungsiCallback) {
+    let modSemasa = dapatkanModSemasa();
+    
+    if (modSemasa === 'NONE' || modSemasa === modDestinasi) {
+        return fungsiCallback(); 
+    }
+
+    if (modDestinasi === 'REKOD' && document.getElementById('active-maklumatGaji')) {
+        return fungsiCallback();
+    }
+
+    let paparanMod = modSemasa === '18A' ? 'KALKULATOR SEKSYEN 18A' : 'KALKULATOR AKTA KERJA';
+    
+    let existingModal = document.getElementById('modalAmaranPertukaran');
+    if (existingModal) existingModal.remove();
+
+    // --- TAMBAHAN BARU: Logik sasaran flow "Sambung Draf -> Klik Seksyen 18A" ---
+    let butangHapusHtml = `<button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">Hapus (Padam Aktiviti)</button>`;
+    let infoTambahan = "";
+    
+    // Syarat: Jika sedang sambung draf dan user tekan menu Seksyen 18A (atau rekod/akta lain yang berbeza mod)
+    if (window.isSambungDrafAktif && (modDestinasi === '18A' || modDestinasi === 'REKOD' || modDestinasi === 'AKTA')) {
+        butangHapusHtml = ``; // REMOVE BUTANG HAPUS
+        infoTambahan = `<br><br><span style="color:#d9534f; font-size:12px;">Sila gunakan butang <b>Simpan Draf</b> untuk kembali ke Senarai Rekod dengan selamat.</span>`;
+    }
+    // -----------------------------------------------------------------------------
+
+    let boxHtml = `
+    <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; box-sizing: border-box;">
+            <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
+            <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Aktiviti Pengiraan Dikesan</h3>
+            <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b>.<br><br>Sila pilih tindakan anda sebelum beralih:${infoTambahan}
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="btnBatalTukar" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">Batal (Kekal Di Paparan Sekarang)</button>
+                ${butangHapusHtml}
+            </div>
+        </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', boxHtml);
+
+    document.getElementById('btnBatalTukar').onclick = function() {
+        document.getElementById('modalAmaranPertukaran').remove();
+    };
+
+    let btnHapus = document.getElementById('btnHapusDraf');
+    if (btnHapus) {
+        btnHapus.onclick = function() {
+            window.isSambungDrafAktif = false; // Reset flag
+            document.getElementById('modalAmaranPertukaran').remove();
+            document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
+            if(typeof resetRumusan === 'function') resetRumusan();
+            senaraiElaunGlobal = [];
+            let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
+
+            window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
+            window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
+            window.rekodSedangDikemaskini = null;
+            let sediaAdaModal = document.getElementById('modalLaporanPenuh');
+            if (sediaAdaModal) sediaAdaModal.remove();
+
+            fungsiCallback();
+        };
+    }
+}
+
+// 3. TUTUP FLAG (Reset) JIKA ADA TINDAKAN LAIN SEPERTI SIMPAN / RESET SEMUA
+let asal_simpanDrafManual = window.simpanDrafManual;
+window.simpanDrafManual = function() {
+    window.isSambungDrafAktif = false; // Reset apabila selesai simpan
+    if (typeof asal_simpanDrafManual === 'function') asal_simpanDrafManual();
+};
+
+let asal_resetSemua = window.resetSemua;
+window.resetSemua = function() {
+    window.isSambungDrafAktif = false; // Reset apabila buang semua kalkulator
+    if (typeof asal_resetSemua === 'function') asal_resetSemua();
+};
