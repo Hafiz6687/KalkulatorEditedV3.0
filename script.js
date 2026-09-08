@@ -2890,30 +2890,49 @@ if (!window.asal_tambahKalkulator) {
 
 // Pemintas Navigasi Utama (Sidebar & Flyout)
 window.tambahKalkulator = function(templateId, skipWarning = false) {
+
+    // =====================================================
+    // REKOD / MAKLUMAT GAJI
+    // Destinasi = REKOD
+    // =====================================================
     if (templateId === 'maklumatGaji') {
+
         if (skipWarning) {
-            // Bypass pop-up amaran jika flow "Simpan" dari laporan digunakan
-            window.asal_tambahKalkulator(templateId);
-        } else {
-            // Flow biasa dari klik Sidebar
-            urusPertukaranMenu('REKOD', function() {
-                window.asal_tambahKalkulator(templateId);
-            });
+            // Bypass pop-up jika dipanggil oleh flow dalaman "Simpan"
+            return window.asal_tambahKalkulator(templateId);
         }
-    } else {
-        let modSemasa = dapatkanModSemasa();
-        if (modSemasa !== 'NONE') {
-            if (skipWarning) {
-                window.asal_tambahKalkulator(templateId);
-            } else {
-                urusPertukaranMenu(modSemasa, function() {
-                    window.asal_tambahKalkulator(templateId);
-                });
-            }
-        } else {
+
+        return urusPertukaranMenu('REKOD', function() {
             window.asal_tambahKalkulator(templateId);
-        }
+        });
     }
+
+    // =====================================================
+    // SEMUA KALKULATOR DARIPADA FLYOUT AKTA KERJA
+    // Destinasi = AKTA
+    //
+    // PENTING:
+    // Seksyen 18A mempunyai fungsi flyout khasnya sendiri
+    // iaitu toggleFlyout18A() dan
+    // tambahKalkulator18ACustom().
+    //
+    // Oleh itu, tambahKalkulator() biasa mesti menganggap
+    // template biasa sebagai destinasi AKTA.
+    // =====================================================
+    const modDestinasi = 'AKTA';
+
+    // Jika flow dalaman minta bypass amaran
+    if (skipWarning) {
+        return window.asal_tambahKalkulator(templateId);
+    }
+
+    // Jika tiada aktiviti, terus buka kalkulator
+    // Jika sudah dalam AKTA, terus buka kalkulator
+    // Jika sedang dalam 18A, urusPertukaranMenu akan
+    // keluarkan pop-up sebelum berpindah ke AKTA.
+    return urusPertukaranMenu(modDestinasi, function() {
+        window.asal_tambahKalkulator(templateId);
+    });
 };
 
 // Fungsi Pelarasan Kedudukan Menu Flyout
