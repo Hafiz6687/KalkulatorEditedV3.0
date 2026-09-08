@@ -2164,6 +2164,9 @@ window.resetSemua = function() {
         resetRumusan();
         senaraiElaunGlobal = [];
         
+        // --- RESET FLAG JIKA USER TEKAN RESET SEMUA ---
+        window.isDrafDisambung = false;
+
         // --- PENAMBAHBAIKAN: CUCI MEMORI MAKLUMAT LAPORAN ---
         window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
         window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
@@ -2307,17 +2310,6 @@ window.tambahKalkulator = function(templateId) {
     let warningBox = document.querySelector('.warning-box');
 
     if (templateId === 'maklumatGaji') {
-        let existingMg = document.querySelectorAll('#active-maklumatGaji');
-        existingMg.forEach(mg => mg.remove());
-
-        let semuaKadAktif = document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)');
-        semuaKadAktif.forEach(kad => {
-            kad.classList.add('sementara-sembunyi');
-            kad.style.display = 'none';
-        });
-        if (rumusanCard) rumusanCard.style.display = "none";
-        if (warningBox) warningBox.style.display = "none";
-    } else {
         if (warningBox) warningBox.style.display = "block";
         let existingMg = document.getElementById('active-maklumatGaji');
         if (existingMg) {
@@ -2332,13 +2324,15 @@ window.tambahKalkulator = function(templateId) {
             if (rumusanCard) rumusanCard.style.display = "none";
             setTimeout(() => { if (typeof window.semakDanTukarElaun === 'function') window.semakDanTukarElaun(); }, 50);
 
-            // --- PENAMBAHBAIKAN: CUCI MEMORI MAKLUMAT LAPORAN (PENGIRAAN BARU) ---
             window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
             window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
             window.rekodSedangDikemaskini = null;
+
+            // --- RESET FLAG KERANA PENGGUNA MULA PENGIRAAN BARU ---
+            window.isDrafDisambung = false; 
+
             let sediaAdaModal = document.getElementById('modalLaporanPenuh');
             if (sediaAdaModal) sediaAdaModal.remove();
-            // ----------------------------------------------------
         }
     }
 
@@ -3110,49 +3104,58 @@ function urusPertukaranMenu(modDestinasi, fungsiCallback) {
     let existingModal = document.getElementById('modalAmaranPertukaran');
     if (existingModal) existingModal.remove();
 
-    // HTML Pop-up Dikemaskini (Buang butang Simpan & Ikon Batal/Hapus)
+    // --- PENAMBAHBAIKAN: SEMAK FLAG DRAF ---
+    let isDraf = window.isDrafDisambung === true;
+
+    // Sembunyikan butang Hapus jika sedang menyambung draf
+    let htmlButangHapus = isDraf ? '' : `<button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">Hapus (Padam Aktiviti)</button>`;
+    
+    let mesejTambahan = isDraf ? "<br><br>Anda sedang membuka paparan <b>Draf Disimpan</b>. Sila tekan <b>'Batal'</b> dan simpan draf anda atau lengkapkan pengiraan terlebih dahulu." : "<br><br>Sila pilih tindakan anda sebelum beralih:";
+
+    // HTML Pop-up Dikemaskini
     let boxHtml = `
     <div id="modalAmaranPertukaran" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
         <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid #f39c12; box-sizing: border-box;">
             <div style="font-size: 45px; margin-bottom: 10px; line-height: 1;">⚠️</div>
             <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Aktiviti Pengiraan Dikesan</h3>
             <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
-                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b>.<br><br>Sila pilih tindakan anda sebelum beralih:
+                Anda mempunyai aktiviti pengiraan di<br><b>${paparanMod}</b>.${mesejTambahan}
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <button id="btnBatalTukar" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">Batal (Kekal Di Paparan Sekarang)</button>
-                <button id="btnHapusDraf" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(220,53,69,0.2);">Hapus (Padam Aktiviti)</button>
+                ${htmlButangHapus}
             </div>
         </div>
     </div>
     `;
     document.body.insertAdjacentHTML('beforeend', boxHtml);
 
-    // KOD LOGIK SIMPAN TELAH DIBUANG
-
     // 1. BATAL: Tutup pop-up amaran dan KEKAL di paparan kalkulator semasa
     document.getElementById('btnBatalTukar').onclick = function() {
         document.getElementById('modalAmaranPertukaran').remove();
     };
 
-    // 2. HAPUS: Padam aktiviti semasa dan teruskan membuka menu/kalkulator pilihan
-document.getElementById('btnHapusDraf').onclick = function() {
-        document.getElementById('modalAmaranPertukaran').remove();
-        document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
-        if(typeof resetRumusan === 'function') resetRumusan();
-        senaraiElaunGlobal = [];
-        let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
+    // 2. HAPUS: Padam aktiviti semasa dan teruskan (Hanya aktif bila butang Hapus ada)
+    let btnHapus = document.getElementById('btnHapusDraf');
+    if (btnHapus) {
+        btnHapus.onclick = function() {
+            document.getElementById('modalAmaranPertukaran').remove();
+            document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card):not(#active-maklumatGaji)').forEach(k => k.remove());
+            if(typeof resetRumusan === 'function') resetRumusan();
+            senaraiElaunGlobal = [];
+            let rc = document.querySelector('.rumusan-card'); if(rc) rc.style.display = 'none';
 
-        // --- PENAMBAHBAIKAN: CUCI MEMORI MAKLUMAT LAPORAN (SELEPAS KLIK HAPUS) ---
-        window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
-        window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
-        window.rekodSedangDikemaskini = null;
-        let sediaAdaModal = document.getElementById('modalLaporanPenuh');
-        if (sediaAdaModal) sediaAdaModal.remove();
-        // ----------------------------------------------------
+            window.globalNamaMajikan = ""; window.globalNoDaftarMajikan = ""; window.globalTempohUpah = "";
+            window.globalNamaPekerja = ""; window.globalIcPekerja = ""; window.globalNoPekerja = "";
+            window.rekodSedangDikemaskini = null;
+            window.isDrafDisambung = false; // Reset flag perlindungan
+            
+            let sediaAdaModal = document.getElementById('modalLaporanPenuh');
+            if (sediaAdaModal) sediaAdaModal.remove();
 
-        fungsiCallback();
-    };
+            fungsiCallback();
+        };
+    }
 }
 
 // Logik Ekstrak dan Simpan Draf DOM ke "Senarai Rekod"
@@ -3249,6 +3252,9 @@ window.bukaDraf = function(e) {
         alert("Maaf, draf tidak dijumpai.");
         return;
     }
+
+    // --- MENGAKTIFKAN PERLINDUNGAN DRAF (BUTTON HAPUS DIHILANGKAN) ---
+    window.isDrafDisambung = true;
 
     // 1. Padamkan sebarang kad aktif/panel Senarai Rekod yang sedang terbuka
     document.querySelectorAll('.calculator-card:not(.hidden-template):not(.rumusan-card)').forEach(k => k.remove());
@@ -3416,12 +3422,14 @@ window.simpanDrafManual = function() {
         senaraiElaunGlobal = [];
         let rc = document.querySelector('.rumusan-card'); 
         if(rc) rc.style.display = 'none';
+
+        // --- RESET FLAG SELEPAS BERJAYA DISIMPAN ---
+        window.isDrafDisambung = false;
         
         // Buka menu Senarai Rekod menggunakan "Bypass skipWarning" (true)
         window.tambahKalkulator('maklumatGaji', true);
     };
-};
-
+    
 // =====================================================
 // PEMBERSIHAN DUMMY AUTOMATIK PADA INITIALIZATION
 // =====================================================
