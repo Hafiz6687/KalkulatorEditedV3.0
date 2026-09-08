@@ -1539,7 +1539,7 @@ function teruskanJanaLaporan(jenis) {
         }
     }
 
-    tambahRekodKeMaklumatGaji(jenis, namaPekerja, namaMajikan, tempohUpah, unikId);
+tambahRekodKeMaklumatGaji(jenis, namaPekerja, namaMajikan, tempohUpah, unikId);
     document.getElementById('modalLaporanPenuh').style.display = 'none'; 
     
     prosesJanaLaporanPenuh(namaMajikan, noDaftarMajikan, tempohUpah, namaPekerja, icPekerja, noPekerja, jenis, { 
@@ -1553,6 +1553,11 @@ function teruskanJanaLaporan(jenis) {
     if (typeof window.simpanDataKekal === "function") {
         window.simpanDataKekal();
     }
+
+    // [KOD TAMBAHAN PENYELESAIAN]: Bawa user terus ke Senarai Rekod supaya reset state berlaku
+    setTimeout(() => {
+        window.tambahKalkulator('maklumatGaji', true);
+    }, 500); // Beri sedikit masa untuk PDF dijana dengan selamat sebelum tukar paparan
 }
 
 window.simpananHTMLGlobal = window.simpananHTMLGlobal || {};
