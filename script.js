@@ -1670,7 +1670,9 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
     tr.setAttribute('data-pekerja', safeNama);
     tr.setAttribute('data-majikan', safeMajikan);
     
-// PENAMBAHBAIKAN: Penyingkiran butang 'Sambung' yang bertindih fungsi dengan butang Kemaskini dalam 'Buka'
+// Dapatkan tarikh dan masa semasa rekod dijana
+    let tarikhJana = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
     tr.innerHTML = `
         <td style="padding: 15px; font-size: 13px; font-weight: bold; color: ${warnaTeks}; vertical-align: middle;">
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
@@ -1680,6 +1682,7 @@ function tambahRekodKeMaklumatGaji(jenis, namaPekerja, majikan, tempoh, unikId) 
         </td>
         <td style="padding: 15px; font-size: 13px; vertical-align: middle;"><strong style="color: #333;">${safeNama}</strong></td>
         <td style="padding: 15px; font-size: 13px; vertical-align: middle;"><strong style="color: #333;">${safeMajikan}</strong></td>
+        <td style="padding: 15px; text-align: center; font-size: 13px; color: #555; vertical-align: middle;">${tarikhJana}</td>
         <td style="padding: 15px; text-align: center; font-size: 13px; color: #444; vertical-align: middle;">${tempoh || '-'}</td>
         <td style="padding: 15px; text-align: center; vertical-align: middle; white-space: nowrap;">
             <button data-id="${unikId}" onclick="bukaRekodSimpanan(event)" style="background: #0d6efd; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📂 Buka</button>
@@ -3181,13 +3184,13 @@ window.simpanKeDrafDOM = function(modSemasa) {
         </td>
         <td style="padding: 15px; font-size: 13px; vertical-align: middle;"><strong style="color: #333;">${labelMode}</strong></td>
         <td style="padding: 15px; font-size: 13px; vertical-align: middle;"><strong style="color: #666;">-</strong></td>
-        <td style="padding: 15px; text-align: center; font-size: 13px; color: #444; vertical-align: middle;">${tarikh}</td>
-        <td style="padding: 15px; text-align: center; vertical-align: middle;">
+        <td style="padding: 15px; text-align: center; font-size: 13px; color: #555; vertical-align: middle;">${tarikh}</td>
+        <td style="padding: 15px; text-align: center; font-size: 13px; color: #444; vertical-align: middle;">-</td>
+        <td style="padding: 15px; text-align: center; vertical-align: middle; white-space: nowrap;">
             <button data-draf-id="${drafId}" onclick="bukaDraf(event)" style="background: #ffc107; color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📂 Sambung</button>
             <button data-draf-id="${drafId}" onclick="hapusDraf(event)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">🗑️ Hapus</button>
         </td>
     `;
-
     let tbodyTemplate = document.querySelector('#card-maklumatGaji tbody');
     if (tbodyTemplate) {
         let trTemplate = document.createElement('tr');
