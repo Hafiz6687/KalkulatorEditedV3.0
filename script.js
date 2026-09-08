@@ -3340,20 +3340,36 @@ window.simpanDrafManual = function() {
         return;
     }
 
-    // --- PINTASAN KEMASKINI OVERWRITE (DIKEMASKINI) ---
-    // Jika pengguna menekan "Simpan Draf" semasa mengemaskini rekod, 
-    // sistem akan membuang rekod PDF lama dan menukarnya menjadi Draf tanpa gangguan fungsi lain.
+    // --- PINTASAN KEMASKINI (DIKEMBALIKAN KE LOGIK SELAMAT) ---
+    // Jika user dalam mod Kemaskini, klik "Simpan Draf" TIDAK AKAN menjadikan ia Draf.
+    // Sebaliknya ia mengekalkan identiti Laporan/Penyata dengan terus memaparkan Modal Cetakan untuk dikemaskini.
     if (window.rekodSedangDikemaskini) {
-        // Padam rekod lama dari memori dan jadual supaya tak berlaku duplikasi
+        let isPenyata = false;
+        
+        // Semak Identiti Asal (Penyata atau Laporan Penuh)
         if (window.simpananHTMLGlobal && window.simpananHTMLGlobal[window.rekodSedangDikemaskini]) {
-            delete window.simpananHTMLGlobal[window.rekodSedangDikemaskini];
+            if (window.simpananHTMLGlobal[window.rekodSedangDikemaskini].includes('PENYATA GAJI')) {
+                isPenyata = true;
+            }
+        } else {
+            let btnLama = document.querySelector(`button[data-id="${window.rekodSedangDikemaskini}"]`);
+            if (btnLama && btnLama.closest('tr')) {
+                let trText = btnLama.closest('tr').innerText || "";
+                let trJenis = btnLama.closest('tr').getAttribute('data-jenis');
+                if (trText.includes('Penyata Gaji') || trJenis === 'Penyata Gaji') {
+                    isPenyata = true;
+                }
+            }
         }
-        let barisLama = document.querySelector(`#card-maklumatGaji tbody button[data-id="${window.rekodSedangDikemaskini}"]`);
-        if (barisLama && barisLama.closest('tr')) {
-            barisLama.closest('tr').remove();
+        
+        // Terus buka Modal yang tepat mengikut fungsi sedia ada, TANPA menjadi draf
+        if (isPenyata) {
+            janaPenyataGaji();
+        } else {
+            janaLaporanPenuh();
         }
-        // Putuskan memori kemaskini
-        window.rekodSedangDikemaskini = null; 
+        
+        return; // ⛔ Hentikan operasi di sini. Ia TIDAK akan melepasi ke kod Draf di bawah.
     }
     // --- TAMAT PINTASAN KEMASKINI ---
 
@@ -3362,7 +3378,7 @@ window.simpanDrafManual = function() {
     // Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada sebagai DRAF
     simpanKeDrafDOM(modSemasa);
     
-    // Pop-up Profesional: Draf Berjaya Disimpan 
+    // Pop-up Profesional: Draf Berjaya Disimpan (HANYA UNTUK PROSES CIPTA BARU)
     let existingModal = document.getElementById('modalSuccessDraf');
     if (existingModal) existingModal.remove();
 
@@ -3393,7 +3409,7 @@ window.simpanDrafManual = function() {
             window.simpanDataKekal();
         }
         
-        // Buka menu Senarai Rekod menggunakan "Bypass skipWarning" (true)
+        // Buka menu Senarai Rekod
         window.tambahKalkulator('maklumatGaji', true);
     };
 };
