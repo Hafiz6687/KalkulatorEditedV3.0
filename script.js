@@ -3340,13 +3340,12 @@ window.simpanDrafManual = function() {
         return;
     }
 
-    // --- PINTASAN KEMASKINI (DIKEMBALIKAN KE LOGIK SELAMAT) ---
-    // Jika user dalam mod Kemaskini, klik "Simpan Draf" TIDAK AKAN menjadikan ia Draf.
-    // Sebaliknya ia mengekalkan identiti Laporan/Penyata dengan terus memaparkan Modal Cetakan untuk dikemaskini.
+    // --- PINTASAN KEMASKINI SENYAP (SILENT OVERWRITE BACKGROUND) ---
+    // Logik ini mengemaskini rekod tanpa menukarnya menjadi draf dan TANPA membuka apa-apa modal visual.
     if (window.rekodSedangDikemaskini) {
         let isPenyata = false;
         
-        // Semak Identiti Asal (Penyata atau Laporan Penuh)
+        // Semak Identiti Asal (Adakah ia Penyata atau Laporan)
         if (window.simpananHTMLGlobal && window.simpananHTMLGlobal[window.rekodSedangDikemaskini]) {
             if (window.simpananHTMLGlobal[window.rekodSedangDikemaskini].includes('PENYATA GAJI')) {
                 isPenyata = true;
@@ -3362,23 +3361,93 @@ window.simpanDrafManual = function() {
             }
         }
         
-        // Terus buka Modal yang tepat mengikut fungsi sedia ada, TANPA menjadi draf
-        if (isPenyata) {
-            janaPenyataGaji();
-        } else {
-            janaLaporanPenuh();
-        }
-        
-        return; // ⛔ Hentikan operasi di sini. Ia TIDAK akan melepasi ke kod Draf di bawah.
-    }
-    // --- TAMAT PINTASAN KEMASKINI ---
+        // Simpan / Pintas fungsi paparan (Pop-up/Tour) supaya ia tidak muncul semasa proses senyap ini
+        let asalTunjukTourElaunPopup = window.tunjukTourElaunPopup;
+        let asalTunjukTourSvc = window.tunjukTourMaklumatPerkhidmatan;
+        window.tunjukTourElaunPopup = function() {}; 
+        window.tunjukTourMaklumatPerkhidmatan = function() {};
 
+        // 1. Panggil fungsi papar modal secara latar belakang (untuk trigger auto-kiraan KWSP dll)
+        paparModalLaporan(isPenyata ? 'penyata' : 'penuh');
+        
+        // 2. Sembunyikan segera modal yang dibina supaya pengguna tidak nampak
+        let modalLaporan = document.getElementById('modalLaporanPenuh');
+        if (modalLaporan) modalLaporan.style.display = 'none';
+
+        // 3. Beri masa sedikit (150ms) supaya autoKiraPotonganBerkanun selesai berjalan di background
+        setTimeout(() => {
+            // Pintas window.open supaya tetingkap cetakan (PDF) TIDAK terbuka
+            let asalWindowOpen = window.open;
+            window.open = function() { 
+                return { document: { write: function(){}, close: function(){} }, focus: function(){} }; 
+            };
+
+            // Pintas amaran Cuti UPL (biarkan ia berlalu secara senyap)
+            let oldStatusUPL = window.statusUPLDisahkan;
+            window.statusUPLDisahkan = true;
+
+            try {
+                // Eksekusi fungsi jana laporan sebenar secara selamat di sebalik skrin
+                teruskanJanaLaporan(isPenyata ? 'penyata' : 'penuh');
+            } finally {
+                // PULIHKAN SEMULA fungsi asal supaya tidak mengganggu sesi yang lain kelak
+                window.open = asalWindowOpen;
+                window.statusUPLDisahkan = oldStatusUPL;
+            }
+
+            // 4. Paparkan pop-up Kemaskini Berjaya Disimpan (Custom Untuk Overwrite)
+            let existingModal = document.getElementById('modalSuccessDraf');
+            if (existingModal) existingModal.remove();
+
+            let modalHtml = `
+            <div id="modalSuccessDraf" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+                <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; border-top: 6px solid #0d6efd; animation: floatUp 0.3s ease-out;">
+                    <div style="font-size: 50px; margin-bottom: 10px; line-height: 1;">🔄</div>
+                    <h3 style="margin-top: 0; color: #1f4e79; font-size: 20px; font-weight: 800;">Kemaskini Disimpan!</h3>
+                    <p style="font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 25px;">
+                        Rekod pengiraan anda telah berjaya dikemaskini dan disimpan secara automatik.
+                    </p>
+                    <button id="btnOkSuccessDraf" style="background: #0d6efd; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.2s; box-shadow: 0 4px 6px rgba(13,110,253,0.3);">TUTUP & TERUSKAN</button>
+                </div>
+            </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            document.getElementById('btnOkSuccessDraf').onclick = function() {
+                document.getElementById('modalSuccessDraf').remove();
+                if(typeof resetRumusan === 'function') resetRumusan();
+                senaraiElaunGlobal = [];
+                let rc = document.querySelector('.rumusan-card'); 
+                if(rc) rc.style.display = 'none';
+                
+                if (typeof window.simpanDataKekal === "function") window.simpanDataKekal();
+                
+                // Terus bawa pengguna ke senarai rekod
+                window.tambahKalkulator('maklumatGaji', true);
+            };
+
+            // Pulihkan fungsi paparan Tour / Notis ke keadaan asal
+            setTimeout(() => {
+                window.tunjukTourElaunPopup = asalTunjukTourElaunPopup;
+                window.tunjukTourMaklumatPerkhidmatan = asalTunjukTourSvc;
+            }, 500);
+
+        }, 150);
+
+        return; // ⛔ Wajib return untuk mematikan aliran ke fungsi simpanan Draf Baru (Cipta Baru)
+    }
+    // --- TAMAT PINTASAN KEMASKINI SENYAP ---
+
+
+    // ========================================================
+    // LOGIK DI BAWAH HANYA AKAN BERJALAN UNTUK CIPTA REKOD BARU
+    // ========================================================
     let modSemasa = dapatkanModSemasa();
     
     // Laksanakan penyimpanan ke DOM menggunakan enjin sedia ada sebagai DRAF
     simpanKeDrafDOM(modSemasa);
     
-    // Pop-up Profesional: Draf Berjaya Disimpan (HANYA UNTUK PROSES CIPTA BARU)
+    // Pop-up Profesional: Draf Berjaya Disimpan
     let existingModal = document.getElementById('modalSuccessDraf');
     if (existingModal) existingModal.remove();
 
